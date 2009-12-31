@@ -1084,16 +1084,7 @@ Function PlaylistListSelect_fn()
 			trace("ActivePlaylistID = %u",PlaylistID[i]);
 			ActivePlaylist = PlaylistRaw[i]; //set the active playlist name
             trace("ActivePlaylist = %s",PlaylistRaw[i]);
-
-//			makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
-
-			// the following replaces the preceding line to enable iTunes playlists to work
-			makestring(OUT$,"%s playlistcontrol cmd:load playlist_id:%u \n",PlayerID$,PlaylistID[i]);
-			trace("sending: %s",OUT$);
-			SocketSend(TCPClient, OUT$);
-			makestring(OUT$,"%s playlist index 0 \n",PlayerID$);
-			// end fix for iTunes			
-
+			makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
 			trace("sending: %s",OUT$);
 			SocketSend(TCPClient, OUT$);
 			pulse(20,NowplayingPageFlip);
@@ -1497,6 +1488,9 @@ Function FavoritesListAdd_fn(){
 			makestring(OUT$,"%s favorites playlist add item_id:%s\n",PlayerID$, FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			SocketSend(TCPClient, OUT$);
+			ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
+			ActivePlaylist = ""; // clear the active playlist
+			
 //			pulse(20,NowplayingPageFlip);
 		}
 	}
@@ -1631,6 +1625,8 @@ Function FavoritesListInsert_fn(){
 			trace("sending: %s",OUT$);
 			SocketSend(TCPClient, OUT$);
 //			pulse(20,NowplayingPageFlip);
+			ActivePlaylistID = 0; // clear the active playlist ID 
+			ActivePlaylist = ""; // clear the active playlist
 		}
 	}
 }
