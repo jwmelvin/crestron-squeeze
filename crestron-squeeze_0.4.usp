@@ -1084,7 +1084,16 @@ Function PlaylistListSelect_fn()
 			trace("ActivePlaylistID = %u",PlaylistID[i]);
 			ActivePlaylist = PlaylistRaw[i]; //set the active playlist name
             trace("ActivePlaylist = %s",PlaylistRaw[i]);
-			makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
+
+//			makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
+
+			// the following replaces the preceding line to enable iTunes playlists to work
+			makestring(OUT$,"%s playlistcontrol cmd:load playlist_id:%u \n",PlayerID$,PlaylistID[i]);
+			trace("sending: %s",OUT$);
+			SocketSend(TCPClient, OUT$);
+			makestring(OUT$,"%s playlist index 0 \n",PlayerID$);
+			// end fix for iTunes			
+
 			trace("sending: %s",OUT$);
 			SocketSend(TCPClient, OUT$);
 			pulse(20,NowplayingPageFlip);
