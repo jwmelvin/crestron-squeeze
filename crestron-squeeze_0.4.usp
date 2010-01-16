@@ -44,7 +44,7 @@ Comments:
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
 
 #PRINT_TO_TRACE
-//#ENABLE_TRACE
+#ENABLE_TRACE
 
 /*
 #HELP_BEGIN
@@ -209,7 +209,7 @@ INTEGER PandoraIsAudio[10], PandoraHasItems[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 
 STRING PlayerIDOut[32];
-STRING Mode$[8],CurrentTrackTime$[32],CurrentTrackRate$[8],CurrentTrackDuration$[32],CurrentTrackTitle$[256],CurrentTrackGenre$[256],CurrentTrackArtist$[256],CurrentTrackAlbum$[256];
+STRING Mode$[8],CurrentTrackTime$[32],CurrentTrackRate$[16],CurrentTrackDuration$[32],CurrentTrackTitle$[256],CurrentTrackGenre$[256],CurrentTrackArtist$[256],CurrentTrackAlbum$[256];
 STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[256];
 
 STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256], restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
@@ -3312,13 +3312,15 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 		indexEnd = Find(" ",InFavorites$,indexStart + 7);
 		Length = indexEnd - indexStart;
 		FavoritesFirstNumber = Atoi(Mid(InFavorites$,indexStart,Length));
-	
-		indexStart = Find(" count%3A",InFavorites$,40) + 9;
+		trace("FavoritesFirstNumber = %u",FavoritesFirstNumber);
+			
+		indexStart = Find(" count%3A",InFavorites$,30) + 9;
 		indexEnd = Find(" ",InFavorites$, indexStart);
 		Length = indexEnd - indexStart;
 		TotalFavorites = Atoi(Mid(InFavorites$,indexStart,Length));
 		OutFavoritesCount = TotalFavorites;
-	
+	    trace("TotalFavorites = %u",TotalFavorites);
+	    
 		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
 		If (ListType[1] = 10){
 			OutListBar = OutFavoritesBar;
@@ -3354,6 +3356,11 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 	
 		For (i = 1 to ListLengthFavorites){
 			indexStart = Find(" id%3A",InFavorites$,indexEnd) + 6;
+
+			if (indexStart = 0){
+				break;
+			}
+
 			indexEnd = Find(" ",InFavorites$,indexStart);
 			Length = indexEnd - indexStart;
 			FavoritesID[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
@@ -4095,7 +4102,7 @@ Function Main() {
 	SetArray(ListType,0);
 	SetArray(ListName,"Home");
 	SetArray(ListRestrictor,"");
-	PlayerIDOut = FormatPlayerID(PlayerID$);
+//	PlayerIDOut = FormatPlayerID(PlayerID$);
 	Nowplaying_refresh_enable = 1;
 	DisplayNowplaying = NumberOfNowplaying;    
 	SetArray(ListHome,"");	
