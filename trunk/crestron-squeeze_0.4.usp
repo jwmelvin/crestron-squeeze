@@ -44,7 +44,7 @@ Comments:
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
 
 #PRINT_TO_TRACE
-#ENABLE_TRACE
+//#ENABLE_TRACE
 
 /*
 #HELP_BEGIN
@@ -227,26 +227,25 @@ STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
 STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];
 
 ////////////// TCPIP Connection
-PUSH TCPIP_Connect
-{
+PUSH TCPIP_Connect{
     SIGNED_INTEGER status;
     status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
-    if (status < 0)
+    if (status < 0){
         Print("Error connecting socket to address %s on port  %d", 
             SqueezeCenterIPAddr$, SqueezeCenterPort);
+	}
 }
 
-RELEASE TCPIP_Connect
-{
+RELEASE TCPIP_Connect{
     SIGNED_INTEGER status;
     status = SocketDisconnectClient (TCPClient);
-if (status < 0)
+	if (status < 0){
     Print("Error disconnecting socket to address %s on port  %d", 
             SqueezeCenterIPAddr$, SqueezeCenterPort);
+    }
 }
 
-SOCKETCONNECT TCPClient
-{
+SOCKETCONNECT TCPClient{
     SIGNED_LONG_INTEGER PortNumber;
     SIGNED_INTEGER LocalStatus;
     STRING RemoteIPAddress[20];
@@ -265,17 +264,11 @@ SOCKETCONNECT TCPClient
     Print("OnConnect: Connected to port %ld on address %s\n", 
                 PortNumber, RemoteIPAddress);
 //SOCKET Startup procedure
-//
-//	SocketSend(TCPClient, "subscribe playlist newsong\n");
-//
-//	above line commented out as a test: verify that the current song feedback stays reliable
-//
 	Makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  //subscribe to status updates including currentsong (different than other subscribes)
 	SocketSend(TCPClient, out$);
 }
 
-SOCKETDISCONNECT TCPClient
-{
+SOCKETDISCONNECT TCPClient{
     TCPIP_Connected = 0;
     if (TCPIP_Connect)
         Print("Socket disconnected remotely");
@@ -283,8 +276,7 @@ SOCKETDISCONNECT TCPClient
         Print("Local disconnect complete.");
 }
 
-SOCKETSTATUS TCPClient
-{
+SOCKETSTATUS TCPClient{
     SIGNED_INTEGER Status;
     Status = SocketGetStatus();
     TCPIP_Status = Status;
@@ -295,11 +287,9 @@ SOCKETSTATUS TCPClient
 
 //////////////////////// FUNCTIONS
 
-Function ListShiftFwd_fn()
-{
+Function ListShiftFwd_fn(){
 	Integer i;
-	For (i = 0 to 3)
-	{
+	For (i = 0 to 3){
 		ListType[5-i] = ListType[4-i];
 		ListName[5-i] = ListName[4-i];
 		ListRestrictor[5-i] = ListRestrictor[4-i];
@@ -308,11 +298,9 @@ Function ListShiftFwd_fn()
 	}
 }
 
-Function ListShiftBk_fn()
-{
+Function ListShiftBk_fn(){
 	Integer i;//
-	For (i = 1 to 4)
-	{
+	For (i = 1 to 4){
 		ListType[i] = ListType[i+1];
 		ListName[i] = ListName[i+1];
 		ListRestrictor[i] = ListRestrictor[i+1];
@@ -325,48 +313,39 @@ Function ListShiftBk_fn()
 	ListFirst[5] = 0;
 	ListName$ = ListName[1];
 
-	If (ListType[1] = 0)
-	{
+	If (ListType[1] = 0){
 		SetArray(List$," ");
-		For (i = 1 to 10)
-		{
+		For (i = 1 to 10){
 			List$[i] = ListHome[i];
 		} 		
 	}
-	Else If (ListType[1] = 1)
-	{
+	Else If (ListType[1] = 1){
 		FirstGenre = ListFirst[1];
 		restrictorGenres = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 2)
-	{
+	Else If (ListType[1] = 2){
 		FirstArtist = ListFirst[1];
 		restrictorArtists = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 3)
-	{
+	Else If (ListType[1] = 3){
 		FirstAlbum = ListFirst[1];
 		restrictorAlbums = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 4)
-	{
+	Else If (ListType[1] = 4){
 		FirstTitle = ListFirst[1];
 		restrictorTitles = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 5)
-	{
+	Else If (ListType[1] = 5){
 		FirstPlaylist = ListFirst[1];
 		restrictorPlaylists = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 6)
-	{
+	Else If (ListType[1] = 6){
 		FirstDynamic = ListFirst[1];
 	}
 //	Else If (listType[1] = 7)
 //  ...some code for nowplaying list type
 //
-	Else If (ListType[1] = 8)
-	{
+	Else If (ListType[1] = 8){
 		FirstSearch = ListFirst[1];
 		restrictorSearch = ListRestrictor[1];
 	}
@@ -383,8 +362,7 @@ Function ListShiftBk_fn()
 
 
 
-Function GenresRefresh_fn()
-{
+Function GenresRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfGenres, restrictorGenres);
 	trace("sending: %s",OUT$);
@@ -392,8 +370,7 @@ Function GenresRefresh_fn()
 //	ListType = 1;
 }
 
-Function ArtistsRefresh_fn()
-{
+Function ArtistsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfArtists, restrictorArtists);
 	trace("sending: %s",OUT$);
@@ -401,8 +378,7 @@ Function ArtistsRefresh_fn()
 //	ListType = 2;
 }
 
-Function AlbumsRefresh_fn()
-{
+Function AlbumsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 	trace("sending: %s",OUT$);
@@ -410,8 +386,7 @@ Function AlbumsRefresh_fn()
 //	ListType = 3;
 }
 
-Function TitlesRefresh_fn()
-{
+Function TitlesRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfTitles, restrictorTitles);
 	trace("sending: %s",OUT$);
@@ -419,8 +394,7 @@ Function TitlesRefresh_fn()
 //	ListType = 4;
 }
 
-Function PlaylistsRefresh_fn()
-{
+Function PlaylistsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring (OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfPlaylists, restrictorPlaylists);
 	trace("sending: %s",OUT$);
@@ -428,8 +402,7 @@ Function PlaylistsRefresh_fn()
 //	ListType = 5;
 }
 
-Function DynamicRefresh_fn()
-{
+Function DynamicRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfDynamic);
 	trace("sending: %s",OUT$);
@@ -437,24 +410,21 @@ Function DynamicRefresh_fn()
 //	ListType = 6
 }
 
-Function SearchRefresh_fn()
-{
+Function SearchRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfSearch, search_in);
 	trace("sending: %s",OUT$);
 	SocketSend(TCPClient,OUT$);
 //	ListType = 8
 } //yyy
-Function PandoraRefresh_fn() 
-{
+Function PandoraRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"pandora items %u %u %s charset:ascii \n",FirstPandora,NumberOfPandora, restrictorPandora);
 	trace("sending: %s",OUT$);
 	SocketSend(TCPClient,OUT$);
 }   
 
-Function FavoritesRefresh_fn() 
-{
+Function FavoritesRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"favorites items %u %u %s charset:ascii \n",FirstFavorites,NumberOfFavorites, restrictorFavorites);
 	trace("sending: %s",OUT$);
@@ -462,8 +432,7 @@ Function FavoritesRefresh_fn()
 }
 
 
-Function NowplayingRefresh_fn()
-{
+Function NowplayingRefresh_fn(){
 //	makestring (Out$,"%s status - %u tags:al \n",PlayerID$, NumberOfNowplaying);
 	If (CurrentsongIndex - NowplayingShowPrev S< 0)
 		FirstNowplaying = 0;
@@ -474,53 +443,41 @@ Function NowplayingRefresh_fn()
 	SocketSend (TCPClient,OUT$);
 }
 
-Function ListRefresh_fn()
-{
-	If (ListType[1] = 1)
-	{
+Function ListRefresh_fn(){
+	If (ListType[1] = 1){
 		GenresRefresh_fn();
 	}
-	Else If (ListType[1] = 2)
-	{
+	Else If (ListType[1] = 2){
 		ArtistsRefresh_fn();
 	}
-	Else If (ListType[1] = 3)
-	{
+	Else If (ListType[1] = 3){
 		AlbumsRefresh_fn();
 	}
-	Else If (ListType[1] = 4)
-	{
+	Else If (ListType[1] = 4){
 		TitlesRefresh_fn();
 	}
-	Else If (ListType[1] = 5)
-	{
+	Else If (ListType[1] = 5){
 		PlaylistsRefresh_fn();
 	}
-	Else If (ListType[1] = 6)
-	{
+	Else If (ListType[1] = 6){
 		DynamicRefresh_fn();
 	}
-//	Else If (ListType[1] = 7)
-//	{
+//	Else If (ListType[1] = 7){
 //	nowplaying
 //	}
-	Else If (ListType[1] = 8)
-	{
+	Else If (ListType[1] = 8){
 		SearchRefresh_fn();
 	}
-	Else If (ListType[1] = 9)
-	{
+	Else If (ListType[1] = 9){
 		PandoraRefresh_fn();
 	}  
-	Else If (ListType[1] = 10)
-	{
+	Else If (ListType[1] = 10){
 		FavoritesRefresh_fn();
 	}
 
 }
  
-Function Home_PgReset_fn()
-{
+Function Home_PgReset_fn(){
 	Integer i;
 	ListShiftFwd_fn();
 	ListType[1] = 0;
@@ -535,8 +492,7 @@ Function Home_PgReset_fn()
 	}
 }
 
-Function Genres_PgReset_fn()
-{
+Function Genres_PgReset_fn(){
 	FirstGenre = 0;
 	restrictorGenres = "";
     ListShiftFwd_fn();
@@ -547,8 +503,7 @@ Function Genres_PgReset_fn()
 	GenresRefresh_fn();
 }
 
-Function Artists_PgReset_fn()
-{
+Function Artists_PgReset_fn(){
 	FirstArtist = 0;
 	restrictorArtists = "";
     ListShiftFwd_fn();
@@ -559,8 +514,7 @@ Function Artists_PgReset_fn()
 	ArtistsRefresh_fn();
 }
 
-Function Albums_PgReset_fn()
-{
+Function Albums_PgReset_fn(){
 	FirstAlbum = 0;
 	restrictorAlbums = "";
     ListShiftFwd_fn();
@@ -571,8 +525,7 @@ Function Albums_PgReset_fn()
 	AlbumsRefresh_fn();
 }
 
-Function Titles_PgReset_fn()
-{
+Function Titles_PgReset_fn(){
 	FirstTitle = 0;
 	restrictorTitles = "tags:te";
     ListShiftFwd_fn();
@@ -583,8 +536,7 @@ Function Titles_PgReset_fn()
 	TitlesRefresh_fn();
 }
 
-Function Playlists_PgReset_fn()
-{
+Function Playlists_PgReset_fn(){
 	FirstPlaylist = 0;
 	restrictorPlaylists = "";
     ListShiftFwd_fn();
@@ -595,8 +547,7 @@ Function Playlists_PgReset_fn()
 	PlaylistsRefresh_fn();
 }
 
-Function Dynamic_PgReset_fn()
-{
+Function Dynamic_PgReset_fn(){
 	FirstDynamic = 0;
     ListShiftFwd_fn();
 	ListType[1] = 6;
@@ -627,8 +578,7 @@ Function Favorites_PgReset_fn() {
 }
 
 
-Function Nowplaying_PgReset_fn()
-{
+Function Nowplaying_PgReset_fn(){
 	FirstNowplaying = 0;
     Nowplaying_refresh_enable = 1;
 	NowplayingRefresh_fn();
@@ -636,144 +586,145 @@ Function Nowplaying_PgReset_fn()
 
 
 
-Function Genres_PgUp_fn()
-{
-    If (FirstGenre < NumberOfGenres)
-	{
-		FirstGenre = (TotalGenres / NumberOfGenres) * NumberOfGenres;
+Function Genres_PgUp_fn(){
+	If (FirstGenre = 0){
+		FirstGenre = TotalGenres - NumberOfGenres;
+    }
+    Else If (FirstGenre < NumberOfGenres){
+		FirstGenre = 0;//(TotalGenres / NumberOfGenres) * NumberOfGenres;
 	}
-	Else
-	{
-		FirstGenre = FirstGenre - NumberOfGenres;
+    Else {
+    	FirstGenre = FirstGenre - NumberOfGenres;
     }
 	ListFirst[1] = FirstGenre;
 	GenresRefresh_fn();
 }
 
-Function Artists_PgUp_fn()
-{
-    If (FirstArtist < NumberOfArtists)
-	{		
-		FirstArtist = (TotalArtists / NumberOfArtists) * NumberOfArtists;
+Function Artists_PgUp_fn(){
+	If (FirstArtist = 0){
+		FirstArtist = TotalArtists - NumberOfArtists;
 	}
-	Else
-	{
+    Else If (FirstArtist < NumberOfArtists) {		
+		FirstArtist = 0;//(TotalArtists / NumberOfArtists) * NumberOfArtists;
+	}
+	Else {
 		FirstArtist = FirstArtist - NumberOfArtists;
     }
 	ListFirst[1] = FirstArtist;
 	ArtistsRefresh_fn();
 }
 
-Function Albums_PgUp_fn()
-{
-    If (FirstAlbum < NumberOfAlbums)
-	{
-		FirstAlbum = (TotalAlbums / NumberOfAlbums) * NumberOfAlbums;
+Function Albums_PgUp_fn(){
+	If (FirstAlbum = 0){
+		FirstAlbum = TotalAlbums - NumberOfAlbums;
 	}
-	Else
-	{
+    Else If (FirstAlbum < NumberOfAlbums){
+		FirstAlbum = 0;//(TotalAlbums / NumberOfAlbums) * NumberOfAlbums;
+	}
+	Else{
 		FirstAlbum = FirstAlbum - NumberOfAlbums;
     }
 	ListFirst[1] = FirstAlbum;
 	AlbumsRefresh_fn();
 }
 
-Function Titles_PgUp_fn()
-{
-    If (FirstTitle < NumberOfTitles)
-	{
-		FirstTitle = (TotalTitles / NumberOfTitles) * NumberOfTitles;
+Function Titles_PgUp_fn(){
+	If (FirstTitle = 0){
+		FirstTitle = TotalTitles - NumberOfTitles;
 	}
-	Else
-	{
+    Else If (FirstTitle < NumberOfTitles){
+		FirstTitle = 0;//(TotalTitles / NumberOfTitles) * NumberOfTitles;
+	}
+	Else {
 		FirstTitle = FirstTitle - NumberOfTitles;
     }
 	ListFirst[1] = FirstTitle;
 	TitlesRefresh_fn();
 }
 
-Function Playlists_PgUp_fn()
-{
-    If (FirstPlaylist < NumberOfPlaylists)
-	{
-		FirstPlaylist = (TotalPlaylists / NumberOfPlaylists) * NumberOfPlaylists;
+Function Playlists_PgUp_fn(){
+	If (FirstPlaylist = 0){
+		FirstPlaylist = TotalPlaylists - NumberOfPlaylists;
 	}
-	Else
-	{
+    Else If (FirstPlaylist < NumberOfPlaylists){
+		FirstPlaylist = 0;//(TotalPlaylists / NumberOfPlaylists) * NumberOfPlaylists;
+	}
+	Else {
 		FirstPlaylist = FirstPlaylist - NumberOfPlaylists;
     }
 	ListFirst[1] = FirstPlaylist;
 	PlaylistsRefresh_fn();
 }
 
-Function Dynamic_PgUp_fn()
-{
-    If (FirstDynamic < NumberOfDynamic)
-	{
-		FirstDynamic = (TotalDynamic / NumberOfDynamic) * NumberOfDynamic;
+Function Dynamic_PgUp_fn(){
+	If (FirstDynamic = 0){
+		FirstDynamic = TotalDynamic - NumberOfDynamic;
 	}
-	Else
-	{
+    Else If (FirstDynamic < NumberOfDynamic){
+		FirstDynamic = 0;//(TotalDynamic / NumberOfDynamic) * NumberOfDynamic;
+	}
+	Else {
 		FirstDynamic = FirstDynamic - NumberOfDynamic;
     }
 	ListFirst[1] = FirstDynamic;
 	DynamicRefresh_fn();
 }
 
-Function Search_PgUp_fn()
-{
-    If (FirstSearch < NumberOfSearch)
-	{
-		FirstSearch = (TotalSearch / NumberOfSearch) * NumberOfSearch;
+Function Search_PgUp_fn(){
+	If (FirstSearch = 0){
+		FirstSearch = TotalSearch - NumberOfSearch;
 	}
-	Else
-	{
+    Else If (FirstSearch < NumberOfSearch) {
+		FirstSearch = 0;//(TotalSearch / NumberOfSearch) * NumberOfSearch;
+	}
+	Else {
 		FirstSearch = FirstSearch - NumberOfSearch;
     }
 	ListFirst[1] = FirstSearch;
 	SearchRefresh_fn();
 }
 
-Function Nowplaying_PgUp_fn()
-{
+Function Nowplaying_PgUp_fn(){
 //	Cancelwait(Nowplaying_refresh_enable_timer_pgup);
     Nowplaying_refresh_enable = 0;
-	If (FirstNowplaying < NumberOfNowplaying)
-	{
-		FirstNowplaying = (TotalNowplaying / NumberOfNowplaying) * NumberOfNowplaying;
+	If (FirstNowplaying = 0){
+		FirstNowplaying = TotalNowplaying - NumberOfNowplaying;
 	}
-	Else
-	{
+	Else If (FirstNowplaying < NumberOfNowplaying){
+		FirstNowplaying = 0;//(TotalNowplaying / NumberOfNowplaying) * NumberOfNowplaying;
+	}
+	Else {
 		FirstNowplaying = FirstNowplaying - NumberOfNowplaying;
     }
 	makestring (Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
 //	trace("sending: %s",OUT$);
 	SocketSend (TCPClient,OUT$);
 
-	Wait(Nowplaying_refresh_enable_time,Nowplaying_refresh_enable_timer_pgup)
-	{
+	Wait(Nowplaying_refresh_enable_time,Nowplaying_refresh_enable_timer_pgup){
 			Nowplaying_refresh_enable = 1;
 	}
 }
 Function Pandora_PgUp_fn(){
-    If (FirstPandora < NumberOfPandora)
-	{
-		FirstPandora = (TotalPandora / NumberOfPandora) * NumberOfPandora;
+	If (FirstPandora = 0) {
+		FirstPandora = TotalPandora - NumberOfPandora;
+    }
+    Else If (FirstPandora < NumberOfPandora)	{
+		FirstPandora = 0; // replaced with 0:(TotalPandora / NumberOfPandora) * NumberOfPandora;
 	}
-	Else
-	{
-		FirstPandora = FirstPandora - NumberOfPandora;
+    Else {
+    	FirstPandora = FirstPandora - NumberOfPandora;
     }
 	ListFirst[1] = FirstPandora;
 	PandoraRefresh_fn();
 }
-Function Favorites_PgUp_fn(){
-    If (FirstFavorites < NumberOfFavorites)
-	{
-		FirstFavorites = (TotalFavorites / NumberOfFavorites) * NumberOfFavorites;
+Function Favorites_PgUp_fn() {
+	If (FirstFavorites = 0) {
+		FirstFavorites = TotalFavorites - NumberOfFavorites;
 	}
-	Else
-	{
+    Else If (FirstFavorites < NumberOfFavorites)	{
+		FirstFavorites = 0; //replaced with 0:(TotalFavorites / NumberOfFavorites) * NumberOfFavorites;
+	}
+	Else {
 		FirstFavorites = FirstFavorites - NumberOfFavorites;
     }
 	ListFirst[1] = FirstFavorites;
@@ -781,42 +732,33 @@ Function Favorites_PgUp_fn(){
 }
 
 
-Function Genres_PgDn_fn()
-{
-	If (FirstGenre + NumberOfGenres <= TotalGenres)
-	{
+Function Genres_PgDn_fn(){
+	If (FirstGenre + NumberOfGenres < TotalGenres){
     	FirstGenre = FirstGenre + NumberOfGenres;
 	}
-	Else
-	{
+	Else{
 		FirstGenre = 0;
 	}
 	ListFirst[1] = FirstGenre;
 	GenresRefresh_fn();
 }
 
-Function Artists_PgDn_fn()
-{
-	If (FirstArtist + NumberOfArtists <= TotalArtists)
-	{
+Function Artists_PgDn_fn(){
+	If (FirstArtist + NumberOfArtists < TotalArtists){
     	FirstArtist = FirstArtist + NumberOfArtists;
 	}
-	Else
-	{
+	Else{
 		FirstArtist = 0;
 	}
 	ListFirst[1] = FirstArtist;
 	ArtistsRefresh_fn();
 }
 
-Function Albums_PgDn_fn()
-{
-	If (FirstAlbum + NumberOfAlbums <= TotalAlbums)
-	{
+Function Albums_PgDn_fn(){
+	If (FirstAlbum + NumberOfAlbums < TotalAlbums){
     	FirstAlbum = FirstAlbum + NumberOfAlbums;
 	}
-	Else
-	{
+	Else{
 		FirstAlbum = 0;
 	}
 	ListFirst[1] = FirstAlbum;
@@ -824,55 +766,43 @@ Function Albums_PgDn_fn()
 }
 
 
-Function Titles_PgDn_fn()
-{
-	If (FirstTitle + NumberOfTitles <= TotalTitles)
-	{
+Function Titles_PgDn_fn(){
+	If (FirstTitle + NumberOfTitles < TotalTitles){
     	FirstTitle = FirstTitle + NumberOfTitles;
 	}
-	Else
-	{
+	Else{
 		FirstTitle = 0;
 	}
 	ListFirst[1] = FirstTitle;
 	TitlesRefresh_fn();
 }
 
-Function Playlists_PgDn_fn()
-{
-	If (FirstPlaylist + NumberOfPlaylists <= TotalPlaylists)
-	{
+Function Playlists_PgDn_fn(){
+	If (FirstPlaylist + NumberOfPlaylists < TotalPlaylists){
     	FirstPlaylist = FirstPlaylist + NumberOfPlaylists;
 	}
-	Else
-	{
+	Else{
 		FirstPlaylist = 0;
 	}
 	ListFirst[1] = FirstPlaylist;
 	PlaylistsRefresh_fn();
 }
 
-Function Dynamic_PgDn_fn()
-{
-	If (FirstDynamic + NumberOfDynamic <= TotalDynamic)
-	{
+Function Dynamic_PgDn_fn(){
+	If (FirstDynamic + NumberOfDynamic < TotalDynamic){
     	FirstDynamic = FirstDynamic + NumberOfDynamic;
 	}
-	Else
-	{
+	Else{
 		FirstDynamic = 0;
 	}
 	ListFirst[1] = FirstDynamic;
 	DynamicRefresh_fn();
 }
-Function Search_PgDn_fn()
-{
-	If (FirstSearch + NumberOfSearch <= TotalSearch)
-	{
+Function Search_PgDn_fn(){
+	If (FirstSearch + NumberOfSearch < TotalSearch)	{
     	FirstSearch = FirstSearch + NumberOfSearch;
 	}
-	Else
-	{
+	Else{
 		FirstSearch = 0;
 	}
 	ListFirst[1] = FirstSearch;
@@ -881,57 +811,46 @@ Function Search_PgDn_fn()
 
 
 
-Function Nowplaying_PgDn_fn()
-{
+Function Nowplaying_PgDn_fn(){
 //	Cancelwait(Nowplaying_refresh_enable_timer);
     Nowplaying_refresh_enable = 0;
 
-    If (FirstNowplaying + NumberOfNowplaying <= TotalNowplaying)
-	{
+    If (FirstNowplaying + NumberOfNowplaying < TotalNowplaying){
 		FirstNowplaying = FirstNowplaying + NumberOfNowplaying;
 	}
-	Else
-	{
+	Else{
 		FirstNowplaying = 0;
     }
 	makestring (Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
 //	trace("sending: %s",OUT$);
 	SocketSend (TCPClient,OUT$);
 
-	Wait(Nowplaying_refresh_enable_time,Nowpplaying_refresh_enable_timer_pgdn)
-	{
+	Wait(Nowplaying_refresh_enable_time,Nowpplaying_refresh_enable_timer_pgdn){
 			Nowplaying_refresh_enable = 1;
 	}
 }
-Function Pandora_PgDn_fn()
-{
-	If (FirstPandora + NumberOfPandora <= TotalPandora)
-	{
+Function Pandora_PgDn_fn(){
+	If (FirstPandora + NumberOfPandora < TotalPandora){
     	FirstPandora = FirstPandora + NumberOfPandora;
 	}
-	Else
-	{
+	Else{
 		FirstPandora = 0;
 	}
 	ListFirst[1] = FirstPandora;
 	PandoraRefresh_fn();
 }   
-Function Favorites_PgDn_fn()
-{
-	If (FirstFavorites + NumberOfFavorites <= TotalFavorites)
-	{
+Function Favorites_PgDn_fn(){
+	If (FirstFavorites + NumberOfFavorites < TotalFavorites){
     	FirstFavorites = FirstFavorites + NumberOfFavorites;
 	}
-	Else
-	{
+	Else{
 		FirstFavorites = 0;
 	}
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
 }
 
-Function HomeListSelect_fn()
-{
+Function HomeListSelect_fn(){
 	Integer i;
 
 	ListShiftFwd_fn();
