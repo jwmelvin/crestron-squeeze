@@ -92,7 +92,7 @@ DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAl
 
 //DIGITAL_INPUT //INPUTS FOR CURRENTSONG GENRE,ARTIST,ALBUM
 
-STRING_INPUT PlaylistPlay$[256], PlaylistResume$[256], DynamicResume$[256];
+STRING_INPUT PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16], DynamicResume$[256];
 
 DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
 
@@ -2364,6 +2364,13 @@ PUSH PlaylistSave
 }
 */
 
+CHANGE FavoritePlay$ {
+ 	ActivePlaylist = "";
+ 	makestring(OUT$,"%s favorites playlist play item_id:%s \n", PlayerID$, FavoritePlay$);
+	trace("sending: %s",OUT$);
+	SocketSend(TCPClient, OUT$);
+}
+
 CHANGE DynamicResume$ {
 	ActivePlaylist = "";
 	makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, DynamicResume$);
@@ -3223,18 +3230,27 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 	InFavorites$ = In$;
 	In$ = "";
 	LenInFavorites$ = Len(InFavorites$);
-
+	trace("%s",Left(InFavorites$,255));
+	trace("length fav = %u",LenInFavorites$);
 	indexTest = Find(" items ",InFavorites$,10); //TBD: change the start position argument as appropriate to where it should start looking. The CLI is nonstandard in some regards
 	
 	If(indexTest > 1){
 		indexStart = indexTest + 7;
-		indexEnd = Find(" ",InFavorites$,indexStart + 7);
+		trace("indexStart = %u",indexStart);
+		indexEnd = Find(" ",InFavorites$,indexStart);
+		trace("indexEnd = %u",indexEnd);
 		Length = indexEnd - indexStart;
 		FavoritesFirstNumber = Atoi(Mid(InFavorites$,indexStart,Length));
 		trace("FavoritesFirstNumber = %u",FavoritesFirstNumber);
 			
 		indexStart = Find(" count%3A",InFavorites$,30) + 9;
+		trace("indexStart = %u",indexStart);
 		indexEnd = Find(" ",InFavorites$, indexStart);
+		if (indexEnd = 0){
+			indexEnd = len(InFavorites$) - 1;
+		}
+		trace("indexEnd = %u",indexEnd);
+
 		Length = indexEnd - indexStart;
 		TotalFavorites = Atoi(Mid(InFavorites$,indexStart,Length));
 		OutFavoritesCount = TotalFavorites;
@@ -3261,10 +3277,13 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			}
 		}
 	
-		indexEnd = 30;
+		indexEnd = 20;
+		trace("indexEnd = %u",indexEnd);
 	
 		indexStart = Find(" title%3A",InFavorites$,indexEnd) + 9;
+		trace("indexStart = %u",indexStart);
 		indexEnd = Find(" ",InFavorites$,indexStart);
+		trace("indexEnd = %u",indexEnd);
 		Length = indexEnd - indexStart;
 		FavoritesTitle = ParsePercent(Mid(InFavorites$,indexStart,Length));
 		trace("Favorites title: %s",FavoritesTitle);
@@ -3272,21 +3291,23 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			ListName[1] = "Favorites: " + FavoritesTitle;
 		}
 	
-	
-		For (i = 1 to ListLengthFavorites){
+	    For (i = 1 to ListLengthFavorites){
 			indexStart = Find(" id%3A",InFavorites$,indexEnd) + 6;
-
+			trace("indexStart = %u",indexStart);
 			if (indexStart = 0){
+				trace("indexStart of id%3A not found; breaking.");
 				break;
 			}
-
 			indexEnd = Find(" ",InFavorites$,indexStart);
+			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesID[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
 			
 			indexStart = Find(" name%3A",InFavorites$,indexEnd) + 8;
+			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
+			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesName[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites name[%u]: %s",i,FavoritesName[i]);
@@ -3295,20 +3316,26 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 				List$[i] = FavoritesName[i];
 			}
 			
-			indexStart = Find(" type%3A",InFavorites$,indexEnd) + 8;
+/*			indexStart = Find(" type%3A",InFavorites$,indexEnd) + 8;
+			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
+			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesType[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites type[%u]: %s",i,FavoritesType[i]);
-
+*/
 			indexStart = Find(" isaudio%3A",InFavorites$,indexEnd) + 11;
+			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
+			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesIsAudio[i] = Atoi(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites IsAudio[%u]: %u",i,FavoritesIsAudio[i]);
 
 			indexStart = Find(" hasitems%3A",InFavorites$,indexEnd) + 12;
+			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
+			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesHasItems[i] = Atoi(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites HasItems[%u]: %u",i,FavoritesHasItems[i]);
