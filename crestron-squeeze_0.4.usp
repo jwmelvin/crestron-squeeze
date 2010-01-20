@@ -201,7 +201,7 @@ INTEGER OutFavoritesCount,OutFavoritesBar;
 
 INTEGER Nowplaying_refresh_enable;
 
-Integer DisplayNowplaying, DisplayNowplaying_old;
+Integer ListLengthNowplaying_old;
 
 INTEGER ListType[5], ListFirst[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10], PlaylistID[10], SearchID[10], SearchIDType[10], NowplayingIndex[10], NowplayingID[10];
@@ -486,7 +486,7 @@ Function Home_PgReset_fn(){
 	ListFirst[1] = 0;
 	ListName$ = ListName[1];
 	SetArray(List$," ");
-	For (i = 1 to 10)
+	For (i = 1 to NumberOfList)
 	{
 		List$[i] = ListHome[i];
 	}
@@ -558,6 +558,7 @@ Function Dynamic_PgReset_fn(){
 }
 Function Pandora_PgReset_fn() {
 	FirstPandora = 0;
+    restrictorPandora = "";
     ListShiftFwd_fn();
 	ListType[1] = 9;
 	ListName[1] = "Pandora";
@@ -568,6 +569,7 @@ Function Pandora_PgReset_fn() {
 } 
 Function Favorites_PgReset_fn() {
 	FirstFavorites = 0;
+	restrictorFavorites = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
 	ListName[1] = "Favorites";
@@ -576,18 +578,13 @@ Function Favorites_PgReset_fn() {
 	FavoritesRefresh_fn();
 	
 }
-
-
 Function Nowplaying_PgReset_fn(){
 	FirstNowplaying = 0;
     Nowplaying_refresh_enable = 1;
 	NowplayingRefresh_fn();
 }
-
-
-
 Function Genres_PgUp_fn(){
-	If (FirstGenre = 0){
+	If (FirstGenre = 0 && (NumberOfGenres <= TotalGenres)){
 		FirstGenre = TotalGenres - NumberOfGenres;
     }
     Else If (FirstGenre < NumberOfGenres){
@@ -599,9 +596,8 @@ Function Genres_PgUp_fn(){
 	ListFirst[1] = FirstGenre;
 	GenresRefresh_fn();
 }
-
 Function Artists_PgUp_fn(){
-	If (FirstArtist = 0){
+	If (FirstArtist = 0 && (NumberOfArtists <= TotalArtists)){
 		FirstArtist = TotalArtists - NumberOfArtists;
 	}
     Else If (FirstArtist < NumberOfArtists) {		
@@ -613,9 +609,8 @@ Function Artists_PgUp_fn(){
 	ListFirst[1] = FirstArtist;
 	ArtistsRefresh_fn();
 }
-
 Function Albums_PgUp_fn(){
-	If (FirstAlbum = 0){
+	If (FirstAlbum = 0 && (NumberOfAlbums <= TotalAlbums)){
 		FirstAlbum = TotalAlbums - NumberOfAlbums;
 	}
     Else If (FirstAlbum < NumberOfAlbums){
@@ -627,9 +622,8 @@ Function Albums_PgUp_fn(){
 	ListFirst[1] = FirstAlbum;
 	AlbumsRefresh_fn();
 }
-
 Function Titles_PgUp_fn(){
-	If (FirstTitle = 0){
+	If (FirstTitle = 0 && (NumberOfTitles <= TotalTitles)){
 		FirstTitle = TotalTitles - NumberOfTitles;
 	}
     Else If (FirstTitle < NumberOfTitles){
@@ -641,9 +635,8 @@ Function Titles_PgUp_fn(){
 	ListFirst[1] = FirstTitle;
 	TitlesRefresh_fn();
 }
-
 Function Playlists_PgUp_fn(){
-	If (FirstPlaylist = 0){
+	If (FirstPlaylist = 0 && (NumberOfPlaylists <= TotalPlaylists)){
 		FirstPlaylist = TotalPlaylists - NumberOfPlaylists;
 	}
     Else If (FirstPlaylist < NumberOfPlaylists){
@@ -655,9 +648,8 @@ Function Playlists_PgUp_fn(){
 	ListFirst[1] = FirstPlaylist;
 	PlaylistsRefresh_fn();
 }
-
 Function Dynamic_PgUp_fn(){
-	If (FirstDynamic = 0){
+	If (FirstDynamic = 0 && (NumberOfDynamic <= TotalDynamic)){
 		FirstDynamic = TotalDynamic - NumberOfDynamic;
 	}
     Else If (FirstDynamic < NumberOfDynamic){
@@ -669,9 +661,8 @@ Function Dynamic_PgUp_fn(){
 	ListFirst[1] = FirstDynamic;
 	DynamicRefresh_fn();
 }
-
 Function Search_PgUp_fn(){
-	If (FirstSearch = 0){
+	If (FirstSearch = 0 && (NumberOfSearch <= TotalSearch)){
 		FirstSearch = TotalSearch - NumberOfSearch;
 	}
     Else If (FirstSearch < NumberOfSearch) {
@@ -683,11 +674,10 @@ Function Search_PgUp_fn(){
 	ListFirst[1] = FirstSearch;
 	SearchRefresh_fn();
 }
-
 Function Nowplaying_PgUp_fn(){
 //	Cancelwait(Nowplaying_refresh_enable_timer_pgup);
     Nowplaying_refresh_enable = 0;
-	If (FirstNowplaying = 0){
+	If (FirstNowplaying = 0 && (NumberOfNowplaying <= TotalNowplaying)){
 		FirstNowplaying = TotalNowplaying - NumberOfNowplaying;
 	}
 	Else If (FirstNowplaying < NumberOfNowplaying){
@@ -705,7 +695,7 @@ Function Nowplaying_PgUp_fn(){
 	}
 }
 Function Pandora_PgUp_fn(){
-	If (FirstPandora = 0) {
+	If (FirstPandora = 0 && (NumberOfPandora <= TotalPandora)) {
 		FirstPandora = TotalPandora - NumberOfPandora;
     }
     Else If (FirstPandora < NumberOfPandora)	{
@@ -718,7 +708,7 @@ Function Pandora_PgUp_fn(){
 	PandoraRefresh_fn();
 }
 Function Favorites_PgUp_fn() {
-	If (FirstFavorites = 0) {
+	If (FirstFavorites = 0 && (NumberOfFavorites <= TotalFavorites)) {
 		FirstFavorites = TotalFavorites - NumberOfFavorites;
 	}
     Else If (FirstFavorites < NumberOfFavorites)	{
@@ -730,8 +720,6 @@ Function Favorites_PgUp_fn() {
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
 }
-
-
 Function Genres_PgDn_fn(){
 	If (FirstGenre + NumberOfGenres < TotalGenres){
     	FirstGenre = FirstGenre + NumberOfGenres;
@@ -742,7 +730,6 @@ Function Genres_PgDn_fn(){
 	ListFirst[1] = FirstGenre;
 	GenresRefresh_fn();
 }
-
 Function Artists_PgDn_fn(){
 	If (FirstArtist + NumberOfArtists < TotalArtists){
     	FirstArtist = FirstArtist + NumberOfArtists;
@@ -753,7 +740,6 @@ Function Artists_PgDn_fn(){
 	ListFirst[1] = FirstArtist;
 	ArtistsRefresh_fn();
 }
-
 Function Albums_PgDn_fn(){
 	If (FirstAlbum + NumberOfAlbums < TotalAlbums){
     	FirstAlbum = FirstAlbum + NumberOfAlbums;
@@ -764,8 +750,6 @@ Function Albums_PgDn_fn(){
 	ListFirst[1] = FirstAlbum;
 	AlbumsRefresh_fn();
 }
-
-
 Function Titles_PgDn_fn(){
 	If (FirstTitle + NumberOfTitles < TotalTitles){
     	FirstTitle = FirstTitle + NumberOfTitles;
@@ -776,7 +760,6 @@ Function Titles_PgDn_fn(){
 	ListFirst[1] = FirstTitle;
 	TitlesRefresh_fn();
 }
-
 Function Playlists_PgDn_fn(){
 	If (FirstPlaylist + NumberOfPlaylists < TotalPlaylists){
     	FirstPlaylist = FirstPlaylist + NumberOfPlaylists;
@@ -787,7 +770,6 @@ Function Playlists_PgDn_fn(){
 	ListFirst[1] = FirstPlaylist;
 	PlaylistsRefresh_fn();
 }
-
 Function Dynamic_PgDn_fn(){
 	If (FirstDynamic + NumberOfDynamic < TotalDynamic){
     	FirstDynamic = FirstDynamic + NumberOfDynamic;
@@ -808,9 +790,6 @@ Function Search_PgDn_fn(){
 	ListFirst[1] = FirstSearch;
 	SearchRefresh_fn();
 }
-
-
-
 Function Nowplaying_PgDn_fn(){
 //	Cancelwait(Nowplaying_refresh_enable_timer);
     Nowplaying_refresh_enable = 0;
@@ -849,7 +828,6 @@ Function Favorites_PgDn_fn(){
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
 }
-
 Function HomeListSelect_fn(integer i){
 
 	ListShiftFwd_fn();
@@ -864,7 +842,6 @@ Function HomeListSelect_fn(integer i){
 	Else If (i=7){Pandora_PgReset_fn();}  
 	Else If (i=8){Titles_PgReset_fn();}
 }
-
 Function GenreListSelect_fn(integer i){
     ListShiftFwd_fn();
 	ListType[1] = 2;
@@ -878,7 +855,6 @@ Function GenreListSelect_fn(integer i){
 	restrictorTitles = restrictorArtists + " tags:te";
 	FirstArtist = 0;
 	ArtistsRefresh_fn();
-
 /*	Wait(50,waitListGenreAlbums)
 	{
 		AlbumsRefresh_fn();
@@ -888,7 +864,6 @@ Function GenreListSelect_fn(integer i){
 */
 	ListName$ = ListName[1];
 }
-
 Function ArtistListSelect_fn(integer i){
 	ListShiftFwd_fn();	
 	ListType[1] = 3;
@@ -913,7 +888,6 @@ Function ArtistListSelect_fn(integer i){
 */
 	ListName$ = ListName[1];
 }
-
 Function AlbumListSelect_fn(integer i){
 	ListShiftFwd_fn();
 	ListType[1] = 4;
@@ -927,7 +901,6 @@ Function AlbumListSelect_fn(integer i){
 	TitlesRefresh_fn();
 	ListName$ = ListName[1];
 }
-
 Function TitleListSelect_fn(integer i){
 	ActiveAlbumID = TitleAlbumID[i];
 	ActiveTrackID = TrackID[i];
@@ -940,7 +913,6 @@ Function TitleListSelect_fn(integer i){
 	trace("sending: %s",OUT$);
 	SocketSend(TCPClient,OUT$);
 }
-
 Function PlaylistListSelect_fn(integer i){
 	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 	trace("sending: %s",OUT$);
@@ -954,7 +926,6 @@ Function PlaylistListSelect_fn(integer i){
 	SocketSend(TCPClient, OUT$);
 	pulse(20,NowplayingPageFlip);
 }
-
 Function DynamicListSelect_fn(integer i){
 	ActiveDynamicFile = DynamicFile[i];
 	ActiveDynamic = DynamicName[i];
@@ -1003,6 +974,18 @@ Function SearchListSelect_fn(integer i){
 		trace("sending: %s",OUT$);
 		SocketSend(TCPClient,OUT$);
 	}
+	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+		ListType[1] = 2;
+		ActiveGenreID = SearchID[i];
+		ActiveGenre = Search[i];
+		makestring(ListName[1], "Artists in %s",ActiveGenre);
+		makestring(restrictorArtists,"genre_id:%u",SearchID[i]);
+		ListRestrictor[1] = restrictorArtists;
+		restrictorAlbums = restrictorArtists;
+		restrictorTitles = restrictorArtists + " tags:te";
+		FirstArtist = 0;
+		ArtistsRefresh_fn();
+	}
 	ListName$ = ListName[1];
 }
 Function PandoraListSelect_fn(integer i){
@@ -1025,7 +1008,6 @@ Function PandoraListSelect_fn(integer i){
 	}
 	ListName$ = ListName[1];
 }
-
 Function FavoritesListSelect_fn(integer i){
 	If (FavoritesIsAudio[i] = 0){
 		ListShiftFwd_fn();
@@ -1047,7 +1029,6 @@ Function FavoritesListSelect_fn(integer i){
 		pulse(20,NowplayingPageFlip);
 	}
 }
-
 Function GenreListPlay_fn(integer i){
 	makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, GenreID[i]);
 	trace("sending: %s",OUT$);
@@ -1062,7 +1043,6 @@ Function ArtistListPlay_fn(integer i){
 	ActiveArtistID = ArtistID[i];
 	ActivePlaylist = "";
 }
-
 Function AlbumListPlay_fn(integer i){
 	makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
 	trace("sending: %s",OUT$);
@@ -1143,6 +1123,15 @@ Function SearchListPlay_fn(integer i){
 		trace("sending: %s",OUT$);
 		SocketSend(TCPClient,OUT$);
 	}
+	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
+		trace("sending: %s",OUT$);
+		SocketSend(TCPClient,OUT$);
+		delay(10);
+		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+		trace("sending: %s",OUT$);
+		SocketSend(TCPClient,OUT$);
+	}
 }
 Function GenreListAdd_fn(integer i){
 	makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u \n",PlayerID$, GenreID[i]);
@@ -1209,6 +1198,11 @@ Function SearchListAdd_fn(integer i){
 		trace("sending: %s",OUT$);
 		SocketSend(TCPClient,OUT$);
 	}
+	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u  \n",PlayerID$, SearchID[i]);
+		trace("sending: %s",OUT$);
+		SocketSend(TCPClient,OUT$);
+	}
 }
 Function GenreListInsert_fn(integer i){
 	makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, GenreID[i]);
@@ -1272,6 +1266,11 @@ Function SearchListInsert_fn(integer i){
 		ActiveTrackID = SearchID[i];
 		ActiveTitle = Search[i];
 		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
+		trace("sending: %s",OUT$);
+		SocketSend(TCPClient,OUT$);
+	}
+	Else If (SearchIDType[i] = 4){ // SearchID is an genre_id
+		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
 		trace("sending: %s",OUT$);
 		SocketSend(TCPClient,OUT$);
 	}
@@ -1640,9 +1639,7 @@ PUSH ListPlay{
 		FavoritesListPlay_fn(i); //Favorites results code
     }
 }
-
-PUSH ListAdd
-{
+PUSH ListAdd{
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
 	If (ListType[1] = 1)
@@ -2096,6 +2093,7 @@ SOCKETRECEIVE TCPClient {
 	Integer ListLengthGenres, ListLengthArtists, ListLengthAlbums, ListLengthTitles, ListLengthPlaylists, ListLengthNowplaying, ListLengthDynamic, ListLengthSearch;
 	Integer ListLengthPandora;   
 	Integer ListLengthFavorites;
+	Integer searchTest;
 	String In$[16384], InGenres$[16384], InArtists$[16384], InAlbums$[16384], InTitles$[16384], InSearch$[16384]; 
 	String InPlaylists$[16384], InDynamic$[16384], InNowplaying$[16384], InCurrentsong$[4096], InStatus$[4096], InTime$[2048]; 
 	String InPandora$[16384];   
@@ -2410,45 +2408,24 @@ If (Find("status - 1",In$,1) > 0) {
 /////NOWPLAYING PARSING
 Else If (Find("status ",In$,1) > 0) {
 	trace("parsing nowplaying");
-//	progNowplaying = progNowplaying + 1;
-//	progLocal = progNowplaying;
-	
 	InNowplaying$ = In$;
 	In$ = "";
 	LenInNowplaying$ = Len(InNowplaying$);
-
-	DisplayNowplaying_old = DisplayNowplaying;
-
-//debug
-/*
-   	debugLocal = InNowplaying$;
-    For (i = 1 to ((Len(debugLocal) / 256) + 1))
-	{
-		debug$[i] = Left(debugLocal,255);
-		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
-    }
-*/
-// playlist%20index%3A[#] id%3A[#] title%3A[name] artist%3A[artist] album%3A[album]	
-
+	ListLengthNowplaying_old = ListLengthNowplaying;
 	indexStart = Find(" status",InNowplaying$,28) + 8;
 	indexEnd = Find(" ",InNowplaying$,indexStart);
 	Length = indexEnd - indexStart;
 	NowplayingFirstNumber = Atoi(Mid(InNowplaying$,indexStart,Length));
 	trace("NowplayingFirstNumber: %u",NowplayingFirstNumber);
-	
 	indexStart = Find(" playlist_cur_index%3A",InNowplaying$,indexEnd) + 22;
 	indexEnd = Find(" ",InNowplaying$, indexStart);
 	Length = indexEnd - IndexStart;
 	CurrentsongIndex = Atoi(Mid(InNowplaying$,indexStart, Length));
-//		use this to determine the individual outputs of NowplayingCurrentSong 
-
 	trace("CurrentsongIndex: %u",CurrentsongIndex);
-
 	indexStart = Find(" playlist_tracks%3A",InNowplaying$,indexEnd) + 19;
 	indexEnd = Find(" ",InNowplaying$, indexStart);
 	Length = indexEnd - indexStart;
 	TotalNowplaying = Atoi(Mid(InNowplaying$,indexStart,Length));
-
 	trace("TotalNowplaying: %u",TotalNowplaying);
 	OutNowplayingCount = TotalNowplaying;
 	If (TotalNowplaying > 0){
@@ -2457,25 +2434,18 @@ Else If (Find("status ",In$,1) > 0) {
 	Else {
 		OutNowplayingBar = 0;
 	}
-
-	InNowplaying$ = Mid(InNowplaying$,indexEnd,(LenInNowplaying$ - indexEnd));
-
 	If (ListType[1] = 7){
 		OutListBar = OutNowplayingBar;
 		OutListCount = OutNowplayingCount;
     }
-
-
-	DisplayNowplaying = TotalNowplaying - NowplayingFirstNumber;
-	
-	If (TotalNowplaying - NowplayingFirstNumber >= NumberOfNowplaying) {
-		ListLengthNowplaying = NumberOfNowplaying;
+	ListLengthNowplaying = TotalNowplaying - NowplayingFirstNumber;
+	If(NumberOfNowplaying < ListLengthNowplaying){
+		ListLengthNowplaying  = NumberOfNowplaying;
 		trace("TotalNowplaying[%u] - NowplayingFirstNumber[%u] >= NumberOfNowplaying[%u]",TotalNowplaying,NowplayingFirstNumber,NumberOfNowplaying);
 	}
-	Else If (DisplayNowplaying < DisplayNowplaying_old)	{
+	trace("ListLengthNowplaying = %u",ListLengthNowplaying);
+	If (ListLengthNowplaying < ListLengthNowplaying_old ){
 		trace("blanking Nowplaying");
-		trace("NOT: TotalNowplaying[%u] - NowplayingFirstNumber[%u] >= NumberOfNowplaying[%u]",TotalNowplaying,NowplayingFirstNumber,NumberOfNowplaying);
-		ListLengthNowplaying = DisplayNowplaying;
 		SetArray(NowplayingTitle$," ");
 		SetArray(NowplayingTitle,"");
 		SetArray(NowplayingArtist$," ");
@@ -2488,94 +2458,67 @@ Else If (Find("status ",In$,1) > 0) {
 		If (ListType[1] = 7)
 			SetArray(List$," ");
 	}
-	Else {
-		ListLengthNowplaying = NumberOfNowplaying;
-	}
-
-//debug
-/*
-   	debugLocal = InNowplaying$;
-    For (i = 1 to ((Len(debugLocal) / 256) + 1))
-	{
-		debug$[i] = Left(debugLocal,255);
-		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
-    }
-*/	
 	For (i = 1 to ListLengthNowplaying)	{
-//    	If ((progNowplaying != progLocal))// || (Find(" id%3A",InNowplaying$,1) = 0))
-//			Break;
-//		Else
-//		{
-//	 		debugINT = i;
-//			debug = InNowplaying$;
-
-// playlist%20index%3A[#] id%3A[#] title%3A[name] artist%3A[artist] album%3A[album]	
-			
-			indexStart = Find(" playlist%20index%3A",InNowplaying$,1) + 20;
+		indexStart = Find(" playlist%20index%3A",InNowplaying$,indexEnd);
+		If (indexStart > 0){
+			indexStart = indexStart + 20;
 			indexEnd = Find(" ",InNowplaying$,indexStart);
-			If (indexEnd > indexStart){
-				Length = indexEnd - indexStart;
-				NowplayingIndex[i] = Atoi(Mid(InNowplaying$,indexStart,Length));
-				trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); //xxx
-				If (NowplayingIndex[i] = CurrentsongIndex){  // compare Index w/ CurrentsongIndex for NowplayingCurrentSong
-					NowplayingCurrentSong[i] = 1;
-				}
-				Else {
-					NowplayingCurrentSong[i] = 0;
-				}
-			}
-			Else { // zero the remaining array elements if no more matches for index (should be unnecessary)
-				For (j = i to ListLengthNowplaying){
-					NowplayingCurrentSong[j] = 0;
-					NowplayingID[j] = 0;
-					NowplayingTitle[j] = "";
-					NowplayingTitle$[j] = " ";
-					NowplayingArtist[j] = "";
-					NowplayingArtist$[j] = " ";
-					NowplayingAlbum[j] = "";
-					NowplayingAlbum$[j] = " ";
-					NowplayingIndex[i] = 65534; //dummy value to test for disabling button action if empty
-				}
-				Break;
-			}
-
-			indexStart = Find(" id%3A",InNowplaying$,indexEnd) + 6;
-			indexEnd = Find(" ",InNowplaying$, indexStart);
 			Length = indexEnd - indexStart;
-			NowplayingID[i] = Atoi(Mid(InNowplaying$,indexStart,Length));
-			trace("NowplayingID (i=%u)= %u",i,NowplayingID[i]);
-
-			indexStart = indexEnd + 9;
-			indexEnd = Find(" ",InNowplaying$, indexStart);
-			Length = indexEnd - indexStart;
-			NowplayingTitle[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
-			NowplayingTitle$[i] = NowplayingTitle[i];
-			If (ListType[1] = 7){
-				List$[i] = NowplayingTitle[i];
-			}
-			indexStart = indexEnd + 10;
-			indexEnd = Find(" ",InNowplaying$, indexStart);
-			Length = indexEnd - indexStart;
-			NowplayingArtist[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
-			NowplayingArtist$[i] = NowplayingArtist[i];
-//			If (ListType[1] = 7)
-//				List$[i] = NowplayingArtist[i];
-
-			indexStart = indexEnd + 9;
-			If (Find(" ",InNowplaying$, indexStart) = 0) {
-				indexEnd = Len(InNowplaying$);
+			NowplayingIndex[i] = Atoi(Mid(InNowplaying$,indexStart,Length));
+			trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); //xxx
+			If (NowplayingIndex[i] = CurrentsongIndex){  // compare Index w/ CurrentsongIndex for NowplayingCurrentSong
+				NowplayingCurrentSong[i] = 1;
 			}
 			Else {
-				indexEnd = Find(" ",InNowplaying$, indexStart);
+				NowplayingCurrentSong[i] = 0;
 			}
-			Length = indexEnd - indexStart;
-			NowplayingAlbum[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
-			NowplayingAlbum$[i] = NowplayingAlbum[i];
+		}
+		Else { // zero the remaining array elements if no more matches for index (should be unnecessary)
+			For (j = i to ListLengthNowplaying){
+				NowplayingCurrentSong[j] = 0;
+				NowplayingID[j] = 0;
+				NowplayingTitle[j] = "";
+				NowplayingTitle$[j] = " ";
+				NowplayingArtist[j] = "";
+				NowplayingArtist$[j] = " ";
+				NowplayingAlbum[j] = "";
+				NowplayingAlbum$[j] = " ";
+				NowplayingIndex[i] = 65534; //dummy value to test for disabling button action if empty
+			}
+			Break;
+		}
+		indexStart = Find(" id%3A",InNowplaying$,indexEnd) + 6;
+		indexEnd = Find(" ",InNowplaying$, indexStart);
+		Length = indexEnd - indexStart;
+		NowplayingID[i] = Atoi(Mid(InNowplaying$,indexStart,Length));
+		trace("NowplayingID (i=%u)= %u",i,NowplayingID[i]);
+		indexStart = indexEnd + 9;
+		indexEnd = Find(" ",InNowplaying$, indexStart);
+		Length = indexEnd - indexStart;
+		NowplayingTitle[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
+		NowplayingTitle$[i] = NowplayingTitle[i];
+		If (ListType[1] = 7){
+			List$[i] = NowplayingTitle[i];
+		}
+		indexStart = indexEnd + 10;
+		indexEnd = Find(" ",InNowplaying$, indexStart);
+		Length = indexEnd - indexStart;
+		NowplayingArtist[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
+		NowplayingArtist$[i] = NowplayingArtist[i];
+//			If (ListType[1] = 7)
+//				List$[i] = NowplayingArtist[i];
+		indexStart = indexEnd + 9;
+		If (Find(" ",InNowplaying$, indexStart) = 0) {
+			indexEnd = Len(InNowplaying$);
+		}
+		Else {
+			indexEnd = Find(" ",InNowplaying$, indexStart);
+		}
+		Length = indexEnd - indexStart;
+		NowplayingAlbum[i] = ParsePercent(Mid(InNowplaying$,indexStart,Length));
+		NowplayingAlbum$[i] = NowplayingAlbum[i];
 //			If (ListType[1] = 7)
 //				List$[i] = NowplayingAlbum[i];
-
-			InNowplaying$ = Mid(InNowplaying$,indexEnd,(LenInNowplaying$ - indexEnd));
-//		}
 	}
 }
 Else If (Find(" time",In$,1)) {
@@ -2583,43 +2526,35 @@ Else If (Find(" time",In$,1)) {
 	InTime$ = In$;
 	In$ = "";
 //	debug = InTime$;
-//	00%3A04%3A20%3A05%3Ab7%3A38 time 69.227
 	indexEnd = Find(".",InStatus$,34);
 	Length = indexEnd - 34;
-//	CurrentTrackTime$ = Atoi(Mid(InTime$,34, Length));
 	Time_sec = Atoi(Mid(InTime$,34,Length));
 //	trace("time_sec:%u",time_sec);
 	Time_min = Time_sec / 60;
 	Time_rmd = Time_sec - (Time_min * 60);
 	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd); 
-
 }
 Else If (Find(" pandora",In$,1)) {
 	trace("parsing pandora");
 	InPandora$ = In$;
 	In$ = "";
 	LenInPandora$ = Len(InPandora$);
-
 	indexTest = Find(" items ",InPandora$,30);
-	
 	If(indexTest > 1){
 		indexStart = indexTest + 7;
 		indexEnd = Find(" ",InPandora$,indexStart + 7);
 		Length = indexEnd - indexStart;
 		PandoraFirstNumber = Atoi(Mid(InPandora$,indexStart,Length));
-	
 		indexStart = Find(" count%3A",InPandora$,40) + 9;
 		indexEnd = Find(" ",InPandora$, indexStart);
 		Length = indexEnd - indexStart;
 		TotalPandora = Atoi(Mid(InPandora$,indexStart,Length));
 		OutPandoraCount = TotalPandora;
-	
 		OutPandoraBar = 65535 - ((65535 / TotalPandora) * PandoraFirstNumber );
 		If (ListType[1] = 9){
 			OutListBar = OutPandoraBar;
 			OutListCount = OutPandoraCount;
 	    }
-		
 		If (TotalPandora - PandoraFirstNumber >= NumberOfPandora){
 			ListLengthPandora = NumberOfPandora;
 		}
@@ -2629,14 +2564,11 @@ Else If (Find(" pandora",In$,1)) {
 			SetArray(PandoraType,"");
 			SetArray(PandoraName,"");
 			SetArray(PandoraID,"");
-	
 			If (ListType[1] = 9){
 				SetArray(List$," ");
 			}
 		}
-	
 		indexEnd = 30;
-	
 		indexStart = Find(" title%3A",InPandora$,indexEnd) + 9;
 		indexEnd = Find(" ",InPandora$,indexStart);
 		Length = indexEnd - indexStart;
@@ -2649,7 +2581,6 @@ Else If (Find(" pandora",In$,1)) {
 			ListName[1] = "Pandora: " + PandoraTitle;
 			ListName$ = ListName[1];
 		}
-	
 		For (i = 1 to ListLengthPandora){
 				indexStart = Find(" id%3A",InPandora$,indexEnd) + 6;
 				indexEnd = Find(" ",InPandora$,indexStart);
@@ -2681,11 +2612,9 @@ Else If (Find(" pandora",In$,1)) {
 				Length = indexEnd - indexStart;
 				PandoraHasItems[i] = Atoi(Mid(InPandora$,indexStart,Length));
 		   		trace("pandora HasItems[%u]: %u",i,PandoraHasItems[i]);
-	//			InPandora$ = Mid(InPandora$,indexEnd,(LenInPandora$ - indexEnd));
 		}
 	}	
 }
-
 Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important sometimes because the CLI is nonstandard in some regards
 	trace("parsing favorites");
 	InFavorites$ = In$;
@@ -2694,7 +2623,6 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 	trace("%s",Left(InFavorites$,255));
 	trace("length fav = %u",LenInFavorites$);
 	indexTest = Find(" items ",InFavorites$,10); //TBD: change the start position argument as appropriate to where it should start looking. The CLI is nonstandard in some regards
-	
 	If(indexTest > 1){
 		indexStart = indexTest + 7;
 		trace("indexStart = %u",indexStart);
@@ -2703,7 +2631,6 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 		Length = indexEnd - indexStart;
 		FavoritesFirstNumber = Atoi(Mid(InFavorites$,indexStart,Length));
 		trace("FavoritesFirstNumber = %u",FavoritesFirstNumber);
-			
 		indexStart = Find(" count%3A",InFavorites$,30) + 9;
 		trace("indexStart = %u",indexStart);
 		indexEnd = Find(" ",InFavorites$, indexStart);
@@ -2711,18 +2638,15 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			indexEnd = len(InFavorites$) - 1;
 		}
 		trace("indexEnd = %u",indexEnd);
-
 		Length = indexEnd - indexStart;
 		TotalFavorites = Atoi(Mid(InFavorites$,indexStart,Length));
 		OutFavoritesCount = TotalFavorites;
 	    trace("TotalFavorites = %u",TotalFavorites);
-	    
 		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
 		If (ListType[1] = 10){
 			OutListBar = OutFavoritesBar;
 			OutListCount = OutFavoritesCount;
 	    }
-		
 		If (TotalFavorites - FavoritesFirstNumber >= NumberOfFavorites){
 			ListLengthFavorites = NumberOfFavorites;
 		}
@@ -2732,15 +2656,12 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			SetArray(FavoritesType,"");
 			SetArray(FavoritesName,"");
 			SetArray(FavoritesID,"");
-	
 			If (ListType[1] = 10){
 				SetArray(List$," ");
 			}
 		}
-	
 		indexEnd = 20;
 		trace("indexEnd = %u",indexEnd);
-	
 		indexStart = Find(" title%3A",InFavorites$,indexEnd) + 9;
 		trace("indexStart = %u",indexStart);
 		indexEnd = Find(" ",InFavorites$,indexStart);
@@ -2755,20 +2676,19 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			ListName[1] = "Favorites: " + FavoritesTitle;
 			ListName$ = ListName[1];
 		}
-	
 	    For (i = 1 to ListLengthFavorites){
-			indexStart = Find(" id%3A",InFavorites$,indexEnd) + 6;
-			trace("indexStart = %u",indexStart);
+			indexStart = Find(" id%3A",InFavorites$,indexEnd);
 			if (indexStart = 0){
 				trace("indexStart of id%3A not found; breaking.");
 				break;
 			}
+			indexStart = indexStart + 6;
+			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
 			trace("indexEnd = %u",indexEnd);
 			Length = indexEnd - indexStart;
 			FavoritesID[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
-			
 			indexStart = Find(" name%3A",InFavorites$,indexEnd) + 8;
 			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
@@ -2776,11 +2696,9 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			Length = indexEnd - indexStart;
 			FavoritesName[i] = ParsePercent(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites name[%u]: %s",i,FavoritesName[i]);
-			
 			If (ListType[1] = 10){
 				List$[i] = FavoritesName[i];
 			}
-			
 /*			indexStart = Find(" type%3A",InFavorites$,indexEnd) + 8;
 			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
@@ -2796,7 +2714,6 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			Length = indexEnd - indexStart;
 			FavoritesIsAudio[i] = Atoi(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites IsAudio[%u]: %u",i,FavoritesIsAudio[i]);
-
 			indexStart = Find(" hasitems%3A",InFavorites$,indexEnd) + 12;
 			trace("indexStart = %u",indexStart);
 			indexEnd = Find(" ",InFavorites$,indexStart);
@@ -2804,17 +2721,11 @@ Else If (Find("favorites",In$,1)){//TBD: putting a whitespace is important somet
 			Length = indexEnd - indexStart;
 			FavoritesHasItems[i] = Atoi(Mid(InFavorites$,indexStart,Length));
 	   		trace("Favorites HasItems[%u]: %u",i,FavoritesHasItems[i]);
-//			InFavorites$ = Mid(InFavorites$,indexEnd,(LenInFavorites$ - indexEnd));
 		}
 	}	
 }
-
 Else If (Find("dynamicplaylist playlists",In$,1) > 0) { //dynamic playlist parsing code
 	trace("parsing dynamic playlists");
-	
-//	progDynamic = progDynamic + 1;
-//	progLocal = progDynamic;
-	
 	InDynamic$ = In$;
 	In$ = "";
 	LenInDynamic$ = Len(InDynamic$);
@@ -2826,24 +2737,20 @@ Else If (Find("dynamicplaylist playlists",In$,1) > 0) { //dynamic playlist parsi
 		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
     }
 */
-
 	indexStart = Find(" playlists 1 ",InDynamic$,30) + 13;
 	indexEnd = Find(" ",InDynamic$,indexStart + 13);
 	Length = indexEnd - indexStart;
 	DynamicFirstNumber = Atoi(Mid(InDynamic$,indexStart,Length));
-
 	indexStart = Find(" count%3A",InDynamic$,40) + 9;
 	indexEnd = Find(" ",InDynamic$, indexStart);
 	Length = indexEnd - indexStart;
 	TotalDynamic = Atoi(Mid(InDynamic$,indexStart,Length));
 	OutDynamicCount = TotalDynamic;
-
 	OutDynamicBar = 65535 - ((65535 / TotalDynamic) * DynamicFirstNumber );
 	If (ListType[1] = 6){
 		OutListBar = OutDynamicBar;
 		OutListCount = OutDynamicCount;
     }
-	
 	If (TotalDynamic - DynamicFirstNumber >= NumberOfDynamic){
 		ListLengthDynamic = NumberOfDynamic;
 	}
@@ -2854,51 +2761,34 @@ Else If (Find("dynamicplaylist playlists",In$,1) > 0) { //dynamic playlist parsi
 		SetArray(DynamicFile,"");
 		If (ListType[1] = 6)
 			SetArray(List$," ");
-
 	}
-
+	indexEnd = 1;
 	For (i = 1 to ListLengthDynamic){
-//    	If (progDynamic != progLocal)
-//			Break;
-//		Else
-//		{
-//			trace("InDynamic$= %s",InDynamic$);
-
-			indexStart = Find("playlistid%3A",InDynamic$,1) + 13;
-			indexEnd = Find(" ",InDynamic$,indexStart);
-			Length = indexEnd - indexStart;
-			DynamicFile[i] = ParsePercent(Mid(InDynamic$,indexStart,Length));
-   	
-			indexStart = indexEnd + 16;
-
-			If (Find(" ",InDynamic$, indexStart) = 0){
-				indexEnd = Len(InDynamic$);
-			}
-			Else{
-				indexEnd = Find(" ",InDynamic$, indexStart);
-			}
-			Length = indexEnd - indexStart;
-		
-			DynamicName[i] = ParsePercent(Mid(InDynamic$,indexStart,Length));
-//			Dynamic$[i] = DynamicName[i];
-			If (ListType[1] = 6){
-				List$[i] = DynamicName[i];
-			}
-			InDynamic$ = Mid(InDynamic$,indexEnd,(LenInDynamic$ - indexEnd));
-//		}
+		indexStart = Find("playlistid%3A",InDynamic$,indexEnd) + 13;
+		indexEnd = Find(" ",InDynamic$,indexStart);
+		Length = indexEnd - indexStart;
+		DynamicFile[i] = ParsePercent(Mid(InDynamic$,indexStart,Length));
+		indexStart = indexEnd + 16;
+		If (Find(" ",InDynamic$, indexStart) = 0){
+			indexEnd = Len(InDynamic$);
+		}
+		Else{
+			indexEnd = Find(" ",InDynamic$, indexStart);
+		}
+		Length = indexEnd - indexStart;
+		DynamicName[i] = ParsePercent(Mid(InDynamic$,indexStart,Length));
+//		Dynamic$[i] = DynamicName[i];
+		If (ListType[1] = 6){
+			List$[i] = DynamicName[i];
+		}
 	}
 }
 Else If (Find("search ",In$,1) > 0){ // Search parsing code
 	trace("parsing search");
-
-//	progSearch = progSearch + 1;
-//	progLocal = progSearch;
-	
 	InSearch$ = In$;
 	In$ = "";
 	LenInSearch$ = Len(InSearch$);
-/*
-//debug line to output an array of debug$ lines with the full content of InSeach$
+/*	debug line to output an array of debug$ lines with the full content of InSeach$
    	debugLocal = InSearch$;
     For (j = 1 to ((Len(debugLocal) / 256) + 1))
 	{
@@ -2910,29 +2800,23 @@ Else If (Find("search ",In$,1) > 0){ // Search parsing code
 	Length = indexEnd - 7;
 	SearchFirstNumber = Atoi(Mid(InSearch$,7,Length));
 	trace("searchfirstnumber: %u",SearchFirstNumber);
-//search 0 20 term:al
-//count:9 
-
 	indexStart = Find("count%3A",InSearch$,1) + 8;
 	indexEnd = Find(" ",InSearch$, indexStart);
 	Length = indexEnd - indexStart;
 	TotalSearch = Atoi(Mid(InSearch$,indexStart,Length));
 	trace("TotalSearch: %u",TotalSearch);
 	OutSearchCount = TotalSearch;
-
 	If (TotalSearch > 0){
 		OutSearchBar = 65535 - ((65535 / TotalSearch) * SearchFirstNumber);
 	}
 	Else{
 		OutSearchBar = 0;
 	}
-
 	ListType[1] = 8;
 	If (ListType[1] = 8){
 		OutListBar = OutSearchBar;
 		OutListCount = OutSearchCount;
     }
-	
 	If (TotalSearch - SearchFirstNumber >= NumberOfSearch){
 		ListLengthSearch = NumberOfSearch;
 	}
@@ -2944,98 +2828,83 @@ Else If (Find("search ",In$,1) > 0){ // Search parsing code
 			SetArray(List$," ");
 		}
 	}
-//contributors_count:2 
-//albums_count:1 
-//tracks_count:6 
-
+	indexEnd = 1;
 	For (i = 1 to ListLengthSearch){
-//    	If ((progSearch != progLocal) || (Find("id%3A",InSearch$,1) = 0))
-//		{
-//			trace("breaking iteration routine");
-//			Break;
-//		}
-//		Else
-//		{
-//			trace("iteration i=%u",i);
-/*
-			//debug to output an array of debug$ lines with the full content of InSeach$
-			debugLocal = InSearch$;
-			For (j = 1 to ((Len(debugLocal) / 256) + 1))
-			{
-				debug$[j] = Left(debugLocal,255);
-				debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
+		If (Find(" contributor_id",InSearch$,indexEnd)) {//parsing for artists in search results
+			trace("parsing contributor_id in search result");
+			indexStart = Find(" contributor_id%3A",InSearch$,indexEnd) + 18;
+			indexEnd = Find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
+			trace("contributor_id:%u",SearchID[i]);
+			SearchIDtype[i] = 1;
+			indexStart = indexEnd + 15;
+			indexEnd = Find(" ",InSearch$, indexStart);
+			If (indexEnd = 0){
+				indexEnd = len(InSearch$);
 			}
-			//end debug
-*/
-			If (Find(" contributor_id",InSearch$,1)) {//parsing for artists in search results
-//				trace("parsing contributor_id in search result");
-				indexStart = Find(" contributor_id%3A",InSearch$,1) + 18;
-				indexEnd = Find(" ",InSearch$,indexStart);
-				Length = indexEnd - indexStart;
-				SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
-				trace("contributor_id:%u",SearchID[i]);
-				SearchIDtype[i] = 1;
-				indexStart = indexEnd + 15;
-				indexEnd = Find(" ",InSearch$, indexStart);
-				If (indexEnd = 0){
-					indexEnd = len(InSearch$);
-				}
-				Length = indexEnd - indexStart;
-				Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
-				trace("contributor:%s",Search[i]);
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+			trace("contributor:%s",Search[i]);
+		}
+		Else If (Find(" album_id%3A",InSearch$,indexEnd)) {//parsing for albums in search results
+			trace("parsing album_id in search result");
+			indexStart = Find(" album_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = Find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
+			SearchIDtype[i] = 2;
+			indexStart = indexEnd + 9;
+			indexEnd = Find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$);
 			}
-			Else If (Find(" album_id%3A",InSearch$,1)) {//parsing for albums in search results
-//				trace("parsing album_id in search result");
-				indexStart = Find(" album_id%3A",InSearch$,1) + 12;
-				indexEnd = Find(" ",InSearch$,indexStart);
-				Length = indexEnd - indexStart;
-				SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
-				SearchIDtype[i] = 2;
-				indexStart = indexEnd + 9;
-				indexEnd = Find(" ",InSearch$, indexStart);
-				If (indexEnd = 0) {
-					indexEnd = len(InSearch$);
-				}
-				Length = indexEnd - indexStart;
-				Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+		}
+		Else If (Find(" genre_id%3A",InSearch$,indexEnd)) {//parsing for genres in search results
+			trace("parsing genre_id in search result");
+			indexStart = Find(" genre_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = Find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
+			SearchIDtype[i] = 4;
+			indexStart = indexEnd + 9;
+			indexEnd = Find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$);
 			}
-			Else If (Find(" track_id%3A",InSearch$,1)) {//parsing for tracks in search results
-//				trace("parsing track_id in search result");
-				indexStart = Find(" track_id%3A",InSearch$,1) + 12;
-				indexEnd = Find(" ",InSearch$,indexStart);
-				Length = indexEnd - indexStart;
-				SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
-				SearchIDtype[i] = 3;
-				indexStart = indexEnd + 9;
-				indexEnd = Find(" ",InSearch$, indexStart);
-				If (indexEnd = 0) {
-					indexEnd = len(InSearch$);
-				}
-				Length = indexEnd - indexStart;
-				Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+		}
+		Else If (Find(" track_id%3A",InSearch$,indexEnd)) {//parsing for tracks in search results
+			trace("parsing track_id in search result");
+			indexStart = Find(" track_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = Find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = Atoi(Mid(InSearch$,indexStart,Length));
+			SearchIDtype[i] = 3;
+			indexStart = indexEnd + 9;
+			indexEnd = Find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$);
 			}
-			If (ListType[1] = 8){
-	            List$[i] = Search[i];
-			}
-			InSearch$ = Mid(InSearch$,indexEnd,(LenInSearch$ - indexEnd));
-//		}
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(Mid(InSearch$,indexStart,Length));
+		}
+		If (ListType[1] = 8){
+            List$[i] = Search[i];
+		}
 	}
-//	progSearch = progSearch - 1;
 }
 Else If (Find("genres ",In$,1) > 0) { // genre parsing code
 	trace("parsing genres");
-
-//	progGenres = progGenres + 1;
-//	progLocal = progGenres;
-	
 	InGenres$ = In$;
 	In$ = "";
 	LenInGenres$ = Len(InGenres$);
-
 	indexEnd = Find(" ",InGenres$,9);
 	Length = indexEnd - 8;
 	GenreFirstNumber = Atoi(Mid(InGenres$,8,Length));
-
 	indexStart = Find("count%3A",InGenres$,1) + 8;
 	indexEnd = Find(" ",InGenres$, indexStart);
 	Length = indexEnd - indexStart;
@@ -3047,12 +2916,10 @@ Else If (Find("genres ",In$,1) > 0) { // genre parsing code
 	Else{
 		OutGenresBar = 0;
 	}
-
 	If (ListType[1] = 1){
 		OutListBar = OutGenresBar;
 		OutListCount = OutGenreCount;
     }
-	
 	If (TotalGenres - GenreFirstNumber >= NumberOfGenres){
 		ListLengthGenres = NumberOfGenres;
 	}
@@ -3065,41 +2932,29 @@ Else If (Find("genres ",In$,1) > 0) { // genre parsing code
 			SetArray(List$," ");
 		}
 	}
-
+	indexEnd = 1;
 	For (i = 1 to ListLengthGenres){
-//    	If ((progGenres != progLocal) || (Find(" id%3A",InGenres$,1) = 0))
-//			Break;
-//		Else
-//		{
-			indexStart = Find(" id%3A",InGenres$,1) + 6;
+		indexStart = Find(" id%3A",InGenres$,indexEnd) + 6;
+		If (IndexStart > 6){
 			indexEnd = Find(" ",InGenres$,indexStart);
 			Length = indexEnd - indexStart;
 			GenreID[i] = Atoi(Mid(InGenres$,indexStart,Length));
-   	
 			indexStart = indexEnd + 9;
 			indexEnd = Find(" ",InGenres$, indexStart);
 			Length = indexEnd - indexStart;
-
 			Genre[i] = ParsePercent(Mid(InGenres$,indexStart,Length));
-//			Genre$[i] = Genre[i];
+	//			Genre$[i] = Genre[i];
 			If (ListType[1] = 1) {
 	            List$[i] = Genre[i];
 			}
-
-			InGenres$ = Mid(InGenres$,indexEnd,(LenInGenres$ - indexEnd));
-//		}
+		}
 	}
-//	progGenres = progGenres - 1;
 }
 Else If (Find("artists ",In$,1) > 0) { // Artist parsing code
 	trace("parsing Artists");
-//	progArtists = progArtists + 1;
-//	progLocal = progArtists;
-	
 	InArtists$ = In$;
 	In$ = "";
 	LenInArtists$ = Len(InArtists$);
-
 /*
    	debugLocal = InArtists$;
     For (i = 1 to ((Len(debugLocal) / 256) + 1))
@@ -3108,12 +2963,10 @@ Else If (Find("artists ",In$,1) > 0) { // Artist parsing code
 		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
     }
 */
-
 	indexEnd = Find(" ",InArtists$,9);
 	Length = indexEnd - 8;
 	ArtistFirstNumber = Atoi(Mid(InArtists$,8,Length));
 	trace("ArtistFirstNumber = %u",ArtistFirstNumber);
-
 	indexStart = Find(" count%3A",InArtists$,1);
 	indexStart = indexStart + 9;
 	indexEnd = Find(" ",InArtists$, indexStart);
@@ -3126,19 +2979,16 @@ Else If (Find("artists ",In$,1) > 0) { // Artist parsing code
 	TotalArtists = Atoi(Mid(InArtists$,indexStart,Length));
 	trace("TotalArtists = %u",TotalArtists);
 	OutArtistCount = TotalArtists;
-
 	If (TotalArtists > 0){
 		OutArtistsBar = 65535 - ((65535 / TotalArtists) * ArtistFirstNumber);
 	}
 	Else{
 		OutArtistsBar = 0;
 	}
-
 	If (ListType[1] = 2){
 		OutListBar = OutArtistsBar;
 		OutListCount = OutArtistCount;
     }
-
 	If (TotalArtists - ArtistFirstNumber >= NumberOfArtists){
 		ListLengthArtists = NumberOfArtists;
 	}
@@ -3157,55 +3007,32 @@ Else If (Find("artists ",In$,1) > 0) { // Artist parsing code
 		debug$[i] = Left(debugLocal,255);
 		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
     }
-*/    
+*/  
+	indexEnd = 1;  
 	For (i = 1 to ListLengthArtists){
-    	indexStart = Find(" id%3A",InArtists$,1);
-//			If ((progArtists != progLocal) || (indexStart = 0))
-//				Break;
-//			Else
-//			{
-//		trace("%s",InArtists$);
+    	indexStart = Find(" id%3A",InArtists$,indexEnd);
 		indexStart = indexStart + 6;
 		indexEnd = Find(" ",InArtists$,indexStart);
 		Length = indexEnd - indexStart;
 		ArtistID[i] = Atoi(Mid(InArtists$,indexStart,Length));
-//		trace(ArtistID[%u]=%u,i,ArtistID[i]);   	
-
 		indexStart = Find(" artist%3A",InArtists$,indexEnd) + 10;
 		indexEnd = Find(" ",InArtists$, indexStart);
 		Length = indexEnd - indexStart;		
-//		trace("Artist = %s",Mid(InArtists$,indexStart,Length));
 		Artist[i] = ParsePercent(Mid(InArtists$,indexStart,Length));
-
 //		Artist$[i] = Artist[i];
 		If (ListType[1] = 2){
 			List$[i] = Artist[i];
 		}
-		InArtists$ = Mid(InArtists$,indexEnd,(LenInArtists$ - indexEnd));
-//		}
-}
-//	progArtists = progArtists - 1;
+	}
 }
 Else If (Find("albums ",In$,1) > 0) { // Album parsing code
 	trace("parsing albums");
-//	progAlbums = progAlbums + 1;
-//	progLocal = progAlbums;
-	
 	InAlbums$ = In$;
 	In$ = "";
 	LenInAlbums$ = Len(InAlbums$);
-/*
-   	debugLocal = InAlbums$;
-    For (i = 1 to ((Len(debugLocal) / 256) + 1))
-	{
-		debug$[i] = Left(debugLocal,255);
-		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
-    }
-*/
 	indexEnd = Find(" ",InAlbums$,9);
 	Length = indexEnd - 8;
 	AlbumFirstNumber = Atoi(Mid(InAlbums$,8,Length));
-
 	indexStart = Find("count%3A",InAlbums$,1) + 8;
 	indexEnd = Find(" ",InAlbums$, indexStart);
 	Length = indexEnd - indexStart;
@@ -3217,12 +3044,10 @@ Else If (Find("albums ",In$,1) > 0) { // Album parsing code
 	Else{
 		OutAlbumsBar = 0;
 	}
-
 	If (ListType[1] = 3){
 		OutListBar = OutAlbumsBar;
 		OutListCount = OutAlbumCount;
     }
-	
 	If (TotalAlbums - AlbumFirstNumber >= NumberOfAlbums){
 		ListLengthAlbums = NumberOfAlbums;
 	}
@@ -3242,63 +3067,53 @@ Else If (Find("albums ",In$,1) > 0) { // Album parsing code
 		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
     }
 */
-	If (Find(" search%3A",InAlbums$,1) > 0) {
+	If (Find(" search%3A",InAlbums$,1)){
+		SearchTest = 1;
+	}
+	Else {
+		SearchTest = 0;
+	}
+	indexEnd = 1;
+/*
+	If (Find(" search%3A",InAlbums$,1)) {
 		For (i = 1 to ListLengthAlbums) {
-	    	indexStart = Find(" id%3A",InAlbums$,1);
-			If (indexStart = 0){ // || (progAlbums != progLocal)
-				Break;
-			}
-			Else {
-				indexStart = indexStart + 6;
+			If (Find(" id%3A",InAlbums$,indexEnd)){
+				indexStart = Find(" id%3A",InAlbums$,indexEnd) + 6;
 				indexEnd = Find(" ",InAlbums$,indexStart);
 				Length = indexEnd - indexStart;
 				AlbumID[i] = Atoi(Mid(InAlbums$,indexStart,Length));
-	   	
 				indexStart = indexEnd + 9;
 				indexEnd = Find(" ",InAlbums$, indexStart);
 				Length = indexEnd - indexStart;
-			
 				Album[i] = ParsePercent(Mid(InAlbums$,indexStart,Length));
 //				Album$[i] = Album[i];             
-//				If (ListType[1] = 3){List$[i] = Album[i];}
 				ListType[1] = 3;
 				List$[i] = Album[i];	
-				InAlbums$ = Mid(InAlbums$,indexEnd,(LenInAlbums$ - indexEnd));  
 			}
 		}
 	}
 	Else {
+*/
 		For (i = 1 to ListLengthAlbums) {
-	    	indexStart = Find(" id%3A",InAlbums$,1);
-			If (indexStart = 0) { // || (progAlbums != progLocal) 
-				Break;
-			}
-			Else {
-				indexStart = indexStart + 6;
+			If (Find(" id%3A",InAlbums$,indexEnd)){
+				indexStart = Find(" id%3A",InAlbums$,indexEnd) + 6;
 				indexEnd = Find(" ",InAlbums$,indexStart);
 				Length = indexEnd - indexStart;
 				AlbumID[i] = Atoi(Mid(InAlbums$,indexStart,Length));
-	   	
 				indexStart = indexEnd + 9;
 				indexEnd = Find(" ",InAlbums$, indexStart);
 				Length = indexEnd - indexStart;
-			
 				Album[i] = ParsePercent(Mid(InAlbums$,indexStart,Length));
 //				Album$[i] = Album[i];             
-				If (ListType[1] = 3){List$[i] = Album[i];}
-//				ListType[1] = 3;
-//				List$[i] = Album[i];	
-				InAlbums$ = Mid(InAlbums$,indexEnd,(LenInAlbums$ - indexEnd));  
+				If (ListType[1] = 3){
+					List$[i] = Album[i];
+				}
 			}
 		}
-    }
-//	progAlbums = progAlbums - 1;
+//	} // end the Else structure
 }
 Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 	trace("parsing titles");
-	progTitles = progTitles + 1;
-	progLocal = progTitles;
-
 	InTitles$ = In$;
 	In$ = "";
 	LenInTitles$ = Len(InTitles$);
@@ -3313,10 +3128,8 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 	indexEnd = Find(" ",InTitles$,9);
 	Length = indexEnd - 8;
 	TitleFirstNumber = Atoi(Mid(InTitles$,8,Length));
-
 //	debug = "TitleFirstNumber";
 //    debugInt = TitleFirstNumber;
-
 	indexStart = Find("count%3A",InTitles$,1) + 8;
 	indexEnd = Find(" ",InTitles$, indexStart);
 	Length = indexEnd - indexStart;
@@ -3328,12 +3141,10 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 	Else{
 		OutTitlesBar = 0;
 	}
-
 	If (ListType[1] = 4){
 		OutListBar = OutTitlesBar;
 		OutListCount = OutTitleCount;
     }
-
 	If (TotalTitles - TitleFirstNumber >= NumberOfTitles){
 		ListLengthTitles = NumberOfTitles;
 	}
@@ -3346,9 +3157,7 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 			SetArray(List$," ");
 	}
 	indexStart = Find("tags%3A",InTitles$,1) + 7;
-
 	inTitles$ = Mid(InTitles$, indexStart,(LenInTitles$ - indexStart));
-
 /*
    	debugLocal = InTitles$;
     For (i = 1 to ((Len(debugLocal) / 256) + 1))
@@ -3357,23 +3166,16 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 		debugLocal = Mid(debugLocal,255,Len(debugLocal)-255);
     }
 */
-    
+    indexEnd = 1;
 	For (i = 1 to ListLengthTitles){
-    	If ((Find(" id%3A",InTitles$,1) = 0) || (progTitles != progLocal)) {
-			Break;
-		}
-		Else {
-//	 		debugINT = i;
-//			debug = InTitles$;
-		   	indexStart = Find(" id%3A",InTitles$,1) + 6;
+    	If (Find(" id%3A",InTitles$,indexEnd)){
+		   	indexStart = Find(" id%3A",InTitles$,indexEnd) + 6;
 			indexEnd = Find(" ",InTitles$,indexStart);
 			Length = indexEnd - indexStart;
 			TrackID[i] = Atoi(Mid(InTitles$,indexStart,Length));
-   		
 			indexStart = Find("title%3A",InTitles$,indexEnd) + 8;
 			indexEnd = Find(" ",InTitles$, indexStart);
 			Length = indexEnd - indexStart;
-
     		Title[i] = ParsePercent(Mid(InTitles$,indexStart,Length));
 //			Title$[i] = Title[i];
 			If (ListType[1] = 4){
@@ -3388,7 +3190,6 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 			Else{
 				trace("no tracknum");
 			}
-
 			If (Find("album_id%3A",InTitles$,1) != 0) {
 				indexStart = Find("album_id%3A", InTitles$,IndexEnd) + 11;
 				indexEnd = Find(" ",InTitles$, indexStart);
@@ -3398,23 +3199,17 @@ Else If (Find("titles ",In$,1) > 0) { // Titles (tracks) parsing code
 			Else {
 				trace("no album_id");
 			}
-
-			InTitles$ = Mid(InTitles$,indexEnd,(LenInTitles$ - indexEnd));
 		}
 	}
-	progTitles = progTitles - 1;
 }
 Else If (Find("playlists ",In$,1) > 0) {  // Playlist parsing code
 	trace("parsing playlists");
-	
 	InPlaylists$ = In$;
 	In$ = "";
 	LenInPlaylists$ = Len(InPlaylists$);
-
 	indexEnd = Find(" ",InPlaylists$,10);
 	Length = indexEnd - 9;
 	PlaylistFirstNumber = Atoi(Mid(InPlaylists$,9,Length));
-
 	indexStart = Find("count%3A",InPlaylists$,1) + 8;
 	indexEnd = Find(" ",InPlaylists$, indexStart);
 	Length = indexEnd - indexStart;
@@ -3425,7 +3220,6 @@ Else If (Find("playlists ",In$,1) > 0) {  // Playlist parsing code
 		OutListBar = OutPlaylistsBar;
 		OutListCount = OutPlaylistCount;
     }
-	
 	If (TotalPlaylists - PlaylistFirstNumber >= NumberOfPlaylists){
 		ListLengthPlaylists = NumberOfPlaylists;
 	}
@@ -3437,17 +3231,13 @@ Else If (Find("playlists ",In$,1) > 0) {  // Playlist parsing code
 			SetArray(List$," ");
 		}
 	}
-	
+	indexEnd = 1;
 	For (i = 1 to ListLengthPlaylists) {
-    	If (Find(" id%3A",InPlaylists$,1) = 0) { 
-			Break;
-		}
-		Else {
-			indexStart = Find(" id%3A",InPlaylists$,1) + 6;
+    	If (Find(" id%3A",InPlaylists$,indexEnd)){ 
+			indexStart = Find(" id%3A",InPlaylists$,indexEnd) + 6;
 			indexEnd = Find(" ",InPlaylists$,indexStart);
 			Length = indexEnd - indexStart;
 			PlaylistID[i] = Atoi(Mid(InPlaylists$,indexStart,Length));
-   	
 			indexStart = indexEnd + 12;
 			indexEnd = Find(" ",InPlaylists$, indexStart);
 			Length = indexEnd - indexStart;
@@ -3457,12 +3247,10 @@ Else If (Find("playlists ",In$,1) > 0) {  // Playlist parsing code
 			If (ListType[1] = 5){
 				List$[i] = Playlist[i];
 			}
-
-			InPlaylists$ = Mid(InPlaylists$,indexEnd,(LenInPlaylists$ - indexEnd));
 		}
 	}
-} // end the playlist parsing
-} // end the SocketReceive parsing
+} // end of playlist parsing
+} // end of SocketReceive parsing
 
 /*
 CHANGE TCPIP_Tx$
@@ -3485,7 +3273,6 @@ Function Main() {
 	NumberOfSearch = NumberOfList;
 	NumberOfPandora = NumberOfList;        
 	NumberOfFavorites = NumberOfList;
-
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
@@ -3515,7 +3302,6 @@ Function Main() {
 	SetArray(ListRestrictor,"");
 //	PlayerIDOut = FormatPlayerID(PlayerID$);
 	Nowplaying_refresh_enable = 1;
-	DisplayNowplaying = NumberOfNowplaying;    
 	SetArray(ListHome,"");	
 	ListHome[1] = "Favorites";
 	ListHome[2] = "Genres";
