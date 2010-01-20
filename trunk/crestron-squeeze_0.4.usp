@@ -24,10 +24,6 @@ Comments:
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-
-
-
 /////////////////////Compiler Directives
 // #SYMBOL_NAME "SqueezeBox Server"
 // #HINT ""
@@ -40,44 +36,33 @@ Comments:
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
-
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
-
 #PRINT_TO_TRACE
 #ENABLE_TRACE
-
 /*
 #HELP_BEGIN
    (add additional lines of help lines)
 #HELP_END
 */
-
 ///////////  Include Libraries
 // #CRESTRON_LIBRARY ""
 // #USER_LIBRARY ""
-
 /////////////// Inputs & Outputs
 DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
-
 DIGITAL_INPUT Playlist_Save_Enable;
-
 DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
-
 //ANALOG_OUTPUT debugINT;
 //STRING_OUTPUT debug;
-
 DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev, FFW, REW, Pwr_On, Pwr_Off;
 DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All, Shuffle_Off, Shuffle_Track, Shuffle_Album;
-
 // DIGITAL_INPUT PlaylistSave;
 // DIGITAL_INPUT DynamicRefresh;
-
 DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
 DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn; //, NowplayingCheckCurrent;
-
+//
 DIGITAL_INPUT Jump_Home;//display the home list
 DIGITAL_INPUT Jump_Genres;//, Genres_PgUp, Genres_PgDn;
 DIGITAL_INPUT Jump_Artists;//, Artists_PgUp, Artists_PgDn;
@@ -87,46 +72,38 @@ DIGITAL_INPUT Jump_Playlists;//, Playlists_PgUp, Playlists_PgDn;
 DIGITAL_INPUT Jump_Dynamic;//, Dynamic_PgUp, Dynamic_PgDn;
 DIGITAL_INPUT Jump_Pandora;
 DIGITAL_INPUT Jump_Favorites;
-
+//
 DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAlbum;
-
-//DIGITAL_INPUT //INPUTS FOR CURRENTSONG GENRE,ARTIST,ALBUM
-
+//
 STRING_INPUT PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16], DynamicResume$[256];
-
+//
 DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
-
+//
 DIGITAL_INPUT search_clear;
 DIGITAL_INPUT search_backspace;
 BUFFER_INPUT search_in$[64];
 STRING_OUTPUT search_in_fb;
-
-
+//
 ANALOG_INPUT InPageList;
 ANALOG_INPUT InPageNowplaying;
-
 ANALOG_INPUT NowplayingShowPrev;
-
+//
 ANALOG_OUTPUT OutListCount, OutListBar;
 ANALOG_OUTPUT OutNowplayingCount, OutNowplayingBar;
-
 STRING_OUTPUT ListName$;
-
+//
 DIGITAL_OUTPUT mode_play_fb;
 DIGITAL_OUTPUT mode_pause_fb;
 DIGITAL_OUTPUT mode_stop_fb;
-
 DIGITAL_OUTPUT repeat_off_fb;
 DIGITAL_OUTPUT repeat_track_fb;
 DIGITAL_OUTPUT repeat_all_fb;
-
 DIGITAL_OUTPUT shuffle_off_fb;
 DIGITAL_OUTPUT shuffle_track_fb;
 DIGITAL_OUTPUT shuffle_album_fb;
-
 DIGITAL_OUTPUT CurrentsongRemote_fb;
 DIGITAL_OUTPUT CurrentsongIsPandora;
-
+//
 STRING_OUTPUT CurrentsongTitle;
 STRING_OUTPUT CurrentsongTitleFormatted;
 STRING_OUTPUT CurrentsongAlbum;
@@ -136,36 +113,30 @@ STRING_OUTPUT CurrentsongCoverURL;
 STRING_OUTPUT CurrentsongTime;
 STRING_OUTPUT CurrentsongRate;
 STRING_OUTPUT CurrentsongDuration;
-
-
+//
 DIGITAL_OUTPUT NowplayingPageFlip;
 STRING_OUTPUT NowplayingTitle$[10];
 STRING_OUTPUT NowplayingArtist$[10];
 STRING_OUTPUT NowplayingAlbum$[10];
 DIGITAL_OUTPUT NowplayingCurrentSong[10,10];
-
+//
 DIGITAL_INPUT NowplayingPlay[10];
 DIGITAL_INPUT NowplayingRemove[10];
 DIGITAL_INPUT NowplayingMoveUp[10];
 DIGITAL_INPUT NowPlayingMoveDown[10];
-
+//
 STRING_OUTPUT List$[10,10];
-
 DIGITAL_INPUT ListSelect[10];
 DIGITAL_INPUT ListPlay[10];
 DIGITAL_INPUT ListAdd[10];
 DIGITAL_INPUT ListInsert[10,10];
-
 ///////////////////////////// Parameters
-
 STRING_PARAMETER PlayerID$[17], SqueezeCenterIPAddr$[16];   //for PlayerID please use the MAC address as found on SB Server player information page.
 INTEGER_PARAMETER SqueezeCenterPort;
 INTEGER_PARAMETER NumberOfList, NumberOfNowplaying;
-//, NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles, NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
-
+// NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles, NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
 /////////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
-
 ////////////////// Global Variables
 INTEGER FirstGenre, TotalGenres, GenreFirstNumber, ActiveGenreID;
 INTEGER FirstArtist, TotalArtists, ArtistFirstNumber, ActiveArtistID;
@@ -181,14 +152,14 @@ INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowp
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
-
+//
 INTEGER NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles, NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
 INTEGER NumberOfPandora;
 INTEGER NumberOfFavorites;
-
+//
 INTEGER nextChar;
 STRING search_in[64];
-
+//
 INTEGER OutGenreCount, OutGenresBar;
 INTEGER OutArtistCount, OutArtistsBar;
 INTEGER OutAlbumCount, OutAlbumsBar;
@@ -198,34 +169,37 @@ INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
 INTEGER OutPandoraCount,OutPandoraBar;
 INTEGER OutFavoritesCount,OutFavoritesBar;
-
+//
 INTEGER Nowplaying_refresh_enable;
-
+//
 Integer ListLengthNowplaying_old;
-
+//
 INTEGER ListType[5], ListFirst[5];
-INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10], PlaylistID[10], SearchID[10], SearchIDType[10], NowplayingIndex[10], NowplayingID[10];
+INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10];
+INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
+INTEGER NowplayingIndex[10], NowplayingID[10];
 INTEGER PandoraIsAudio[10], PandoraHasItems[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
-
+//
 STRING PlayerIDOut[32];
-STRING Mode$[8],CurrentTrackTime$[32],CurrentTrackRate$[16],CurrentTrackDuration$[32],CurrentTrackTitle$[256],CurrentTrackGenre$[256],CurrentTrackArtist$[256],CurrentTrackAlbum$[256];
+STRING Mode$[8],CurrentTrackTime$[32],CurrentTrackRate$[16],CurrentTrackDuration$[32];
+STRING CurrentTrackTitle$[256],CurrentTrackGenre$[256],CurrentTrackArtist$[256],CurrentTrackAlbum$[256];
 STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[256];
-
-STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256], restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
+//
+STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256];
+STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
 STRING restrictorPandora[256];
 STRING restrictorFavorites[256];
 STRING ListName[5][256], ListRestrictor[5][256], ListHome[10][16];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 STRING ActivePandoraName[256], ActivePandoraID[256], PandoraTitle[256];
 STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
-
+//
 STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist[10][256],PlaylistRaw[10][256], DynamicName[10][256], DynamicFile[10][256], Search[10][256];
 STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
 STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
 STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
 STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];
-
 ////////////// TCPIP Connection
 PUSH TCPIP_Connect{
     SIGNED_INTEGER status;
@@ -235,7 +209,6 @@ PUSH TCPIP_Connect{
             SqueezeCenterIPAddr$, SqueezeCenterPort);
 	}
 }
-
 RELEASE TCPIP_Connect{
     SIGNED_INTEGER status;
     status = SocketDisconnectClient (TCPClient);
@@ -244,7 +217,6 @@ RELEASE TCPIP_Connect{
             SqueezeCenterIPAddr$, SqueezeCenterPort);
     }
 }
-
 SOCKETCONNECT TCPClient{
     SIGNED_LONG_INTEGER PortNumber;
     SIGNED_INTEGER LocalStatus;
@@ -267,7 +239,6 @@ SOCKETCONNECT TCPClient{
 	Makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  //subscribe to status updates including currentsong (different than other subscribes)
 	SocketSend(TCPClient, out$);
 }
-
 SOCKETDISCONNECT TCPClient{
     TCPIP_Connected = 0;
     if (TCPIP_Connect)
@@ -275,7 +246,6 @@ SOCKETDISCONNECT TCPClient{
     Else
         Print("Local disconnect complete.");
 }
-
 SOCKETSTATUS TCPClient{
     SIGNED_INTEGER Status;
     Status = SocketGetStatus();
@@ -283,10 +253,7 @@ SOCKETSTATUS TCPClient{
     Print("The SocketGetStatus returns:       %d\n", Status);
     Print("The TCPClient.SocketStatus returns: %d\n", TCPClient.SocketStatus);
 }
-
-
 //////////////////////// FUNCTIONS
-
 Function ListShiftFwd_fn(){
 	Integer i;
 	For (i = 0 to 3){
@@ -297,7 +264,6 @@ Function ListShiftFwd_fn(){
 //		trace("History %u = Type: %u, Name: %s, Restr: %s, 1st: %u",5-i,ListType[4-i],ListName[4-i],ListRestrictor[4-i],ListFirst[4-i]);
 	}
 }
-
 Function ListShiftBk_fn(){
 	Integer i;//
 	For (i = 1 to 4){
@@ -359,9 +325,6 @@ Function ListShiftBk_fn(){
 	}
 
 }
-
-
-
 Function GenresRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfGenres, restrictorGenres);
@@ -369,7 +332,6 @@ Function GenresRefresh_fn(){
 	SocketSend(TCPClient,OUT$);
 //	ListType = 1;
 }
-
 Function ArtistsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfArtists, restrictorArtists);
@@ -377,7 +339,6 @@ Function ArtistsRefresh_fn(){
 	SocketSend(TCPClient,OUT$);
 //	ListType = 2;
 }
-
 Function AlbumsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
@@ -385,7 +346,6 @@ Function AlbumsRefresh_fn(){
 	SocketSend(TCPClient,OUT$);
 //	ListType = 3;
 }
-
 Function TitlesRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfTitles, restrictorTitles);
@@ -393,7 +353,6 @@ Function TitlesRefresh_fn(){
 	SocketSend(TCPClient,OUT$);
 //	ListType = 4;
 }
-
 Function PlaylistsRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring (OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfPlaylists, restrictorPlaylists);
@@ -401,7 +360,6 @@ Function PlaylistsRefresh_fn(){
 	SocketSend (TCPClient,OUT$);
 //	ListType = 5;
 }
-
 Function DynamicRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfDynamic);
@@ -409,7 +367,6 @@ Function DynamicRefresh_fn(){
 	SocketSend(TCPClient,OUT$);
 //	ListType = 6
 }
-
 Function SearchRefresh_fn(){
 	ListName$ = ListName[1];
 	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfSearch, search_in);
@@ -423,15 +380,12 @@ Function PandoraRefresh_fn(){
 	trace("sending: %s",OUT$);
 	SocketSend(TCPClient,OUT$);
 }   
-
 Function FavoritesRefresh_fn(){
 //	ListName$ = ListName[1];
 	makestring(OUT$,"favorites items %u %u %s charset:ascii \n",FirstFavorites,NumberOfFavorites, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	SocketSend(TCPClient,OUT$);
 }
-
-
 Function NowplayingRefresh_fn(){
 //	makestring (Out$,"%s status - %u tags:al \n",PlayerID$, NumberOfNowplaying);
 	If (CurrentsongIndex - NowplayingShowPrev S< 0)
@@ -442,7 +396,6 @@ Function NowplayingRefresh_fn(){
 	trace("sending: %s",OUT$);
 	SocketSend (TCPClient,OUT$);
 }
-
 Function ListRefresh_fn(){
 	If (ListType[1] = 1){
 		GenresRefresh_fn();
@@ -474,9 +427,7 @@ Function ListRefresh_fn(){
 	Else If (ListType[1] = 10){
 		FavoritesRefresh_fn();
 	}
-
 }
- 
 Function Home_PgReset_fn(){
 	Integer i;
 	ListShiftFwd_fn();
@@ -491,7 +442,6 @@ Function Home_PgReset_fn(){
 		List$[i] = ListHome[i];
 	}
 }
-
 Function Genres_PgReset_fn(){
 	FirstGenre = 0;
 	restrictorGenres = "";
@@ -502,7 +452,6 @@ Function Genres_PgReset_fn(){
 	ListFirst[1] = 0;
 	GenresRefresh_fn();
 }
-
 Function Artists_PgReset_fn(){
 	FirstArtist = 0;
 	restrictorArtists = "";
@@ -513,7 +462,6 @@ Function Artists_PgReset_fn(){
 	ListFirst[1] = 0;
 	ArtistsRefresh_fn();
 }
-
 Function Albums_PgReset_fn(){
 	FirstAlbum = 0;
 	restrictorAlbums = "";
@@ -524,7 +472,6 @@ Function Albums_PgReset_fn(){
 	ListFirst[1] = 0;
 	AlbumsRefresh_fn();
 }
-
 Function Titles_PgReset_fn(){
 	FirstTitle = 0;
 	restrictorTitles = "tags:te";
@@ -535,7 +482,6 @@ Function Titles_PgReset_fn(){
 	ListFirst[1] = 0;
 	TitlesRefresh_fn();
 }
-
 Function Playlists_PgReset_fn(){
 	FirstPlaylist = 0;
 	restrictorPlaylists = "";
@@ -546,7 +492,6 @@ Function Playlists_PgReset_fn(){
 	ListFirst[1] = 0;
 	PlaylistsRefresh_fn();
 }
-
 Function Dynamic_PgReset_fn(){
 	FirstDynamic = 0;
     ListShiftFwd_fn();
@@ -1019,11 +964,9 @@ Function FavoritesListSelect_fn(integer i){
 		ListRestrictor[1] = restrictorFavorites;
 		FirstFavorites = 0;
 		FavoritesRefresh_fn();
-//		ListName$ = ListName[1];
 	}
 	Else If (FavoritesIsAudio[i] = 1){
 		makestring(OUT$,"%s favorites playlist play item_id:%s\n",PlayerID$, FavoritesID[i]);
-		// 00%3A04%3A20%3A05%3Ab7%3A38 Favorites playlist play item_id%3A66b996d3.0.0
 		trace("sending: %s",OUT$);
 		SocketSend(TCPClient, OUT$);
 		pulse(20,NowplayingPageFlip);
