@@ -2457,7 +2457,7 @@ If (find(StatusFind$,In$,1) > 0) {
 			CurrentsongCoverURL = CurrentTrackRemoteCover$;
 		}
 		Else {
-			Length = len(InStatus$) - indexStart;
+			Length = len(InStatus$) - indexStart - 1; // xxx
 			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 			CurrentsongCoverURL = CurrentTrackRemoteCover$;
 		}
