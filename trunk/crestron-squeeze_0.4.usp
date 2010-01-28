@@ -25,14 +25,14 @@ Comments:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
-// #SYMBOL_NAME "SqueezeBox Server"
+// #SYMBOL_NAME "SqueezeBox Server 0.4"
 // #HINT ""
 // #CATEGORY "" 
 // #DIGITAL_EXPAND 
 // #ANALOG_SERIAL_EXPAND 
 // #HELP_PDF_FILE ""
 // #DEFAULT_NONVOLATILE
-#OUTPUT_SHIFT 5
+#OUTPUT_SHIFT 6
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -48,21 +48,21 @@ Comments:
 // #CRESTRON_LIBRARY ""
 // #USER_LIBRARY ""
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT Playlist_Save_Enable;
+DIGITAL_INPUT DirectIn_Fixed_Default;
+//
 DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
-// ANALOG_OUTPUT debugINT;
-// STRING_OUTPUT debug;
-DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev, FFW, REW, Pwr_On, Pwr_Off;
-DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All, Shuffle_Off, Shuffle_Track, Shuffle_Album;
+DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
+DIGITAL_INPUT Pwr_On, Pwr_Off;
+DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
+DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
 // DIGITAL_INPUT PlaylistSave;
-// DIGITAL_INPUT DynamicRefresh;
-DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
-DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn; //, NowplayingCheckCurrent;
 //
+// Jump inputs
 DIGITAL_INPUT Jump_Home;//display the home list
 DIGITAL_INPUT Jump_Genres;//, Genres_PgUp, Genres_PgDn;
 DIGITAL_INPUT Jump_Artists;//, Artists_PgUp, Artists_PgDn;
@@ -72,26 +72,36 @@ DIGITAL_INPUT Jump_Playlists;//, Playlists_PgUp, Playlists_PgDn;
 DIGITAL_INPUT Jump_Dynamic;//, Dynamic_PgUp, Dynamic_PgDn;
 DIGITAL_INPUT Jump_Pandora;
 DIGITAL_INPUT Jump_Favorites;
-//
+// Direct Browse inputs
 DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAlbum;
-//
-STRING_INPUT PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16], DynamicResume$[256];
-//
+// Direct string inputs
+STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16], DynamicResume$[256];
+// Pandora inputs
 DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
-//
+// Search inputs
 DIGITAL_INPUT search_clear;
 DIGITAL_INPUT search_backspace;
-BUFFER_INPUT search_in$[64];
-STRING_OUTPUT search_in_fb;
-//
-ANALOG_INPUT InPageList;
-ANALOG_INPUT InPageNowplaying;
-ANALOG_INPUT NowplayingShowPrev;
-//
-ANALOG_OUTPUT OutListCount, OutListBar;
-ANALOG_OUTPUT OutNowplayingCount, OutNowplayingBar;
-STRING_OUTPUT ListName$;
-//
+BUFFER_INPUT  search_in$[64];
+// List scroll inputs
+DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
+DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn; //
+DIGITAL_INPUT Players_Refresh, Players_PgUp, Players_PgDn;
+// Analog scroll inputs
+ANALOG_INPUT  InPageList;
+ANALOG_INPUT  InPageNowplaying;
+ANALOG_INPUT  NowplayingShowPrev;
+ANALOG_INPUT  InPagePlayers;
+// Scroll Feedback
+ANALOG_OUTPUT  OutListCount, OutListBar;
+ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar;
+STRING_OUTPUT  search_in_fb;
+STRING_OUTPUT  ListName$;
+STRING_OUTPUT  PlayerName_Active$;
+STRING_OUTPUT  PlayerID_Active$;
+DIGITAL_OUTPUT CurrentPlayerMaster;
+DIGITAL_OUTPUT CurrentPlayerSlave;
+STRING_OUTPUT  PlayerName_Master$;
+// Player feedback
 DIGITAL_OUTPUT mode_play_fb;
 DIGITAL_OUTPUT mode_pause_fb;
 DIGITAL_OUTPUT mode_stop_fb;
@@ -101,39 +111,46 @@ DIGITAL_OUTPUT repeat_all_fb;
 DIGITAL_OUTPUT shuffle_off_fb;
 DIGITAL_OUTPUT shuffle_track_fb;
 DIGITAL_OUTPUT shuffle_album_fb;
+// CurrentSong feedback
 DIGITAL_OUTPUT CurrentsongRemote_fb;
 DIGITAL_OUTPUT CurrentsongIsPandora;
-//
-STRING_OUTPUT CurrentsongTitle;
-STRING_OUTPUT CurrentsongTitleFormatted;
-STRING_OUTPUT CurrentsongAlbum;
-STRING_OUTPUT CurrentsongArtist;
-STRING_OUTPUT CurrentsongGenre;
-STRING_OUTPUT CurrentsongCoverURL;
-STRING_OUTPUT CurrentsongTime;
-STRING_OUTPUT CurrentsongRate;
-STRING_OUTPUT CurrentsongDuration;
-//
+STRING_OUTPUT  CurrentsongTitle;
+STRING_OUTPUT  CurrentsongTitleFormatted;
+STRING_OUTPUT  CurrentsongAlbum;
+STRING_OUTPUT  CurrentsongArtist;
+STRING_OUTPUT  CurrentsongGenre;
+STRING_OUTPUT  CurrentsongCoverURL;
+STRING_OUTPUT  CurrentsongTime;
+STRING_OUTPUT  CurrentsongRate;
+STRING_OUTPUT  CurrentsongDuration;
+// ARRAYS
+// Nowplaying i/o
+DIGITAL_INPUT  NowplayingPlay[10];
+DIGITAL_INPUT  NowplayingRemove[10];
+DIGITAL_INPUT  NowplayingMoveUp[10];
+DIGITAL_INPUT  NowPlayingMoveDown[10];
 DIGITAL_OUTPUT NowplayingPageFlip;
-STRING_OUTPUT NowplayingTitle$[10];
-STRING_OUTPUT NowplayingArtist$[10];
-STRING_OUTPUT NowplayingAlbum$[10];
-DIGITAL_OUTPUT NowplayingCurrentSong[10,10];
+STRING_OUTPUT  NowplayingTitle$[10];
+STRING_OUTPUT  NowplayingArtist$[10];
+STRING_OUTPUT  NowplayingAlbum$[10];
+DIGITAL_OUTPUT NowplayingCurrentSong[10];
+// List i/o
+DIGITAL_INPUT  ListSelect[10];
+DIGITAL_INPUT  ListPlay[10];
+DIGITAL_INPUT  ListAdd[10];
+DIGITAL_INPUT  ListInsert[10];
+STRING_OUTPUT  List$[10];
+// Players i/o
+DIGITAL_INPUT  PlayersSelect[10];
+DIGITAL_INPUT  PlayersSyncTog[10,10];
+STRING_OUTPUT  Players$[10];
+STRING_OUTPUT  PlayersID$[10,10];
+DIGITAL_OUTPUT PlayersSynced[10,10];
 //
-DIGITAL_INPUT NowplayingPlay[10];
-DIGITAL_INPUT NowplayingRemove[10];
-DIGITAL_INPUT NowplayingMoveUp[10];
-DIGITAL_INPUT NowPlayingMoveDown[10];
-//
-STRING_OUTPUT List$[10,10];
-DIGITAL_INPUT ListSelect[10];
-DIGITAL_INPUT ListPlay[10];
-DIGITAL_INPUT ListAdd[10];
-DIGITAL_INPUT ListInsert[10,10];
 ///////////////////////////// Parameters
-STRING_PARAMETER PlayerID$[17], SqueezeCenterIPAddr$[16];   //for PlayerID please use the MAC address as found on SB Server player information page.
+STRING_PARAMETER PlayerID$_Startup[17], SqueezeCenterIPAddr$[16];   //for PlayerID please use the MAC address as found on SB Server player information page.
 INTEGER_PARAMETER SqueezeCenterPort;
-INTEGER_PARAMETER NumberOfList, NumberOfNowplaying;
+INTEGER_PARAMETER NumberOfList, NumberOfNowplaying, NumberOfPlayers;
 // NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles, NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
@@ -148,8 +165,10 @@ INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
 INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
 INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
 INTEGER FirstPandora, TotalPandora, PandoraFirstNumber;
-INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber;
-INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
+INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
+INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
+//
+// INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
@@ -171,6 +190,7 @@ INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
 INTEGER OutPandoraCount,OutPandoraBar;
 INTEGER OutFavoritesCount,OutFavoritesBar;
+INTEGER OutPlayersCount, OutPlayersBar;
 //
 INTEGER Nowplaying_refresh_enable, ListLengthNowplaying_old;
 //
@@ -181,8 +201,9 @@ INTEGER NowplayingIndex[10], NowplayingID[10];
 INTEGER PandoraIsAudio[10], PandoraHasItems[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 //
-STRING PlayerIDOut[32];
+STRING ActivePlayerID[32], StatusFind$[64], NowplayingFind$[64], TimeFind$[64];
 STRING Mode$[8],CurrentTrackTime$[32],CurrentTrackRate$[16],CurrentTrackDuration$[32];
+STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
 STRING CurrentTrackTitle$[256],CurrentTrackGenre$[256],CurrentTrackArtist$[256],CurrentTrackAlbum$[256];
 STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[256];
 //
@@ -199,60 +220,10 @@ STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist
 STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
 STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
 STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
-STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];
-// //////////// TCPIP Connection
-PUSH TCPIP_Connect{
-    SIGNED_INTEGER status;
-    status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
-    if (status < 0){
-        print ("Error connecting socket to address %s on port  %d", 
-            SqueezeCenterIPAddr$, SqueezeCenterPort);
-	}
-}
-RELEASE TCPIP_Connect{
-    SIGNED_INTEGER status;
-    status = SocketDisconnectClient (TCPClient);
-	if (status < 0){
-    print ("Error disconnecting socket to address %s on port  %d", 
-            SqueezeCenterIPAddr$, SqueezeCenterPort);
-    }
-}
-SOCKETCONNECT TCPClient{
-    SIGNED_LONG_INTEGER PortNumber;
-    SIGNED_INTEGER LocalStatus;
-    STRING RemoteIPAddress[20];
-    STRING RequestedAddress[256];
-    TCPIP_Connected = 1;
-    LocalStatus = SocketGetAddressAsRequested(TCPClient, RequestedAddress);
-    if (LocalStatus < 0)
-        print ("Error getting remote ip address. %d\n", LocalStatus);
-    print ("OnConnect: Connect call to %s successful\n", RequestedAddress);
-    PortNumber = SocketGetPortNumber(TCPClient);
-    if (PortNumber < 0)
-        print ("Error getting client port number. %ld\n", PortNumber);
-    LocalStatus = SocketGetRemoteIPAddress(TCPClient, RemoteIPAddress);
-    if (LocalStatus < 0)
-        print ("Error getting remote ip address. %d\n", LocalStatus);
-    print ("OnConnect: Connected to port %ld on address %s\n", 
-                PortNumber, RemoteIPAddress);
-//	SOCKET Startup procedure
-	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  //subscribe to status updates including currentsong (different than other subscribes)
-	socketsend(TCPClient, out$);
-}
-SOCKETDISCONNECT TCPClient{
-    TCPIP_Connected = 0;
-    if (TCPIP_Connect)
-        print ("Socket disconnected remotely");
-    Else
-        print ("Local disconnect complete.");
-}
-SOCKETSTATUS TCPClient{
-    SIGNED_INTEGER Status;
-    Status = SocketGetStatus();
-    TCPIP_Status = Status;
-    print ("The SocketGetStatus returns:       %d\n", Status);
-    print ("The TCPClient.SocketStatus returns: %d\n", TCPClient.SocketStatus);
-}
+STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];  
+//
+STRING  PlayerID$[32], PlayersName[10][128], PlayersID[10][32], PlayersID_raw[10][32];
+INTEGER PlayersIndex[10];
 // ////////////////////// FUNCTIONS
 Function ListShiftFwd_fn(){
 	Integer i;
@@ -413,6 +384,11 @@ Function NowplayingRefresh_fn(){
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+Function PlayersRefresh_fn(){
+	makestring(OUT$,"players %u %u \n",FirstPlayers,NumberOfPlayers);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
 Function ListRefresh_fn(){
 	If (ListType[1] = 0){
 		HomeRefresh_fn();
@@ -543,6 +519,10 @@ Function Nowplaying_PgReset_fn(){
 	FirstNowplaying = 0;
     Nowplaying_refresh_enable = 1;
 	NowplayingRefresh_fn();
+}
+Function Players_PgReset_fn(){
+	FirstPlayers = 0;
+	PlayersRefresh_fn();
 }
 Function Home_PgUp_fn(){
  	If (FirstHome = 0 && (NumberOfHome <= TotalHome)){
@@ -694,6 +674,18 @@ Function Favorites_PgUp_fn() {
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
 }  
+Function Players_PgUp_fn(){
+	If (FirstPlayers = 0 && (NumberOfPlayers <= TotalPlayers)){
+		FirstPlayers = TotalPlayers - NumberOfPlayers;
+	}
+    Else If (FirstPlayers < NumberOfPlayers) {
+		FirstPlayers = 0;//(TotalPlayers / NumberOfPlayers) * NumberOfPlayers;
+	}
+	Else {
+		FirstPlayers = FirstPlayers - NumberOfPlayers;
+    }
+	PlayersRefresh_fn();
+}
 Function Home_PgDn_fn(){
 	If (FirstHome + NumberOfHome < TotalHome){
     	FirstHome = FirstHome + NumberOfHome;
@@ -811,6 +803,16 @@ Function Favorites_PgDn_fn(){
 	}
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
+}  
+Function Players_PgDn_fn(){
+	If (FirstPlayers + NumberOfPlayers < TotalPlayers)	{
+    	FirstPlayers = FirstPlayers + NumberOfPlayers;
+	}
+	else {
+		FirstPlayers = 0;
+	}
+	ListFirst[1] = FirstPlayers;
+	PlayersRefresh_fn();
 }
 Function HomeListSelect_fn(integer i){
 //	ListShiftFwd_fn(); 
@@ -1399,7 +1401,61 @@ String_Function FormatPlayerID(String PlayerID){
 	}
 	Return (PlayerIDLocal);
 }
-
+// //////////// TCPIP Connection
+PUSH TCPIP_Connect{
+    SIGNED_INTEGER status;
+    status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
+    if (status < 0){
+        print ("Error connecting socket to address %s on port  %d", 
+            SqueezeCenterIPAddr$, SqueezeCenterPort);
+	}
+}
+RELEASE TCPIP_Connect{
+    SIGNED_INTEGER status;
+    status = SocketDisconnectClient (TCPClient);
+	if (status < 0){
+    print ("Error disconnecting socket to address %s on port  %d", 
+            SqueezeCenterIPAddr$, SqueezeCenterPort);
+    }
+}
+SOCKETCONNECT TCPClient{
+    SIGNED_LONG_INTEGER PortNumber;
+    SIGNED_INTEGER LocalStatus;
+    STRING RemoteIPAddress[20];
+    STRING RequestedAddress[256];
+    TCPIP_Connected = 1;
+    LocalStatus = SocketGetAddressAsRequested(TCPClient, RequestedAddress);
+    if (LocalStatus < 0)
+        print ("Error getting remote ip address. %d\n", LocalStatus);
+    print ("OnConnect: Connect call to %s successful\n", RequestedAddress);
+    PortNumber = SocketGetPortNumber(TCPClient);
+    if (PortNumber < 0)
+        print ("Error getting client port number. %ld\n", PortNumber);
+    LocalStatus = SocketGetRemoteIPAddress(TCPClient, RemoteIPAddress);
+    if (LocalStatus < 0)
+        print ("Error getting remote ip address. %d\n", LocalStatus);
+    print ("OnConnect: Connected to port %ld on address %s\n", 
+                PortNumber, RemoteIPAddress);
+//	SOCKET Startup procedure
+	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  //subscribe to status updates including currentsong (different than other subscribes)
+	socketsend(TCPClient, out$);
+	delay(100);
+	Players_Pgreset_fn();
+}
+SOCKETDISCONNECT TCPClient{
+    TCPIP_Connected = 0;
+    if (TCPIP_Connect)
+        print ("Socket disconnected remotely");
+    Else
+        print ("Local disconnect complete.");
+}
+SOCKETSTATUS TCPClient{
+    SIGNED_INTEGER Status;
+    Status = SocketGetStatus();
+    TCPIP_Status = Status;
+    print ("The SocketGetStatus returns:       %d\n", Status);
+    print ("The TCPClient.SocketStatus returns: %d\n", TCPClient.SocketStatus);
+}
 // ////////////// Events 
 PUSH Jump_Home{
  	Home_PgReset_fn();
@@ -1486,6 +1542,10 @@ CHANGE InPageNowplaying{
 	FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
 	NowplayingRefresh_fn();
 }
+CHANGE InPagePlayers{
+	FirstPlayers = (65535 - InPagePlayers) * TotalPlayers / 65535;
+	PlayersRefresh_fn();
+}
 PUSH List_PgUp{
 	If (ListType[1] = 0){
 	 	Home_PgUp_fn();
@@ -1519,7 +1579,10 @@ PUSH List_PgUp{
     }
 }
 PUSH Nowplaying_PgUp{
-	Nowplaying_PgUp_fn();
+	Nowplaying_PgUp_fn(); 
+}                         
+PUSH Players_PgUp {
+	Players_PgUp_fn();
 }
 PUSH List_PgDn{
 	If (ListType[1] = 0){
@@ -1555,6 +1618,9 @@ PUSH List_PgDn{
 }
 PUSH Nowplaying_PgDn {
 	Nowplaying_PgDn_fn();
+}    
+PUSH Players_PgDn {
+	Players_PgDn_fn();
 }
 PUSH ListSelect{
 	INTEGER i;
@@ -1706,6 +1772,51 @@ PUSH NowplayingMoveDown {
 	i = GetLastModifiedArrayIndex ();
 	NowplayingMoveDown_fn(i);
 }
+PUSH Players_Refresh {
+	Players_Pgreset_fn();
+}
+PUSH PlayersSelect {
+	INTEGER i,j;
+	i = GetLastModifiedArrayIndex ();
+	If (i <= ListLengthPlayers){
+		i = i + FirstPlayers;
+		makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		PlayerID$ = PlayersID[i];
+		PlayerID_Active$ = PlayerID$;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = PlayerID$) {
+				PlayerName_Active$ = PlayersName[j];
+				Break;
+			}
+		}
+		StatusFind$ = PlayersID_raw[i] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[i] + " status ";
+		TimeFind$ = PlayersID_raw[i] + " time ";
+		delay(20);
+		makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$); 
+		socketsend(TCPClient, out$);
+	}
+}   
+PUSH PlayersSyncTog {
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	If (i <= ListLengthPlayers){
+		i = i + FirstPlayers;
+		If (PlayersID[i] <> PlayerID$ || PlayersSynced[i] = 1){
+			If (PlayersSynced[i] = 1){
+				makestring(out$,"%s sync - \n",PlayersID[i]);  
+				trace("sending: %s",out$);
+				Socketsend(TCPClient, out$);
+			}
+			Else {
+				makestring(out$,"%s sync %u \n",PlayerID$,PlayersIndex[i]);  
+				trace("sending: %s",out$);
+				Socketsend(TCPClient, out$);
+			}
+		}
+	}     
+}
 PUSH Play {
 	makestring(OUT$,"%s play\n", PlayerID$);
 	trace("sending: %s",OUT$);
@@ -1760,26 +1871,6 @@ PUSH Prev {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
-PUSH FFW {
-//	makestring(OUT$,"%s rate 4\n", PlayerID$);
-//	trace("sending: %s",OUT$);
-//	socketsend(TCPClient,OUT$);
-}
-RELEASE FFW {
-//	makestring(OUT$,"%s rate 1\n", PlayerID$);
-//	trace("sending: %s",OUT$);
-//	socketsend(TCPClient,OUT$);
-}
-PUSH REW {
-//	makestring(OUT$,"%s rate -4\n", PlayerID$);
-//	trace("sending: %s",OUT$);
-//	socketsend(TCPClient,OUT$);
-}
-RELEASE REW {
-//	makestring(OUT$,"%s rate 1\n", PlayerID$);
-//	trace("sending: %s",OUT$);
-//	socketsend(TCPClient,OUT$);
-}
 PUSH Pwr_On {
 	makestring(OUT$,"%s power 1\n", PlayerID$);
 	trace("sending: %s",OUT$);
@@ -1822,32 +1913,45 @@ PUSH Shuffle_Album {
 }
 CHANGE PlaylistPlay$ {
 	ActivePlaylist = "";
-
 	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient, OUT$);
-
-	makestring(OUT$,"%s playlist play %s\n",PlayerID$,PlaylistPlay$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+    
+    If (DirectIn_Fixed_Default = 1){
+		makestring(OUT$,"%s playlist play %s\n",PlayerID$_Startup,PlaylistPlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);    
+    }
+    Else {
+		makestring(OUT$,"%s playlist play %s\n",PlayerID$,PlaylistPlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 CHANGE PlaylistResume$ {
-	If ((ActivePlaylist != "") && (Playlist_Save_Enable = 1))
-	{
+	If ((ActivePlaylist != "") && (Playlist_Save_Enable = 1)) {
 		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
-
 	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient, OUT$);
 
-	makestring(OUT$,"%s playlist resume %s\n",PlayerID$, PlaylistResume$); // start the desired playlist where playing when last saved
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActivePlaylist = PlaylistResume$;
-	trace("active playlist: %s",ActivePlaylist);
+    If (DirectIn_Fixed_Default = 1){
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$_Startup, PlaylistResume$); // start the desired playlist where playing when last saved
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = PlaylistResume$;
+		trace("active playlist: %s",ActivePlaylist);	
+	}
+	Else {
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$, PlaylistResume$); // start the desired playlist where playing when last saved
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = PlaylistResume$;
+		trace("active playlist: %s",ActivePlaylist);	
+	}
 }
 /*
 PUSH PlaylistSave
@@ -1858,16 +1962,32 @@ PUSH PlaylistSave
 }
 */
 CHANGE FavoritePlay$ {
- 	ActivePlaylist = "";
- 	makestring(OUT$,"%s favorites playlist play item_id:%s \n", PlayerID$, FavoritePlay$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
+    If (DirectIn_Fixed_Default = 1){
+		ActivePlaylist = "";
+	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n",PlayerID$_Startup, FavoritePlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else {
+		ActivePlaylist = "";
+	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n", PlayerID$, FavoritePlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
 }
 CHANGE DynamicResume$ {
-	ActivePlaylist = "";
-	makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, DynamicResume$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
+    If (DirectIn_Fixed_Default = 1){
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$_Startup, DynamicResume$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else {
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, DynamicResume$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
 }
 PUSH BrowseCurrentSongGenre {
 // set artist restrictor to CurrentGenreID
@@ -2036,19 +2156,25 @@ CHANGE search_in$ {
 }
 SOCKETRECEIVE TCPClient {
 	Integer delimited, i, progLocal, j;
-	Integer LenInStatus$, LenInGenres$, LenInArtists$, LenInAlbums$, LenInTitles$, LenInPlaylists$, LenInNowplaying$, LenInDynamic$, LenInSearch$;
-	Integer LenInPandora$; 
-	Integer LenInFavorites$;
+	Integer LenInStatus$, LenInGenres$, LenInArtists$;
+	Integer LenInAlbums$, LenInTitles$, LenInPlaylists$;
+	Integer LenInNowplaying$, LenInDynamic$, LenInSearch$;
+	Integer LenInPandora$, LenInFavorites$, LenInPlayers$;
 	Integer indexStart, indexEnd, Length;
+	Integer indexStart2, indexEnd2, Length2;
 	Integer indexTest;
 	Integer Time_min, Time_sec, Time_rmd;	
-	Integer ListLengthGenres, ListLengthArtists, ListLengthAlbums, ListLengthTitles, ListLengthPlaylists, ListLengthNowplaying, ListLengthDynamic, ListLengthSearch;
-	Integer ListLengthPandora;   
-	Integer ListLengthFavorites;
+	Integer CurrentPlayerSlave_local, CurrentPlayerMaster_local;
+	Integer ListLengthGenres, ListLengthArtists, ListLengthAlbums;
+	Integer ListLengthTitles, ListLengthPlaylists, ListLengthNowplaying;
+	Integer ListLengthDynamic, ListLengthSearch;
+	Integer ListLengthPandora, ListLengthFavorites;
 	Integer searchTest;
-	String In$[16384], InGenres$[16384], InArtists$[16384], InAlbums$[16384], InTitles$[16384], InSearch$[16384]; 
-	String InPlaylists$[16384], InDynamic$[16384], InNowplaying$[16384], InCurrentsong$[4096], InStatus$[4096], InTime$[2048]; 
-	String InPandora$[16384];   
+	String In$[16384], InGenres$[16384], InArtists$[16384];
+	String InAlbums$[16384], InTitles$[16384], InSearch$[16384]; 
+	String InPlaylists$[16384], InDynamic$[16384], InNowplaying$[16384];
+	String InCurrentsong$[4096], InStatus$[4096], InTime$[2048]; 
+	String InPandora$[16384], InPlayers$[16384];   
 	String InFavorites$[16384];
 	String debugLocal[16384]; 
     string debug[16384];
@@ -2058,73 +2184,165 @@ SOCKETRECEIVE TCPClient {
 	clearbuffer (TCPClient.SocketRxBuf);
 //	debug = left (in$,255);  
 // //STATUS PARSING
-If (find("status - 1",In$,1) > 0) {
+If (find(StatusFind$,In$,1) > 0) {
 		trace("parsing status");
 	InStatus$ = In$;
 	In$ = "";
    	LenInStatus$ = Len(InStatus$);
-	indexStart = find(" mode%3A",InStatus$,26) + 8;
+	indexStart = find("mode%3A",InStatus$,26) + 7;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	Mode$ = mid(InStatus$,indexStart, Length);
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" remote%3A",InStatus$,1);
+	indexStart = find("remote%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
-		indexStart = indexStart + 10;
+		indexStart = indexStart + 9;
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentTrackRemote = AtoI(mid(InStatus$,indexStart,Length));
-		InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 	}
 	Else {CurrentTrackRemote = 0;}
-	indexStart = find(" time%3A",InStatus$,1) + 8;
+	indexStart = find("time%3A",InStatus$,indexEnd) + 7;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	CurrentTrackTime$ = mid(InStatus$,indexStart, Length);
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" rate%3A",InStatus$,1) + 8;
+	indexStart = find("rate%3A",InStatus$,indexEnd) + 7;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	CurrentTrackRate$ = mid(InStatus$,indexStart, Length);
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" duration%3A",InStatus$,1);
+	indexStart = find("duration%3A",InStatus$,indexEnd);
 	if (indexStart > 0)	{
-		indexStart = indexStart + 12;
+		indexStart = indexStart + 11;
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentTrackDuration$ = mid(InStatus$,indexStart, Length);
-		InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 	}
 	Else {CurrentTrackDuration$ = "<time unavailable>";}
-	indexStart = find(" playlist%20repeat%3A",InStatus$,1) + 21;
+	// start synced player status
+	CurrentPlayerMaster_local = 0;
+	CurrentPlayerSlave_local = 0;
+	indexStart = find(" sync_master%3A",InStatus$,indexEnd) + 15;  
+	if (indexStart > 15){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		SyncMaster = parsepercent(mid(InStatus$,indexStart,Length)); 
+		trace("SyncMaster=%s",SyncMaster);
+		If (SyncMaster = PlayerID$){
+			CurrentPlayerMaster_local = 1;
+		}
+		indexStart = find(" sync_slaves%3A",InStatus$,indexEnd) + 15;
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		SyncSlaves_in = parsepercent(mid(InStatus$,indexStart,Length));
+		indexEnd2 = 1;
+		indexStart2 = 1;
+		SetArray(SyncSlaves,""); //clear the SyncSlaves array 
+		// SyncSlaves array: may include the current player
+		If (find(",",SyncSlaves_in)){
+			For (j = 1 to GetNumArrayRows(SyncSlaves)){
+				indexEnd2 = find(",",SyncSlaves_in,indexStart2 + 1);
+				If (indexEnd2 = 0){ // last iteration
+					trace("last iteration");
+					indexEnd2 = len(SyncSlaves_in) + 1;
+					Length2 = indexEnd2 - indexStart2;
+					SyncSlaves[j] = mid(SyncSlaves_in,indexStart2,Length2);
+					If (SyncSlaves[j] = PlayerID$){
+						CurrentPlayerSlave_local = 1;
+					}
+					trace("SyncSlaves[%u]=%s",j,SyncSlaves[j]);
+					Break;
+				}
+				Length2 = indexEnd2 - indexStart2;
+				SyncSlaves[j] = mid(SyncSlaves_in,indexStart2,Length2);
+				If (SyncSlaves[j] = PlayerID$){
+					CurrentPlayerSlave_local = 1;
+				}
+				trace("SyncSlaves[%u]=%s",j,SyncSlaves[j]);
+				indexStart2 = indexEnd2 + 1;
+			}
+		}
+		Else {
+			SyncSlaves[1] = SyncSlaves_in;
+			If (SyncSlaves[1] = PlayerID$){
+				CurrentPlayerSlave_local = 1;
+			}
+		}
+		// update the PlayersSynced array		
+//		If (SyncMaster = PlayerID$){ // was here to only update if current player master
+			trace("updating PlayersSync array");
+			For (i = 1 to GetNumArrayRows(PlayersID)){ // loop through known players
+				If (len(PlayersID[i]) > 0){ // if there is a player at this iteration
+					For (j = 1 to GetNumArrayRows(SyncSlaves)){ // loop through known slaves
+						If (PlayersID[i] = SyncSlaves[j]){ // if player is one of the slaves
+							PlayersSynced[i] = 1; // set PlayersSynced high
+							trace("PlayersID[%u]=SyncSlaves[%u]",i,j);
+							Break; // move to next player
+						}
+						Else {
+							PlayersSynced[i] = 0; // if not a slave, set PlayersSynced low
+						} 
+					}
+				}
+			} 
+//		} // end of If condition for SyncMaster = PlayerID$
+//		Else {
+//			SetArray(PlayersSynced,0);
+//		}
+	}
+	Else {
+		SetArray(PlayersSynced,0);
+		PlayerName_Master$ = "";
+	}
+	// update the CurrentPlayerMaster output
+	If (CurrentPlayerMaster_local = 1){
+		CurrentPlayerMaster = 1;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = SyncMaster) {
+				PlayerName_Master$ = PlayersName[j];
+				Break;
+			}
+		}
+	}
+	Else {
+		CurrentPlayerMaster = 0;
+	} 
+	// update the CurrentPlayerSlave output
+	If (CurrentPlayerSlave_local = 1){
+		CurrentPlayerSlave = 1;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = SyncMaster) {
+				PlayerName_Master$ = PlayersName[j];
+				Break;
+			}
+		}
+	}
+	Else {
+		CurrentPlayerSlave = 0;
+	} 
+//
+	indexStart = find("playlist%20repeat%3A",InStatus$,indexEnd) + 20;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	Repeat = AtoI(mid(InStatus$,indexStart, Length));
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" playlist%20shuffle%3A",InStatus$,1) + 22;
+	indexStart = find("playlist%20shuffle%3A",InStatus$,indexEnd) + 21;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	Shuffle = AtoI(mid(InStatus$,indexStart, Length));
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" playlist_cur_index%3A",InStatus$,1) + 22;
+	indexStart = find("playlist_cur_index%3A",InStatus$,indexEnd) + 21;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	CurrentSongIndex = AtoI(mid(InStatus$,indexStart, Length)); // use this to determine the individual outputs of NowplayingCurrentSong 
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd)); 
-	indexStart = find(" id%3A",InStatus$,1) + 6;
+	indexStart = find(" id%3A",InStatus$,indexEnd) + 6;
 	indexEnd = find( " ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	CurrentTrackID = AtoI(mid(InStatus$,indexStart, Length));
 	trace("current trackID = %u",CurrentTrackID);
 //	http://192.168.1.75:9000/music/154/cover.jpg
 	makestring(CurrentsongCoverURL,"http://%s:9000/music/%u/cover.jpg",SqueezeCenterIPAddr$,CurrentTrackID);
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" title%3A",InStatus$,1) + 9;
+	indexStart = find(" title%3A",InStatus$,indexEnd) + 9;
 	indexEnd = find(" ",InStatus$,indexStart);
 	Length = indexEnd - indexStart;
 	CurrentTrackTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
-	InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
-	indexStart = find(" genre_id%3A",InStatus$,1);
+	indexStart = find(" genre_id%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 12;
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -2132,30 +2350,27 @@ If (find("status - 1",In$,1) > 0) {
 			Length = indexEnd - indexStart;
 			CurrentGenreID = AtoI(mid(InStatus$,indexStart,Length));
 			trace("current genreID = %u",CurrentGenreID);
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			CurrentGenreID = 0;			
 		}
     }
 	Else {CurrentGenreID = 0;}
-	indexStart = find(" genre%3A",InStatus$,1);
+	indexStart = find(" genre%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 9;
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackGenre$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart;
 			CurrentTrackGenre$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));			
 		}
     }
 	Else {CurrentTrackGenre$ = "<genre unavailable>";}
-	indexStart = find(" artist_id%3A",InStatus$,1);
+	indexStart = find(" artist_id%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 13;
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -2163,30 +2378,27 @@ If (find("status - 1",In$,1) > 0) {
 			Length = indexEnd - indexStart;
 			CurrentArtistID = AtoI(mid(InStatus$,indexStart,Length));
 			trace("current ArtistID = %u",CurrentArtistID);
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			CurrentArtistID = 0;			
 		}
     }
 	Else {CurrentArtistID = 0;}
-	indexStart = find(" artist%3A",InStatus$,1);
+	indexStart = find(" artist%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 10;
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackArtist$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart;
 			CurrentTrackArtist$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));			
 		}
 	}
 	Else {CurrentTrackArtist$ = "<artist unavailable>";}
-	indexStart = find(" album_id%3A",InStatus$,1);
+	indexStart = find(" album_id%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 12;
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -2194,42 +2406,37 @@ If (find("status - 1",In$,1) > 0) {
 			Length = indexEnd - indexStart;
 			CurrentAlbumID = AtoI(mid(InStatus$,indexStart,Length));
 			trace("current AlbumID = %u",CurrentAlbumID);
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			CurrentAlbumID = 0;			
 		}
     }
 	Else {CurrentAlbumID = 0;}
-	indexStart = find(" album%3A",InStatus$,1);
+	indexStart = find(" album%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 9;
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackAlbum$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart;
 			CurrentTrackAlbum$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));			
 		}
 	}
 	Else {CurrentTrackAlbum$ = "<album unavailable>";}
-	indexStart = find(" url%3A",InStatus$,1);
+	indexStart = find(" url%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 7;
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart;
 			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));			
 		}
 		If (find("pandora",CurrentTrackURL$) > 0) {
 			CurrentTrackIsPandora = 1;
@@ -2240,7 +2447,7 @@ If (find("status - 1",In$,1) > 0) {
 			CurrentTrackIsPandora = 0;
 		}
 	}
-	indexStart = find(" artwork_url%3A",InStatus$,1);
+	indexStart = find(" artwork_url%3A",InStatus$,indexEnd);
 	if (indexStart > 0) {
 		indexStart = indexStart + 15;
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -2248,13 +2455,11 @@ If (find("status - 1",In$,1) > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 			CurrentsongCoverURL = CurrentTrackRemoteCover$;
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart;
 			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 			CurrentsongCoverURL = CurrentTrackRemoteCover$;
-			InStatus$ = mid(InStatus$,indexEnd,(LenInStatus$ - indexEnd));			
 		}
 	}
 	Else {indexStart = 1;}
@@ -2355,7 +2560,7 @@ If (find("status - 1",In$,1) > 0) {
 	}
 } 
 // ///NOWPLAYING PARSING
-Else If (find("status ",In$,1) > 0) {
+Else If (Find(NowplayingFind$,In$,1) > 0) {
 	trace("parsing nowplaying");
 	InNowplaying$ = In$;
 	In$ = "";
@@ -2458,7 +2663,7 @@ Else If (find("status ",In$,1) > 0) {
 //				List$[i] = NowplayingArtist[i];
 		indexStart = indexEnd + 9;
 		If (find(" ",InNowplaying$, indexStart) = 0) {
-			indexEnd = Len(InNowplaying$);
+			indexEnd = Len(InNowplaying$) - 1;
 		}
 		Else {
 			indexEnd = find(" ",InNowplaying$, indexStart);
@@ -3130,10 +3335,16 @@ Else If (find("playlists ",In$,1) > 0) {
 	InPlaylists$ = In$;
 	In$ = "";
 	LenInPlaylists$ = Len(InPlaylists$);
-	indexEnd = find(" ",InPlaylists$,10);
-	Length = indexEnd - 9;
-	PlaylistFirstNumber = AtoI(mid(InPlaylists$,9,Length));
-	indexStart = find("count%3A",InPlaylists$,1) + 8;
+
+	debug = Left(InPlayers$,255);
+	trace("%s",debug);
+
+	indexEnd = find(" ",InPlaylists$,12);
+	Length = indexEnd - 11;
+	PlaylistFirstNumber = AtoI(mid(InPlaylists$,11,Length));
+	trace("PlaylistFirstNumber = %u",PlaylistFirstNumber);
+
+	indexStart = find("count%3A",InPlaylists$,indexEnd) + 8;
 	indexEnd = find(" ",InPlaylists$, indexStart);
 	Length = indexEnd - indexStart;
 	TotalPlaylists = AtoI(mid(InPlaylists$,indexStart,Length));
@@ -3172,7 +3383,80 @@ Else If (find("playlists ",In$,1) > 0) {
 			}
 		}
 	}
-} // end of playlist parsing
+} // end of playlist parsing   
+Else If (find("players ",In$,1)) {
+	trace("parsing players");
+	InPlayers$ = In$;
+	In$ = "";
+	LenInPlayers$ = Len(InPlayers$);
+
+	indexEnd = find(" ",InPlayers$,10);
+	Length = indexEnd - 9;
+	PlayersFirstNumber = AtoI(mid(InPlayers$,9,Length));
+	trace("PlayersFirstNumber = %u",PlayersFirstNumber);
+	
+	indexStart = find("count%3A",InPlayers$,indexEnd) + 8;
+	indexEnd = find(" ",InPlayers$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalPlayers = AtoI(mid(InPlayers$,indexStart,Length));
+	trace("TotalPlayers = %u",TotalPlayers);
+	
+	
+	OutPlayersCount = TotalPlayers;
+	OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber );
+	If (ListType[1] = 11) {
+		OutListBar = OutPlayersBar;
+		OutListCount = OutPlayersCount;
+    }
+	If (TotalPlayers - PlayersFirstNumber >= NumberOfPlayers){
+		ListLengthPlayers = NumberOfPlayers;
+	}
+	else {
+		ListLengthPlayers = TotalPlayers - PlayersFirstNumber;
+		SetArray(PlayersName,"");
+		SetArray(PlayersID,0);
+		SetArray(PlayersIndex,0);
+		If (ListType[1] = 11){
+			SetArray(List$," ");
+		}
+	}
+	indexEnd = 1;
+	For (i = 1 to ListLengthPlayers) {
+    	If (find(" playerindex%3A",InPlayers$,indexEnd)){ 
+			indexStart = find(" playerindex%3A",InPlayers$,indexEnd) + 15;
+			indexEnd = find(" ",Inplayers$,indexStart);
+			PlayersIndex[i] = AtoI(mid(InPlayers$,indexStart,Length));
+			trace("PlayersIndex[%u] = %u",i,PlayersIndex[i]);
+			
+			indexStart = find(" playerid%3A",InPlayers$,indexEnd) + 12;
+			indexEnd = find(" ",InPlayers$,indexStart);
+			Length = indexEnd - indexStart;
+			PlayersID_raw[i] = mid(InPlayers$,indexStart,Length);
+			PlayersID[i] = parsepercent(PlayersID_raw[i]);
+			trace("PlayersID[%u] = %s",i,PlayersID[i]);
+			
+			indexStart = find(" name%3A",InPlayers$,indexEnd) + 8;
+			indexEnd = find(" ",InPlayers$, indexStart);
+			Length = indexEnd - indexStart;
+			PlayersName[i] = parsepercent(mid(InPlayers$,indexStart,Length));
+			trace("PlayersName[%u] = %s",i,PlayersName[i]);
+
+			Players$[i] = PlayersName[i];
+			PlayersID$[i] = PlayersID[i];
+			
+			If (ListType[1] = 11){
+				List$[i] = PlayersName[i];
+			}
+		}
+	}
+	For (j = 1 to GetNumArrayRows(PlayersID)){
+		If (PlayersID[j] = PlayerID$) {
+			PlayerName_Active$ = PlayersName[j];
+			Break;
+		}
+	}
+	PlayerID_Active$ = PlayerID$;
+} // end players parsing
 } // end of SocketReceive parsing
 /*
 CHANGE TCPIP_Tx$ {
@@ -3184,6 +3468,14 @@ CHANGE TCPIP_Tx$ {
 */
 // /////////// Initialization script
 Function Main() {
+	PlayerID$ = PlayerID$_Startup;
+	PlayerID_Active$ = PlayerID$;
+	PlayersID_raw[0] = FormatPlayerID(PlayerID$);
+
+	StatusFind$ = PlayersID_raw[0] + " status - 1";
+	NowplayingFind$ = PlayersID_raw[0] + " status ";
+	TimeFind$ = PlayersID_raw[0] + " time ";
+
     NumberOfHome = NumberOfList;
     NumberOfGenres = NumberOfList;
 	NumberOfArtists = NumberOfList;
@@ -3193,7 +3485,7 @@ Function Main() {
 	NumberOfDynamic = NumberOfList;
 	NumberOfSearch = NumberOfList;
 	NumberOfPandora = NumberOfList;        
-	NumberOfFavorites = NumberOfList;
+	NumberOfFavorites = NumberOfList;    
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
@@ -3202,14 +3494,17 @@ Function Main() {
 	FirstNowplaying = 0;
 	FirstDynamic = 0;
 	FirstPandora = 0;   
-	FirstFavorites = 0;
-	progGenres = 0;
+	FirstFavorites = 0; 
+	FirstPlayers = 0;
+	
+/*	progGenres = 0;
 	progArtists = 0;
 	progAlbums = 0;
 	progTitles = 0;
 	progPlaylists = 0;
 	progNowplaying = 0;
 	progDynamic = 0;
+*/
 	ActivePlaylist = "";
 	restrictorGenres = "";
 	restrictorArtists = "";
@@ -3221,7 +3516,6 @@ Function Main() {
 	SetArray(ListType,0);
 	SetArray(ListName,"Home");
 	SetArray(ListRestrictor,"");
-//	PlayerIDOut = FormatPlayerID(PlayerID$);
 	Nowplaying_refresh_enable = 1;
 	SetArray(ListHome,"");	
 	ListHome[1] = "Favorites";
