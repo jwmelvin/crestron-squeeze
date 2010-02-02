@@ -305,6 +305,8 @@ Function ListShiftBk_fn(){
 	Else If (ListType[1] = 12) {
 		FirstRadios = ListFirst[1];
 	}
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }       
 Function HomeRefresh_fn(){
 	integer i;
@@ -450,6 +452,8 @@ Function ListRefresh_fn(){
 	Else If (ListType[1] = 12){
 		RadiosRefresh_fn();
 	}
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 Function Home_PgReset_fn(){
 	Integer i;
@@ -567,10 +571,14 @@ Function Nowplaying_PgReset_fn(){
 	FirstNowplaying = 0;
     Nowplaying_refresh_enable = 1;
 	NowplayingRefresh_fn();
+	// ListType[1] = 7 reserved for Nowplaying
+	// not yet a possible List type
 }
 Function Players_PgReset_fn(){
 	FirstPlayers = 0;
 	PlayersRefresh_fn();
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 Function Home_PgUp_fn(){
  	If (FirstHome = 0 && (NumberOfHome <= TotalHome)){
@@ -1489,7 +1497,7 @@ Function Search_playlists_fn(){
 }
 String_Function ParsePercent(STRING Parse$){
 	Integer i, length, char;
-	String output$[256], char$[1], chunk$[6], dump[3];
+	String output$[512], char$[1], chunk$[6], dump[3];
 	i = 1;
 	output$ = "";
 	While(i <= len (parse$)) {
@@ -1667,6 +1675,8 @@ CHANGE InPageList{
 		ListFirst[1] = FirstRadios;
 		RadiosRefresh_fn();
 	}
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 CHANGE InPageNowplaying{
 	FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
@@ -1713,6 +1723,8 @@ PUSH List_PgUp{
     Else If (ListType[1] = 12){
 		Radios_PgUp_fn(); //Radios results code
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH Nowplaying_PgUp{
 	Nowplaying_PgUp_fn(); 
@@ -1757,6 +1769,8 @@ PUSH List_PgDn{
     Else If (ListType[1] = 12){
 		Radios_PgDn_fn(); 
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH Nowplaying_PgDn {
 	Nowplaying_PgDn_fn();
@@ -1806,6 +1820,8 @@ PUSH ListSelect{
     Else If (ListType[1] = 12){
 		RadiosListSelect_fn(i); 
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH ListPlay{
 	INTEGER i;
@@ -1837,6 +1853,8 @@ PUSH ListPlay{
     Else If (ListType[1] = 10){
 		FavoritesListPlay_fn(i); //Favorites results code
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH ListAdd{
 	INTEGER i;
@@ -1868,6 +1886,8 @@ PUSH ListAdd{
     Else If (ListType[1] = 10){
 		FavoritesListAdd_fn(i); //Favorites results code
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH ListInsert{
 	INTEGER i;
@@ -1899,6 +1919,8 @@ PUSH ListInsert{
     Else If (ListType[1] = 10){
 		FavoritesListInsert_fn(i); //Favorites results code
     }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
 }
 PUSH NowplayingPlay {
 	INTEGER i;
@@ -2198,8 +2220,10 @@ PUSH search_clear {
 	clearbuffer (search_in$);
 	search_in = "";
 	search_in_fb = " ";
-//	makestring(ListName[1],"\"%s\" anywhere",search_in);
-//	makestring(search_in_fb,"%s",search_in);
+	If (ListType[1] = 0){
+		ListName[1] = "\"\" anywhere";
+		ListName$ = ListName[1];
+	}
 	If (ListType[1] = 1){
 		makestring(ListName[1], "\"%s\" in Genres",search_in); //Genres code
 		ListName$ = ListName[1];
@@ -2299,8 +2323,9 @@ CHANGE search_in$ {
 		search_playlists_fn(); //DynamicPlaylists search code
 	}
 	Else If (ListType[1] = 0 || ListType[1] = 8){
-		search_fn(); //General Search function //yyy
+		search_fn(); //General Search function
 	}
+	// xxx add ListType[1] = 10 for special favorites search function
 }
 SOCKETRECEIVE TCPClient {
 	Integer delimited, i, progLocal, j;
@@ -3705,7 +3730,9 @@ Else If (find("players ",Find$)) {
 	
 	OutPlayersCount = TotalPlayers;
 	OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber );
-	If (ListType[1] = 11) {
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+	If (ListType[1] = 13) {
 		OutListBar = OutPlayersBar;
 		OutListCount = OutPlayersCount;
     }
@@ -3717,7 +3744,9 @@ Else If (find("players ",Find$)) {
 		SetArray(PlayersName,"");
 		SetArray(PlayersID,0);
 		SetArray(PlayersIndex,0);
-		If (ListType[1] = 11){
+		// ListType[1] = 13 reserved for Players
+		// not yet a possible List type
+		If (ListType[1] = 13){
 			SetArray(List$," ");
 		}
 	}
@@ -3745,7 +3774,9 @@ Else If (find("players ",Find$)) {
 			Players$[i] = PlayersName[i];
 			PlayersID$[i] = PlayersID[i];
 			
-			If (ListType[1] = 11){
+			// ListType[1] = 13 reserved for Players
+			// not yet a possible List type
+			If (ListType[1] = 13){
 				List$[i] = PlayersName[i];
 			}
 		}
