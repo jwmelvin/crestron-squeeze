@@ -63,19 +63,20 @@ DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
 // DIGITAL_INPUT PlaylistSave;
 //
 // Jump inputs
-DIGITAL_INPUT Jump_Home;//display the home list
-DIGITAL_INPUT Jump_Genres;//, Genres_PgUp, Genres_PgDn;
-DIGITAL_INPUT Jump_Artists;//, Artists_PgUp, Artists_PgDn;
-DIGITAL_INPUT Jump_Albums;//, Albums_PgUp, Albums_PgDn;
-DIGITAL_INPUT Jump_Tracks;//, Titles_PgUp, Titles_PgDn;
-DIGITAL_INPUT Jump_Playlists;//, Playlists_PgUp, Playlists_PgDn;
-DIGITAL_INPUT Jump_Dynamic;//, Dynamic_PgUp, Dynamic_PgDn;
+DIGITAL_INPUT Jump_Home;
+DIGITAL_INPUT Jump_Genres;
+DIGITAL_INPUT Jump_Artists;
+DIGITAL_INPUT Jump_Albums;
+DIGITAL_INPUT Jump_Tracks;
+DIGITAL_INPUT Jump_Playlists;
+DIGITAL_INPUT Jump_Dynamic;
 DIGITAL_INPUT Jump_Pandora;
 DIGITAL_INPUT Jump_Favorites;
 // Direct Browse inputs
 DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAlbum;
 // Direct string inputs
-STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16], DynamicResume$[256];
+STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16];
+STRING_INPUT  DynamicResume$[256];
 // Pandora inputs
 DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
 // Search inputs
@@ -84,7 +85,7 @@ DIGITAL_INPUT search_backspace;
 BUFFER_INPUT  search_in$[64];
 // List scroll inputs
 DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
-DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn; //
+DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn;
 DIGITAL_INPUT Players_Refresh, Players_PgUp, Players_PgDn;
 // Analog scroll inputs
 ANALOG_INPUT  InPageList;
@@ -117,7 +118,6 @@ DIGITAL_OUTPUT shuffle_album_fb;
 DIGITAL_OUTPUT CurrentsongIsRemote;
 DIGITAL_OUTPUT CurrentsongIsPandora;
 STRING_OUTPUT  CurrentsongTitle;
-STRING_OUTPUT  CurrentsongTitleFormatted;
 STRING_OUTPUT  CurrentsongAlbum;
 STRING_OUTPUT  CurrentsongArtist;
 STRING_OUTPUT  CurrentsongGenre;
@@ -961,16 +961,14 @@ Function ArtistListSelect_fn(integer i){
 	ListFirst[1] = 0;
 	ActiveArtistID = ArtistID[i];
 	ActiveArtist = Artist[i];
-/*	If (restrictorArtists != ""){
-		makestring(ListName[1],"%s: Albums for %s",ActiveGenre,ActiveArtist);
-	}
+	If (ActiveArtist = "Various Artists"){
+		ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
+		makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists, ArtistID[i]);
+	}	
 	Else {
-		makestring(ListName[1], "Albums for %s",ActiveArtist);
+		ListName[1] = "Albums for " + ActiveArtist;	
+		makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
 	}
-	makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists,ArtistID[i]);
-*/
-	makestring(ListName[1], "Albums for %s",ActiveArtist);			
-	makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
 	ListRestrictor[1] = restrictorAlbums;
 	FirstAlbum = 0;
 	AlbumsRefresh_fn();
