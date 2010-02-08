@@ -32,7 +32,7 @@ Comments:
 // #ANALOG_SERIAL_EXPAND 
 // #HELP_PDF_FILE ""
 // #DEFAULT_NONVOLATILE
-#OUTPUT_SHIFT 6
+#OUTPUT_SHIFT 3
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -48,11 +48,12 @@ Comments:
 // #CRESTRON_LIBRARY ""
 // #USER_LIBRARY ""
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT Playlist_Save_Enable;
 DIGITAL_INPUT DirectIn_Fixed_Default;
+DIGITAL_INPUT NowplayingSeparate_Enable;
 //
 DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
@@ -80,9 +81,12 @@ STRING_INPUT  DynamicResume$[256];
 // Pandora inputs
 DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
 // Search inputs
-DIGITAL_INPUT search_clear;
-DIGITAL_INPUT search_backspace;
-BUFFER_INPUT  search_in$[64];
+DIGITAL_INPUT	Search_Submit;
+STRING_INPUT	Search_in$[64];
+DIGITAL_OUTPUT	Search_KeyboardPopup;
+DIGITAL_OUTPUT	Search_RequiresSubmit;
+// coverflow 
+DIGITAL_INPUT Coverflow_Enable;
 // List scroll inputs
 DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
 DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn;
@@ -92,10 +96,12 @@ ANALOG_INPUT  InPageList;
 ANALOG_INPUT  InPageNowplaying;
 ANALOG_INPUT  NowplayingShowPrev;
 ANALOG_INPUT  InPagePlayers;
+ANALOG_INPUT  NowplayingWidthTitle, NowplayingWidthArtist;
+ANALOG_INPUT  CoverflowWidthArtist, CoverflowWidthAlbum;
+ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
 // Scroll Feedback
 ANALOG_OUTPUT  OutListCount, OutListBar;
 ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar;
-STRING_OUTPUT  search_in_fb;
 STRING_OUTPUT  ListName$;
 // Player feedback
 STRING_OUTPUT  CurrentPlayerName;
@@ -132,6 +138,7 @@ DIGITAL_INPUT  NowplayingRemove[10];
 DIGITAL_INPUT  NowplayingMoveUp[10];
 DIGITAL_INPUT  NowPlayingMoveDown[10];
 DIGITAL_OUTPUT NowplayingPageFlip;
+STRING_OUTPUT  Nowplaying[10];
 STRING_OUTPUT  NowplayingTitle$[10];
 STRING_OUTPUT  NowplayingArtist$[10];
 STRING_OUTPUT  NowplayingAlbum$[10];
@@ -142,6 +149,8 @@ DIGITAL_INPUT  ListPlay[10];
 DIGITAL_INPUT  ListAdd[10];
 DIGITAL_INPUT  ListInsert[10];
 STRING_OUTPUT  List$[10];
+STRING_OUTPUT  ListCoverURL[10];
+STRING_OUTPUT  ListCoverflowArtist[10];
 // Players i/o
 DIGITAL_INPUT  PlayersSelect[10];
 DIGITAL_INPUT  PlayersSyncTog[10,10];
@@ -150,10 +159,8 @@ STRING_OUTPUT  PlayersID$[10,10];
 DIGITAL_OUTPUT PlayersSynced[10,10];
 //
 ///////////////////////////// Parameters
-STRING_PARAMETER PlayerID$_Startup[17], SqueezeCenterIPAddr$[16];   //for PlayerID please use the MAC address as found on SB Server player information page.
+STRING_PARAMETER PlayerID$_Startup[17], SqueezeCenterIPAddr$[16];   // for PlayerID please use the MAC address as found on SB Server player information page.
 INTEGER_PARAMETER SqueezeCenterPort;
-INTEGER_PARAMETER NumberOfList, NumberOfNowplaying, NumberOfPlayers;
-// NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles, NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
 // //////////////// Global Variables
@@ -172,18 +179,16 @@ INTEGER FirstApps, TotalApps, AppsFirstNumber;
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
 INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 //
+INTEGER NumberOfAlbums;
+//
 // INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
 INTEGER CurrentPlaylistID, CurrentPlaylistModified;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
 //
-INTEGER NumberOfHome, NumberOfGenres, NumberOfArtists, NumberOfAlbums, NumberOfTitles;
-INTEGER NumberOfPlaylists, NumberOfDynamic, NumberOfSearch;
-INTEGER NumberOfPandora, NumberOfFavorites, NumberOfApps, NumberOfRadios;
-//
-INTEGER	nextChar;
-STRING	search_in[64];
+// INTEGER	nextChar;
+ STRING	search_in[64];
 //
 INTEGER OutHomeCount, OutHomeBar;
 INTEGER OutGenreCount, OutGenresBar;
@@ -202,7 +207,7 @@ INTEGER OutPlayersCount, OutPlayersBar;
 //
 INTEGER Nowplaying_refresh_enable, ListLengthNowplaying_old;
 //
-INTEGER ListType[5], ListFirst[5];
+INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10], NowplayingID[10];
@@ -215,19 +220,21 @@ STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], Curre
 STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
 STRING CurrentPlaylistName[256];
 STRING CurrentTrackTitle$[256], CurrentTrackGenre$[256], CurrentTrackArtist$[256], CurrentTrackAlbum$[256];
-STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[2048];
+STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[2048], BlankCoverURL[64];
 //
 STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256];
 STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
 STRING restrictorPandora[256];
-STRING restrictorFavorites[256];
-STRING ListName[5][256], ListRestrictor[5][256], ListHome[10][16];
+STRING restrictorFavorites[256], ActiveFAR_ID[64];
+STRING ListName[5][256], ListRestrictor[5][256], ListActiveGenre[5][256];
+STRING ListHome[10][16];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 STRING ActivePandoraName[256], ActivePandoraID[256], PandoraTitle[256];
 STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
 //
 STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist[10][256],PlaylistRaw[10][256], DynamicName[10][256], DynamicFile[10][256], Search[10][256];
 STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
+STRING  Nowplaying_int[10][512];
 STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
 STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
 STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];  
@@ -244,7 +251,9 @@ Function ListShiftFwd_fn(){
 		ListName[5-i] = ListName[4-i];
 		ListRestrictor[5-i] = ListRestrictor[4-i];
 		ListFirst[5-i] = ListFirst[4-i];
-//		trace("History %u = Type: %u, Name: %s, Restr: %s, 1st: %u",5-i,ListType[4-i],ListName[4-i],ListRestrictor[4-i],ListFirst[4-i]);
+		ListSearchRS[5-i] = ListSearchRS[4-i];
+		ListActiveGenre[5-i] = ListActiveGenre[4-i];
+		trace("listShiftFwd_fn");
 	}
 }
 Function ListShiftBk_fn(){
@@ -254,14 +263,23 @@ Function ListShiftBk_fn(){
 		ListName[i] = ListName[i+1];
 		ListRestrictor[i] = ListRestrictor[i+1];
 		ListFirst[i] = ListFirst[i+1];
+		ListSearchRS[i] = ListSearchRS[i+1];
+		ListActiveGenre[i] = ListActiveGenre[i+1];
 //		trace("History %u = Type: %u, Name: %s, Restr: %s, 1st: %u",i,ListType[i],ListName[i],ListRestrictor[i],ListFirst[i]);
 	}
 	ListType[5] = 0;
 	ListName[5] = "Home";
 	ListRestrictor[5] = "";
 	ListFirst[5] = 0;
+	ListSearchRS[5] = 0;
+	ListActiveGenre[5] = "";
 	ListName$ = ListName[1];
-
+	If (ListSearchRS[1] = 1){
+		Search_RequiresSubmit = 1;
+	}
+	Else {
+		Search_RequiresSubmit = 0;
+	}
 	If (ListType[1] = 0){
 		FirstHome = ListFirst[1];
 	}
@@ -271,6 +289,7 @@ Function ListShiftBk_fn(){
 	}
 	Else If (ListType[1] = 2){
 		FirstArtist = ListFirst[1];
+		ActiveGenre = ListActiveGenre[1];
 		restrictorArtists = ListRestrictor[1];
 	}
 	Else If (ListType[1] = 3){
@@ -335,70 +354,77 @@ Function HomeRefresh_fn(){
 }
 Function GenresRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfGenres, restrictorGenres);
+	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 1;
 }
 Function ArtistsRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfArtists, restrictorArtists);
+	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 2;
 }
 Function AlbumsRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	If (Coverflow_Enable = 0){
+		makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	Else {
+		makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 //	ListType = 3;
 }
 Function TitlesRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfTitles, restrictorTitles);
+	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfList, restrictorTitles);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 4;
 }
 Function PlaylistsRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfPlaylists, restrictorPlaylists);
+	makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 5;
 }
 Function DynamicRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfDynamic);
+	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 6
 }
 Function SearchRefresh_fn(){
 	ListName$ = ListName[1];
-	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfSearch, search_in);
+	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfList, search_in);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 //	ListType = 8
 } 
 Function PandoraRefresh_fn(){
-	makestring(OUT$,"pandora items %u %u %s charset:ascii \n",FirstPandora,NumberOfPandora, restrictorPandora);
+	makestring(OUT$,"pandora items %u %u %s charset:ascii \n",FirstPandora,NumberOfList, restrictorPandora);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }   
 Function FavoritesRefresh_fn(){
-	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_name, FirstFavorites, NumberOfFavorites, restrictorFavorites);
+	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_name, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function AppsRefresh_fn(){
-	makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfApps);
+	makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function RadiosRefresh_fn(){
-	makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfRadios);
+	makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -464,6 +490,10 @@ Function Home_PgReset_fn(){
 	FirstHome = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 0;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "Home";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -474,6 +504,10 @@ Function Genres_PgReset_fn(){
 	restrictorGenres = "";
     ListShiftFwd_fn();
 	ListType[1] = 1;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All Genres";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -484,6 +518,10 @@ Function Artists_PgReset_fn(){
 	restrictorArtists = "";
     ListShiftFwd_fn();
 	ListType[1] = 2;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All Artists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -494,6 +532,10 @@ Function Albums_PgReset_fn(){
 	restrictorAlbums = "";
     ListShiftFwd_fn();
 	ListType[1] = 3;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All Albums";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -504,6 +546,10 @@ Function Titles_PgReset_fn(){
 	restrictorTitles = "tags:te";
     ListShiftFwd_fn();
 	ListType[1] = 4;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All Titles";
 	ListRestrictor[1] = "tags:te";
 	ListFirst[1] = 0;
@@ -514,6 +560,10 @@ Function Playlists_PgReset_fn(){
 	restrictorPlaylists = "";
     ListShiftFwd_fn();
 	ListType[1] = 5;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All Playlists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -523,29 +573,61 @@ Function Dynamic_PgReset_fn(){
 	FirstDynamic = 0;
     ListShiftFwd_fn();
 	ListType[1] = 6;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "All DynamicPlaylists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
 	DynamicRefresh_fn();
 }
+/*
 Function Pandora_PgReset_fn() {
 	FirstPandora = 0;
     restrictorPandora = "";
     ListShiftFwd_fn();
 	ListType[1] = 9;
+	ListSearchRS[1] = 1;
+	Search_RequiresSubmit = 1;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "Pandora";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
 	PandoraRefresh_fn();
 	
 } 
+*/
+Function Pandora_PgReset_fn() {
+	FAR_name = "pandora";
+	FAR_parse = FAR_name + " items ";
+	FirstFavorites = 0;
+	restrictorFavorites = "";
+	ActiveFAR_ID = "";
+    ListShiftFwd_fn();
+	ListType[1] = 10;
+	ListSearchRS[1] = 1;
+	Search_RequiresSubmit = 1;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
+	ListName[1] = "Pandora";
+	ListRestrictor[1] = "";
+	ListFirst[1] = 0;
+	FavoritesRefresh_fn();
+}
 Function Favorites_PgReset_fn() {
 	FAR_name = "favorites";
 	FAR_parse = FAR_name + " items ";
 	FirstFavorites = 0;
 	restrictorFavorites = "";
+	ActiveFAR_ID = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "Favorites";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -555,6 +637,10 @@ Function Apps_PgReset_fn() {
 	FirstApps = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 11;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "Apps";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -565,6 +651,10 @@ Function Radios_PgReset_fn() {
 	FirstRadios = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 12;
+	ListSearchRS[1] = 1;
+	Search_RequiresSubmit = 1;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
 	ListName[1] = "Radios";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -585,40 +675,40 @@ Function Players_PgReset_fn(){
 	// not yet a possible List type
 }
 Function Home_PgUp_fn(){
- 	If (FirstHome = 0 && (NumberOfHome <= TotalHome)){
- 		FirstHome = TotalHome - NumberOfHome;
+ 	If (FirstHome = 0 && (NumberOfList <= TotalHome)){
+ 		FirstHome = TotalHome - NumberOfList;
  	}
- 	Else If (FirstHome < NumberOfHome){
+ 	Else If (FirstHome < NumberOfList){
  		FirstHome = 0;
  	}
  	Else {
- 		FirstHome = FirstHome - NumberOfHome;
+ 		FirstHome = FirstHome - NumberOfList;
  	}
  	ListFirst[1] = FirstHome;
  	HomeRefresh_fn();
 }                     
 Function Genres_PgUp_fn(){
-	If (FirstGenre = 0 && (NumberOfGenres <= TotalGenres)){
-		FirstGenre = TotalGenres - NumberOfGenres;
+	If (FirstGenre = 0 && (NumberOfList <= TotalGenres)){
+		FirstGenre = TotalGenres - NumberOfList;
     }
-    Else If (FirstGenre < NumberOfGenres){
-		FirstGenre = 0;//(TotalGenres / NumberOfGenres) * NumberOfGenres;
+    Else If (FirstGenre < NumberOfList){
+		FirstGenre = 0;//(TotalGenres / NumberOfList) * NumberOfList;
 	}
     Else {
-    	FirstGenre = FirstGenre - NumberOfGenres;
+    	FirstGenre = FirstGenre - NumberOfList;
     }
 	ListFirst[1] = FirstGenre;
 	GenresRefresh_fn();
 }
 Function Artists_PgUp_fn(){
-	If (FirstArtist = 0 && (NumberOfArtists <= TotalArtists)){
-		FirstArtist = TotalArtists - NumberOfArtists;
+	If (FirstArtist = 0 && (NumberOfList <= TotalArtists)){
+		FirstArtist = TotalArtists - NumberOfList;
 	}
-    Else If (FirstArtist < NumberOfArtists) {		
-		FirstArtist = 0;//(TotalArtists / NumberOfArtists) * NumberOfArtists;
+    Else If (FirstArtist < NumberOfList) {		
+		FirstArtist = 0;//(TotalArtists / NumberOfList) * NumberOfList;
 	}
 	Else {
-		FirstArtist = FirstArtist - NumberOfArtists;
+		FirstArtist = FirstArtist - NumberOfList;
     }
 	ListFirst[1] = FirstArtist;
 	ArtistsRefresh_fn();
@@ -637,53 +727,53 @@ Function Albums_PgUp_fn(){
 	AlbumsRefresh_fn();
 }
 Function Titles_PgUp_fn(){
-	If (FirstTitle = 0 && (NumberOfTitles <= TotalTitles)){
-		FirstTitle = TotalTitles - NumberOfTitles;
+	If (FirstTitle = 0 && (NumberOfList <= TotalTitles)){
+		FirstTitle = TotalTitles - NumberOfList;
 	}
-    Else If (FirstTitle < NumberOfTitles){
-		FirstTitle = 0;//(TotalTitles / NumberOfTitles) * NumberOfTitles;
+    Else If (FirstTitle < NumberOfList){
+		FirstTitle = 0;//(TotalTitles / NumberOfList) * NumberOfList;
 	}
 	Else {
-		FirstTitle = FirstTitle - NumberOfTitles;
+		FirstTitle = FirstTitle - NumberOfList;
     }
 	ListFirst[1] = FirstTitle;
 	TitlesRefresh_fn();
 }
 Function Playlists_PgUp_fn(){
-	If (FirstPlaylist = 0 && (NumberOfPlaylists <= TotalPlaylists)){
-		FirstPlaylist = TotalPlaylists - NumberOfPlaylists;
+	If (FirstPlaylist = 0 && (NumberOfList <= TotalPlaylists)){
+		FirstPlaylist = TotalPlaylists - NumberOfList;
 	}
-    Else If (FirstPlaylist < NumberOfPlaylists){
-		FirstPlaylist = 0;//(TotalPlaylists / NumberOfPlaylists) * NumberOfPlaylists;
+    Else If (FirstPlaylist < NumberOfList){
+		FirstPlaylist = 0;//(TotalPlaylists / NumberOfList) * NumberOfList;
 	}
 	Else {
-		FirstPlaylist = FirstPlaylist - NumberOfPlaylists;
+		FirstPlaylist = FirstPlaylist - NumberOfList;
     }
 	ListFirst[1] = FirstPlaylist;
 	PlaylistsRefresh_fn();
 }
 Function Dynamic_PgUp_fn(){
-	If (FirstDynamic = 0 && (NumberOfDynamic <= TotalDynamic)){
-		FirstDynamic = TotalDynamic - NumberOfDynamic;
+	If (FirstDynamic = 0 && (NumberOfList <= TotalDynamic)){
+		FirstDynamic = TotalDynamic - NumberOfList;
 	}
-    Else If (FirstDynamic < NumberOfDynamic){
-		FirstDynamic = 0;//(TotalDynamic / NumberOfDynamic) * NumberOfDynamic;
+    Else If (FirstDynamic < NumberOfList){
+		FirstDynamic = 0;//(TotalDynamic / NumberOfList) * NumberOfList;
 	}
 	Else {
-		FirstDynamic = FirstDynamic - NumberOfDynamic;
+		FirstDynamic = FirstDynamic - NumberOfList;
     }
 	ListFirst[1] = FirstDynamic;
 	DynamicRefresh_fn();
 }
 Function Search_PgUp_fn(){
-	If (FirstSearch = 0 && (NumberOfSearch <= TotalSearch)){
-		FirstSearch = TotalSearch - NumberOfSearch;
+	If (FirstSearch = 0 && (NumberOfList <= TotalSearch)){
+		FirstSearch = TotalSearch - NumberOfList;
 	}
-    Else If (FirstSearch < NumberOfSearch) {
-		FirstSearch = 0;//(TotalSearch / NumberOfSearch) * NumberOfSearch;
+    Else If (FirstSearch < NumberOfList) {
+		FirstSearch = 0;//(TotalSearch / NumberOfList) * NumberOfList;
 	}
 	Else {
-		FirstSearch = FirstSearch - NumberOfSearch;
+		FirstSearch = FirstSearch - NumberOfList;
     }
 	ListFirst[1] = FirstSearch;
 	SearchRefresh_fn();
@@ -709,53 +799,53 @@ Function Nowplaying_PgUp_fn(){
 	}
 }
 Function Pandora_PgUp_fn(){
-	If (FirstPandora = 0 && (NumberOfPandora <= TotalPandora)) {
-		FirstPandora = TotalPandora - NumberOfPandora;
+	If (FirstPandora = 0 && (NumberOfList <= TotalPandora)) {
+		FirstPandora = TotalPandora - NumberOfList;
     }
-    Else If (FirstPandora < NumberOfPandora)	{
+    Else If (FirstPandora < NumberOfList)	{
 		FirstPandora = 0; 
 	}
     Else {
-    	FirstPandora = FirstPandora - NumberOfPandora;
+    	FirstPandora = FirstPandora - NumberOfList;
     }
 	ListFirst[1] = FirstPandora;
 	PandoraRefresh_fn();
 }
 Function Favorites_PgUp_fn() {
-	If (FirstFavorites = 0 && (NumberOfFavorites <= TotalFavorites)) {
-		FirstFavorites = TotalFavorites - NumberOfFavorites;
+	If (FirstFavorites = 0 && (NumberOfList <= TotalFavorites)) {
+		FirstFavorites = TotalFavorites - NumberOfList;
 	}
-    Else If (FirstFavorites < NumberOfFavorites)	{
+    Else If (FirstFavorites < NumberOfList)	{
 		FirstFavorites = 0; 
 	}
 	Else {
-		FirstFavorites = FirstFavorites - NumberOfFavorites;
+		FirstFavorites = FirstFavorites - NumberOfList;
     }
 	ListFirst[1] = FirstFavorites;
 	FavoritesRefresh_fn();
 }  
 Function Apps_PgUp_fn() {
-	If (FirstApps = 0 && (NumberOfApps <= TotalApps)) {
-		FirstApps = TotalApps - NumberOfApps;
+	If (FirstApps = 0 && (NumberOfList <= TotalApps)) {
+		FirstApps = TotalApps - NumberOfList;
 	}
-    Else If (FirstApps < NumberOfApps)	{
+    Else If (FirstApps < NumberOfList)	{
 		FirstApps = 0; 
 	}
 	Else {
-		FirstApps = FirstApps - NumberOfApps;
+		FirstApps = FirstApps - NumberOfList;
     }
 	ListFirst[1] = FirstApps;
 	AppsRefresh_fn();
 }
 Function Radios_PgUp_fn() {
-	If (FirstRadios = 0 && (NumberOfRadios <= TotalRadios)) {
-		FirstRadios = TotalRadios - NumberOfRadios;
+	If (FirstRadios = 0 && (NumberOfList <= TotalRadios)) {
+		FirstRadios = TotalRadios - NumberOfList;
 	}
-    Else If (FirstRadios < NumberOfRadios)	{
+    Else If (FirstRadios < NumberOfList)	{
 		FirstRadios = 0; 
 	}
 	Else {
-		FirstRadios = FirstRadios - NumberOfRadios;
+		FirstRadios = FirstRadios - NumberOfList;
     }
 	ListFirst[1] = FirstRadios;
 	RadiosRefresh_fn();
@@ -773,8 +863,8 @@ Function Players_PgUp_fn(){
 	PlayersRefresh_fn();
 }
 Function Home_PgDn_fn(){
-	If (FirstHome + NumberOfHome < TotalHome){
-    	FirstHome = FirstHome + NumberOfHome;
+	If (FirstHome + NumberOfList < TotalHome){
+    	FirstHome = FirstHome + NumberOfList;
 	}
 	else {
 		FirstHome = 0;
@@ -783,8 +873,8 @@ Function Home_PgDn_fn(){
 	HomeRefresh_fn();
 }
 Function Genres_PgDn_fn(){
-	If (FirstGenre + NumberOfGenres < TotalGenres){
-    	FirstGenre = FirstGenre + NumberOfGenres;
+	If (FirstGenre + NumberOfList < TotalGenres){
+    	FirstGenre = FirstGenre + NumberOfList;
 	}
 	else {
 		FirstGenre = 0;
@@ -793,8 +883,8 @@ Function Genres_PgDn_fn(){
 	GenresRefresh_fn();
 }
 Function Artists_PgDn_fn(){
-	If (FirstArtist + NumberOfArtists < TotalArtists){
-    	FirstArtist = FirstArtist + NumberOfArtists;
+	If (FirstArtist + NumberOfList < TotalArtists){
+    	FirstArtist = FirstArtist + NumberOfList;
 	}
 	else {
 		FirstArtist = 0;
@@ -813,8 +903,8 @@ Function Albums_PgDn_fn(){
 	AlbumsRefresh_fn();
 }
 Function Titles_PgDn_fn(){
-	If (FirstTitle + NumberOfTitles < TotalTitles){
-    	FirstTitle = FirstTitle + NumberOfTitles;
+	If (FirstTitle + NumberOfList < TotalTitles){
+    	FirstTitle = FirstTitle + NumberOfList;
 	}
 	else {
 		FirstTitle = 0;
@@ -823,8 +913,8 @@ Function Titles_PgDn_fn(){
 	TitlesRefresh_fn();
 }
 Function Playlists_PgDn_fn(){
-	If (FirstPlaylist + NumberOfPlaylists < TotalPlaylists){
-    	FirstPlaylist = FirstPlaylist + NumberOfPlaylists;
+	If (FirstPlaylist + NumberOfList < TotalPlaylists){
+    	FirstPlaylist = FirstPlaylist + NumberOfList;
 	}
 	else {
 		FirstPlaylist = 0;
@@ -833,8 +923,8 @@ Function Playlists_PgDn_fn(){
 	PlaylistsRefresh_fn();
 }
 Function Dynamic_PgDn_fn(){
-	If (FirstDynamic + NumberOfDynamic < TotalDynamic){
-    	FirstDynamic = FirstDynamic + NumberOfDynamic;
+	If (FirstDynamic + NumberOfList < TotalDynamic){
+    	FirstDynamic = FirstDynamic + NumberOfList;
 	}
 	else {
 		FirstDynamic = 0;
@@ -843,8 +933,8 @@ Function Dynamic_PgDn_fn(){
 	DynamicRefresh_fn();
 }
 Function Search_PgDn_fn(){
-	If (FirstSearch + NumberOfSearch < TotalSearch)	{
-    	FirstSearch = FirstSearch + NumberOfSearch;
+	If (FirstSearch + NumberOfList < TotalSearch)	{
+    	FirstSearch = FirstSearch + NumberOfList;
 	}
 	else {
 		FirstSearch = 0;
@@ -871,8 +961,8 @@ Function Nowplaying_PgDn_fn(){
 	}
 }
 Function Pandora_PgDn_fn(){
-	If (FirstPandora + NumberOfPandora < TotalPandora){
-    	FirstPandora = FirstPandora + NumberOfPandora;
+	If (FirstPandora + NumberOfList < TotalPandora){
+    	FirstPandora = FirstPandora + NumberOfList;
 	}
 	else {
 		FirstPandora = 0;
@@ -881,8 +971,8 @@ Function Pandora_PgDn_fn(){
 	PandoraRefresh_fn();
 }   
 Function Favorites_PgDn_fn(){
-	If (FirstFavorites + NumberOfFavorites < TotalFavorites){
-    	FirstFavorites = FirstFavorites + NumberOfFavorites;
+	If (FirstFavorites + NumberOfList < TotalFavorites){
+    	FirstFavorites = FirstFavorites + NumberOfList;
 	}
 	else {
 		FirstFavorites = 0;
@@ -891,8 +981,8 @@ Function Favorites_PgDn_fn(){
 	FavoritesRefresh_fn();
 }  
 Function Apps_PgDn_fn(){
-	If (FirstApps + NumberOfApps < TotalApps){
-    	FirstApps = FirstApps + NumberOfApps;
+	If (FirstApps + NumberOfList < TotalApps){
+    	FirstApps = FirstApps + NumberOfList;
 	}
 	else {
 		FirstApps = 0;
@@ -901,8 +991,8 @@ Function Apps_PgDn_fn(){
 	AppsRefresh_fn();
 }  
 Function Radios_PgDn_fn(){
-	If (FirstRadios + NumberOfRadios < TotalRadios){
-    	FirstRadios = FirstRadios + NumberOfRadios;
+	If (FirstRadios + NumberOfList < TotalRadios){
+    	FirstRadios = FirstRadios + NumberOfList;
 	}
 	else {
 		FirstRadios = 0;
@@ -934,457 +1024,571 @@ Function HomeListSelect_fn(integer i){
 	Else If (i=10){Titles_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
-    ListShiftFwd_fn();
-	ListType[1] = 2;
-	ListFirst[1] = 0;
-	ActiveGenreID = GenreID[i];
-	ActiveGenre = Genre[i];
-	makestring(ListName[1], "Artists in %s",ActiveGenre);
-	makestring(restrictorArtists,"genre_id:%u",GenreID[i]);
-	ListRestrictor[1] = restrictorArtists;
-	restrictorAlbums = restrictorArtists;
-	restrictorTitles = restrictorArtists + " tags:te";
-	FirstArtist = 0;
-	ArtistsRefresh_fn();
-/*	Wait(50,waitListGenreAlbums)
-	{
-		AlbumsRefresh_fn();
-		Wait(50,waitListGenreTitles)
-			TitlesRefresh_fn();
-	}
-*/
-	ListName$ = ListName[1];
-}
-Function ArtistListSelect_fn(integer i){
-	ListShiftFwd_fn();	
-	ListType[1] = 3;
-	ListFirst[1] = 0;
-	ActiveArtistID = ArtistID[i];
-	ActiveArtist = Artist[i];
-	If (ActiveArtist = "Various Artists"){
-		ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
-		makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists, ArtistID[i]);
-	}	
-	Else {
-		ListName[1] = "Albums for " + ActiveArtist;	
-		makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
-	}
-	ListRestrictor[1] = restrictorAlbums;
-	FirstAlbum = 0;
-	AlbumsRefresh_fn();
-/*	restrictorTitles = restrictorAlbums + " tags:te";
-	Wait(20,waitListArtistTitles)
-	TitlesRefresh_fn();
-*/
-	ListName$ = ListName[1];
-}
-Function AlbumListSelect_fn(integer i){
-	ListShiftFwd_fn();
-	ListType[1] = 4;
-	ListFirst[1] = 0;
-	ActiveAlbumID = AlbumID[i];
-	ActiveAlbum = Album[i];
-	makestring(ListName[1],"Titles in %s",ActiveAlbum);
-	makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",AlbumID[i]);
-	ListRestrictor[1] = restrictorTitles;
-	FirstTitle = 0;
-	TitlesRefresh_fn();
-	ListName$ = ListName[1];
-}
-Function TitleListSelect_fn(integer i){
-	ActiveAlbumID = TitleAlbumID[i];
-	ActiveTrackID = TrackID[i];
-	ActiveTitle = Title[i];
-	ActivePlaylist = "";
-	makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, TitleAlbumID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-}
-Function PlaylistListSelect_fn(integer i){
-	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-	ActivePlaylistID = PlaylistID[i]; //set the active playlist ID
-	trace("ActivePlaylistID = %u",PlaylistID[i]);
-	ActivePlaylist = PlaylistRaw[i]; //set the active playlist name
-    trace("ActivePlaylist = %s",PlaylistRaw[i]);
-	makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-	pulse(20,NowplayingPageFlip);
-}
-Function DynamicListSelect_fn(integer i){
-	ActiveDynamicFile = DynamicFile[i];
-	ActiveDynamic = DynamicName[i];
-	ActivePlaylist = "";
-	makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-	pulse(20,NowplayingPageFlip);
-}
-Function SearchListSelect_fn(integer i){
-	ListShiftFwd_fn();
-	ListFirst[1] = 0;
-	trace("SearchListSelect_fn");
-	If (SearchIDType[i] = 1){ //searchID is an artist_id
-		ListType[1] = 3;
-		ActiveArtistID = SearchID[i];
-		ActiveArtist = Search[i];
-		makestring(ListName[1], "Albums for %s",ActiveArtist);
-		makestring(restrictorAlbums,"artist_id:%u",SearchID[i]);
-		ListRestrictor[1] = restrictorAlbums;
-// zzz  look for something that is leaving the "search:" in the albums when I click on a search result
-//				restrictorTitles = restrictorAlbums + " tags:te";
-		FirstAlbum = 0;
-		AlbumsRefresh_fn();
-	}
-	Else If (SearchIDType[i] = 2){ // SearchID is an album_id
-		ListType[1] = 4;
-		ActiveAlbumID = SearchID[i];
-		ActiveAlbum = Search[i];
-		makestring(ListName[1],"Titles in %s",ActiveAlbum);
-		makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",SearchID[i]);
-		ListRestrictor[1] = restrictorTitles;
-		FirstTitle = 0;
-		TitlesRefresh_fn();
-	}
-	Else If (SearchIDType[i] = 3){ //searchID is a track_id
-		// insert then next track
-		ActiveTrackID = SearchID[i];
-		ActiveTitle = Search[i];
-		ActivePlaylist = "";
-		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		delay(10);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+	If (GenreID[i] > 0){
+		ListShiftFwd_fn();
 		ListType[1] = 2;
-		ActiveGenreID = SearchID[i];
-		ActiveGenre = Search[i];
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListFirst[1] = 0;
+		ActiveGenreID = GenreID[i];
+		ActiveGenre = Genre[i];
+		ListActiveGenre[1] = ActiveGenre;
 		makestring(ListName[1], "Artists in %s",ActiveGenre);
-		makestring(restrictorArtists,"genre_id:%u",SearchID[i]);
+		makestring(restrictorArtists,"genre_id:%u",GenreID[i]);
 		ListRestrictor[1] = restrictorArtists;
 		restrictorAlbums = restrictorArtists;
 		restrictorTitles = restrictorArtists + " tags:te";
 		FirstArtist = 0;
 		ArtistsRefresh_fn();
+	/*	Wait(50,waitListGenreAlbums)
+		{
+			AlbumsRefresh_fn();
+			Wait(50,waitListGenreTitles)
+				TitlesRefresh_fn();
+		}
+	*/
+		ListName$ = ListName[1];
 	}
-	ListName$ = ListName[1];
 }
-Function PandoraListSelect_fn(integer i){
-	ListShiftFwd_fn();
-	ListFirst[1] = 0;
-	If (PandoraIsAudio[i] = 0){
-		ActivePandoraID = PandoraID[i];
-		ActivePandoraName = PandoraName[i];
-		makestring(ListName[1],"Pandora: %s",PandoraTitle);
-		makestring(restrictorPandora,"item_id:%s",PandoraID[i]);
-		ListRestrictor[1] = restrictorPandora;
-		FirstPandora = 0;
-		PandoraRefresh_fn();
+Function ArtistListSelect_fn(integer i){
+	If (ArtistID[i] > 0){
+		ListShiftFwd_fn();	
+		ListType[1] = 3;
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListFirst[1] = 0;
+		ActiveArtistID = ArtistID[i];
+		ActiveArtist = Artist[i];
+		If (ActiveArtist = "Various Artists"){
+			ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
+			makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists, ArtistID[i]);
+			ListActiveGenre[1] = ActiveGenre;
+		}	
+		Else {
+			ListName[1] = "Albums for " + ActiveArtist;	
+			makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
+			ActiveGenre = "";
+			ListActiveGenre[1] = "";
+		}
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		AlbumsRefresh_fn();
+	/*	restrictorTitles = restrictorAlbums + " tags:te";
+		Wait(20,waitListArtistTitles)
+		TitlesRefresh_fn();
+	*/
+		ListName$ = ListName[1];
 	}
-	Else If (PandoraIsAudio[i] = 1){
-		makestring(OUT$,"%s pandora playlist play item_id:%s\n",PlayerID$, PandoraID[i]);
+}
+Function AlbumListSelect_fn(integer i){
+	If (AlbumID[i] > 0){
+		If (Coverflow_Enable = 0){
+			trace("Coverflow_Enable = 0; AlbumListSelect");
+			ListShiftFwd_fn();
+			ListType[1] = 4;
+			ListSearchRS[1] = 0;
+			Search_RequiresSubmit = 0;
+			ListActiveGenre[1] = "";
+			ActiveGenre = "";
+			ListFirst[1] = 0;
+			ActiveAlbumID = AlbumID[i];
+			ActiveAlbum = Album[i];
+			makestring(ListName[1],"Titles in %s",ActiveAlbum);
+			makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",AlbumID[i]);
+			ListRestrictor[1] = restrictorTitles;
+			FirstTitle = 0;
+			TitlesRefresh_fn();
+			ListName$ = ListName[1];
+		}
+		Else {
+			trace("Coverflow_Enable = 1; AlbumListSelect");
+			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			ActiveAlbumID = AlbumID[i];
+			ActiveAlbum = Album[i];
+			ActivePlaylist = "";
+		}
+	}
+}
+Function TitleListSelect_fn(integer i){
+	If (TrackID[i] > 0){
+		ActiveAlbumID = TitleAlbumID[i];
+		ActiveTrackID = TrackID[i];
+		ActiveTitle = Title[i];
+		ActivePlaylist = "";
+		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, TitleAlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+Function PlaylistListSelect_fn(integer i){
+	If (PlaylistID[i] > 0){
+		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
-//		pulse(20,NowplayingPageFlip);
-	}
-	ListName$ = ListName[1];
-}
-Function FavoritesListSelect_fn(integer i){
-	If (FavoritesIsAudio[i] = 0){
-		ListShiftFwd_fn();
-		FirstFavorites = 0;
-		restrictorFavorites = "item_id:" + FavoritesID[i];
-		ListRestrictor[1] = restrictorFavorites;
-		ListFirst[1] = 0;
-//		ListName[1] = FAR_name + ": " + FavoritesTitle;
-		FavoritesRefresh_fn();
-	}
-	Else If (FavoritesIsAudio[i] = 1){
-		makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+		ActivePlaylistID = PlaylistID[i]; //set the active playlist ID
+		trace("ActivePlaylistID = %u",PlaylistID[i]);
+		ActivePlaylist = PlaylistRaw[i]; //set the active playlist name
+		trace("ActivePlaylist = %s",PlaylistRaw[i]);
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
 		pulse(20,NowplayingPageFlip);
 	}
 }
+Function DynamicListSelect_fn(integer i){
+	If (DynamicName[i] <> ""){
+		ActiveDynamicFile = DynamicFile[i];
+		ActiveDynamic = DynamicName[i];
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		pulse(20,NowplayingPageFlip);
+	}
+}
+Function SearchListSelect_fn(integer i){
+	If (SearchID[i] > 0){
+		trace("SearchListSelect_fn");
+		If (SearchIDType[i] = 1){ // searchID is an artist_id
+			ListShiftFwd_fn();
+			ListFirst[1] = 0;
+			ListType[1] = 3;
+			ListSearchRS[1] = 0;
+			Search_RequiresSubmit = 0;
+			ListActiveGenre[1] = "";
+			ActiveArtistID = SearchID[i];
+			ActiveArtist = Search[i];
+			makestring(ListName[1], "Albums for %s",ActiveArtist);
+			makestring(restrictorAlbums,"artist_id:%u",SearchID[i]);
+			ListRestrictor[1] = restrictorAlbums;
+			FirstAlbum = 0;
+			AlbumsRefresh_fn();
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			ListShiftFwd_fn();
+			ListFirst[1] = 0;
+			ListType[1] = 4;
+			ListSearchRS[1] = 0;
+			Search_RequiresSubmit = 0;
+			ActiveAlbumID = SearchID[i];
+			ActiveAlbum = Search[i];
+			ListActiveGenre[1] = "";
+			makestring(ListName[1],"Titles in %s",ActiveAlbum);
+			makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",SearchID[i]);
+			ListRestrictor[1] = restrictorTitles;
+			FirstTitle = 0;
+			TitlesRefresh_fn();
+		}
+		Else If (SearchIDType[i] = 3){ // searchID is a track_id
+			// insert then next track
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			ActivePlaylist = "";
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ // searchID is a genre_id
+			ListShiftFwd_fn();
+			ListFirst[1] = 0;
+			ListType[1] = 2;
+			ListSearchRS[1] = 0;
+			Search_RequiresSubmit = 0;
+			ActiveGenreID = SearchID[i];
+			ActiveGenre = Search[i];
+			ListActiveGenre[1] = ActiveGenre;
+			makestring(ListName[1], "Artists in %s",ActiveGenre);
+			makestring(restrictorArtists,"genre_id:%u",SearchID[i]);
+			ListRestrictor[1] = restrictorArtists;
+			restrictorAlbums = restrictorArtists;
+			restrictorTitles = restrictorArtists + " tags:te";
+			FirstArtist = 0;
+			ArtistsRefresh_fn();
+		}
+		ListName$ = ListName[1];
+	}
+}
+Function PandoraListSelect_fn(integer i){
+	If (PandoraID[i] <> ""){
+		If (PandoraIsAudio[i] = 0){
+			ListShiftFwd_fn();
+			ListFirst[1] = 0;
+			ListSearchRS[1] = 1;
+			Search_RequiresSubmit = 1;
+			ActivePandoraID = PandoraID[i];
+			ActivePandoraName = PandoraName[i];
+			ListActiveGenre[1] = "";
+			makestring(ListName[1],"Pandora: %s",PandoraTitle);
+			makestring(restrictorPandora,"item_id:%s",PandoraID[i]);
+			ListRestrictor[1] = restrictorPandora;
+			FirstPandora = 0;
+			PandoraRefresh_fn();
+		}
+		Else If (PandoraIsAudio[i] = 1){
+			makestring(OUT$,"%s pandora playlist play item_id:%s\n",PlayerID$, PandoraID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+	//		pulse(20,NowplayingPageFlip);
+		}
+		ListName$ = ListName[1];
+	}
+}
+Function FavoritesListSelect_fn(integer i){
+	If (FavoritesID[i] <> ""){
+		If (FavoritesType[i] = "search"){
+			ListSearchRS[1] = 1;
+			Search_RequiresSubmit = 1;
+			Pulse (20,Search_KeyboardPopup);
+			restrictorFavorites = "item_id:" + FavoritesID[i];
+			ActiveFAR_ID = FavoritesID[i];
+		}
+		Else If (FavoritesIsAudio[i] = 0 && FavoritesHasItems[i] = 1){
+			ListShiftFwd_fn();
+			FirstFavorites = 0;
+			restrictorFavorites = "item_id:" + FavoritesID[i];
+			ListRestrictor[1] = restrictorFavorites;
+			ListActiveGenre[1] = "";
+			ListFirst[1] = 0;
+			ListSearchRS[1] = 1;
+			Search_RequiresSubmit = 1;
+			FavoritesRefresh_fn();
+		}
+		Else If (FavoritesIsAudio[i] = 1){
+			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			pulse(20,NowplayingPageFlip);
+		}
+	}
+}
 Function AppsListSelect_fn(integer i){
-	ListShiftFwd_fn();
-	ListType[1] = 10;
-	ListFirst[1] = 0;
-	FAR_name = AppsCmd[i];
-	FAR_parse = FAR_name + " items ";
-	trace("FAR_parse = %s",FAR_parse);
-	restrictorFavorites = "";
-	ListName[1] = AppsName[i];
-	ListName$ = ListName[1];
-	FirstFavorites = 0;
-	FavoritesRefresh_fn();
+	If (AppsCmd[i] <> ""){
+		ListShiftFwd_fn();
+		ListType[1] = 10;
+		ListFirst[1] = 0;
+		ListSearchRS[1] = 1;
+		Search_RequiresSubmit = 1;
+		ListActiveGenre[1] = "";
+		FAR_name = AppsCmd[i];
+		FAR_parse = FAR_name + " items ";
+		trace("FAR_parse = %s",FAR_parse);
+		ActiveFAR_ID = "";
+		restrictorFavorites = "";
+		ListName[1] = AppsName[i];
+		ListName$ = ListName[1];
+		FirstFavorites = 0;
+		FavoritesRefresh_fn();
+	}
 }
 Function RadiosListSelect_fn(integer i){
-	ListShiftFwd_fn();
-	ListType[1] = 10;
-	ListFirst[1] = 0;
-	FAR_name = RadiosCmd[i];
-	FAR_parse = FAR_name + " items ";
-	trace("FAR_parse = %s",FAR_parse);
-	restrictorFavorites = "";
-	ListName[1] = RadiosName[i];
-	ListName$ = ListName[1];
-	FirstFavorites = 0;
-	FavoritesRefresh_fn();
+	If (RadiosCmd[i] <> ""){
+		ListShiftFwd_fn();
+		ListType[1] = 10;
+		ListFirst[1] = 0;
+		ListSearchRS[1] = 1;
+		Search_RequiresSubmit = 1;
+		FAR_name = RadiosCmd[i];
+		FAR_parse = FAR_name + " items ";
+		trace("FAR_parse = %s",FAR_parse);
+		ActiveFAR_ID = "";
+		restrictorFavorites = "";
+		ListName[1] = RadiosName[i];
+		ListName$ = ListName[1];
+		FirstFavorites = 0;
+		FavoritesRefresh_fn();
+	}
 }
 Function GenreListPlay_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, GenreID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveGenreID = GenreID[i];
-	ActivePlaylist = "";
+	If (GenreID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveGenreID = GenreID[i];
+		ActivePlaylist = "";
+	}
 }
 Function ArtistListPlay_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:load artist_id:%u \n",PlayerID$, ArtistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveArtistID = ArtistID[i];
-	ActivePlaylist = "";
+	If (ArtistID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load artist_id:%u \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
 }
 Function AlbumListPlay_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveAlbumID = AlbumID[i];
-	ActivePlaylist = "";
+	If (AlbumID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
 }
 Function TitleListPlay_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	delay(10);
-	makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveTrackID = TrackID[i];
-	ActivePlaylist = "";
+	If (TrackID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		delay(10);
+		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
 }
 Function PlaylistListPlay_fn(integer i){
-	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-	makestring(OUT$,"%s playlistcontrol cmd:load playlist_id:%u \n",PlayerID$, PlaylistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActivePlaylistID = PlaylistID[i];
-	ActivePlaylist = PlaylistRaw[i];
-	pulse(20,NowplayingPageFlip);
+	If (PlaylistID[i] > 0){
+		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		makestring(OUT$,"%s playlistcontrol cmd:load playlist_id:%u \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = PlaylistID[i];
+		ActivePlaylist = PlaylistRaw[i];
+		pulse(20,NowplayingPageFlip);
+	}
 }
 Function DynamicListPlay_fn(integer i){
-	ActiveDynamicFile = DynamicFile[i];
-	ActiveDynamic = DynamicName[i];
-	ActivePlaylist = "";
-	makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
+	If (DynamicFile[i] <> ""){
+		ActiveDynamicFile = DynamicFile[i];
+		ActiveDynamic = DynamicName[i];
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
 }
 Function FavoritesListPlay_fn(integer i){
-	makestring(OUT$,"%s favorites playlist insert item_id:%s\n",PlayerID$, FavoritesID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-//	pulse(20,NowplayingPageFlip);
-	makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	If (FavoritesID[i] <> ""){
+		makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	//	pulse(20,NowplayingPageFlip);
+		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 Function SearchListPlay_fn(integer i){
-	ActivePlaylist = "";
-	ListShiftFwd_fn();
-	ListFirst[1] = 0;
-	trace("SearchListPLay_fn");
-	If (SearchIDType[i] = 1){ //searchID is an artist_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		delay(10);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 2){ // SearchID is an album_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		delay(10);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 3){ //searchID is a track_id
-		ActiveTrackID = SearchID[i];
-		ActiveTitle = Search[i];
-		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		delay(10);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		delay(10);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
+	If (SearchID[i] > 0){
+		ActivePlaylist = "";
+		trace("SearchListPLay_fn");
+		If (SearchIDType[i] = 1){ //searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ //searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
 	}
 }
 Function GenreListAdd_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u \n",PlayerID$, GenreID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveGenreID = GenreID[i];
-	ActivePlaylist = "";
+	If (GenreID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveGenreID = GenreID[i];
+		ActivePlaylist = "";
+	}
 }
 Function ArtistListAdd_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, ArtistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveArtistID = ArtistID[i];
-	ActivePlaylist = "";
+	If (ArtistID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
 }
 Function AlbumListAdd_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, AlbumID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveAlbumID = AlbumID[i];
-	ActivePlaylist = "";
+	If (AlbumID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
 }
 Function TitleListAdd_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:add track_id:%u \n",PlayerID$, TrackID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveTrackID = TrackID[i];
-	ActivePlaylist = "";
+	If (TrackID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add track_id:%u \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
 }
 Function PlaylistListAdd_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:add playlist_id:%u \n",PlayerID$, PlaylistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
-	ActivePlaylist = ""; // clear the active playlist
+	If (PlaylistID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add playlist_id:%u \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
+		ActivePlaylist = ""; // clear the active playlist
+	}
 }
 Function FavoritesListAdd_fn(integer i){
-	makestring(OUT$,"%s favorites playlist add item_id:%s\n",PlayerID$, FavoritesID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-	ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
-	ActivePlaylist = ""; // clear the active playlist
-//	pulse(20,NowplayingPageFlip);
+	If (FavoritesID[i] <> ""){
+		makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
+		ActivePlaylist = ""; // clear the active playlist
+	//	pulse(20,NowplayingPageFlip);
+	}
 }
 Function SearchListAdd_fn(integer i){
-	ActivePlaylist = "";
-	ListShiftFwd_fn();
-	ListFirst[1] = 0;
-	trace("SearchListAdd_fn");
-	If (SearchIDType[i] = 1){ //searchID is an artist_id
-		makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 2){ // SearchID is an album_id
-		makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 3){ //searchID is a track_id
-		ActiveTrackID = SearchID[i];
-		ActiveTitle = Search[i];
-		makestring(OUT$,"%s playlistcontrol cmd:add track_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 4){ //searchID is a genre_id
-		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u  \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
+	If (SearchID[i] > 0){
+		trace("SearchListAdd_fn");
+		ActivePlaylist = "";
+		If (SearchIDType[i] = 1){ //searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ //searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:add track_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u  \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
 	}
 }
 Function GenreListInsert_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, GenreID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveGenreID = GenreID[i];
-	ActivePlaylist = "";
+	If (GenreID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveGenreID = GenreID[i];
+		ActivePlaylist = "";
+	}
 }
 Function ArtistListInsert_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, ArtistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveArtistID = ArtistID[i];
-	ActivePlaylist = "";
+	If (ArtistID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
 }
 Function AlbumListInsert_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, AlbumID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveAlbumID = AlbumID[i];
-	ActivePlaylist = "";
+	If (AlbumID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
 }
 Function TitleListInsert_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActiveTrackID = TrackID[i];
-	ActivePlaylist = "";
+	If (TrackID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
 }
 Function PlaylistListInsert_fn(integer i){
-	makestring(OUT$,"%s playlistcontrol cmd:insert playlist_id:%u \n",PlayerID$, PlaylistID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
-	ActivePlaylistID = 0; // clear the active playlist ID 
-	ActivePlaylist = ""; // clear the active playlist
+	If (PlaylistID[i] > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert playlist_id:%u \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = 0; // clear the active playlist ID 
+		ActivePlaylist = ""; // clear the active playlist
+	}
 }
 Function FavoritesListInsert_fn(integer i){
-	makestring(OUT$,"%s favorites playlist insert item_id:%s\n",PlayerID$, FavoritesID[i]);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
-//	pulse(20,NowplayingPageFlip);
-	ActivePlaylistID = 0; // clear the active playlist ID 
-	ActivePlaylist = ""; // clear the active playlist
+	If (FavoritesID[i] <> ""){
+		makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	//	pulse(20,NowplayingPageFlip);
+		ActivePlaylistID = 0; // clear the active playlist ID 
+		ActivePlaylist = ""; // clear the active playlist
+	}
 }
 Function SearchListInsert_fn(integer i){
-	ActivePlaylist = "";
-	ListShiftFwd_fn();
-	ListFirst[1] = 0;
-	trace("SearchListInsert_fn");
-	If (SearchIDType[i] = 1){ //searchID is an artist_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 2){ // SearchID is an album_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 3){ //searchID is a track_id
-		ActiveTrackID = SearchID[i];
-		ActiveTitle = Search[i];
-		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else If (SearchIDType[i] = 4){ // SearchID is an genre_id
-		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
+	If (SearchID[i] > 0){
+		ActivePlaylist = "";
+		trace("SearchListInsert_fn");
+		If (SearchIDType[i] = 1){ //searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ //searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ // SearchID is an genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
 	}
 }
 Function NowplayingPlay_fn(integer i){
@@ -1398,30 +1602,37 @@ Function NowplayingPlay_fn(integer i){
 	}
 }
 Function NowplayingRemove_fn(integer i){
-	Activeplaylist = "";
-	makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);//xxx
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	If (NowplayingIndex[i] < 65534){
+		Activeplaylist = "";
+		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);//xxx
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 Function NowplayingMoveUp_fn(integer i){
-	makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);//xxx
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	If (NowplayingIndex[i] < 65534){
+		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);//xxx
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 Function NowplayingMoveDown_fn(integer i){
-	If (NowplayingIndex[i] <> 65534){
+	If (NowplayingIndex[i] < 65534){
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);//xxx
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 }
 Function Search_fn(){
-	If (ListType[1] != 8)
-	{
+	If (ListType[1] != 8){
 		ListShiftFwd_fn(); // move the history forward to make room for the new entry
 		ListType[1] = 8; // search list type = 8
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
 		trace("adding search to history");
 	}
+	ActiveGenre = "";
 	ListFirst[1]=0;
 	makestring(ListName[1],"\"%s\" anywhere",search_in);
 	makestring(restrictorSearch,"%s",search_in);
@@ -1431,11 +1642,14 @@ Function Search_fn(){
 	ListName$ = ListName[1];
 }
 Function Search_genres_fn(){
-	If (ListType[1] != 1)
-	{
+	If (ListType[1] <> 1){
 	    ListShiftFwd_fn();
 		ListType[1] = 1;
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Genres",search_in);
     makestring(restrictorGenres,"search:%s",search_in);
@@ -1445,11 +1659,14 @@ Function Search_genres_fn(){
 	ListName$ = ListName[1];
 }
 Function Search_artists_fn(){
-	If (ListType[1] != 2)
-	{
+	If (ListType[1] != 2){
 	    ListShiftFwd_fn();
 		ListType[1] = 2;
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Artists",search_in);
     makestring(restrictorArtists,"search:%s",search_in);
@@ -1462,7 +1679,11 @@ Function Search_albums_fn(){
 	If (ListType[1] != 3){
 	    ListShiftFwd_fn();
 		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Albums",search_in);
     makestring(restrictorAlbums,"search:%s",search_in);
@@ -1475,7 +1696,11 @@ Function Search_titles_fn(){
 	If (ListType[1] != 4){
 	    ListShiftFwd_fn();
 		ListType[1] = 4;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Titles",search_in);
     makestring(restrictorTitles,"search:%s tags:te",search_in);
@@ -1488,7 +1713,11 @@ Function Search_playlists_fn(){
 	If (ListType[1] != 5){
     	ListShiftFwd_fn();
 		ListType[1] = 5;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Playlists",search_in);
     makestring(restrictorPlaylists,"search:%s",search_in);
@@ -1501,11 +1730,29 @@ Function Search_Radios_fn(){
 	If (ListType[1] != 10){
 		ListShiftFwd_fn();
 		ListType[1] = 10;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 1;
+		Search_RequiresSubmit = 1;
 	}
+	ActiveGenre = "";
 	ListFirst[1] = 0;
 	FAR_name = "search";
 	FAR_parse = "search items ";
 	restrictorFavorites = "search:" + search_in;
+	FirstFavorites = 0;
+	FavoritesRefresh_fn();
+}
+Function Search_Favorites_fn(){
+	If (ListType[1] != 10){
+		ListShiftFwd_fn();
+		ListType[1] = 10;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 1;
+		Search_RequiresSubmit = 1;
+	}
+	ActiveGenre = "";
+	ListFirst[1] = 0;
+	restrictorFavorites = "item_id:" + ActiveFAR_ID + " search:" + search_in;
 	FirstFavorites = 0;
 	FavoritesRefresh_fn();
 }
@@ -2036,11 +2283,12 @@ Function Parse_Nowplaying(String InNowplaying$){
 	trace("ListLengthNowplaying = %u",ListLengthNowplaying);
 	If (ListLengthNowplaying < ListLengthNowplaying_old ){
 		trace("blanking Nowplaying");
-		SetArray(NowplayingTitle$," ");
+		SetArray(Nowplaying," ");
+//		SetArray(NowplayingTitle$," ");
 		SetArray(NowplayingTitle,"");
-		SetArray(NowplayingArtist$," ");
+//		SetArray(NowplayingArtist$," ");
 		SetArray(NowplayingArtist,"");
-		SetArray(NowplayingAlbum$," ");
+//		SetArray(NowplayingAlbum$," ");
 		SetArray(NowplayingAlbum,"");
 		SetArray(NowplayingCurrentSong,0);
 		SetArray(NowplayingID,0);
@@ -2067,12 +2315,15 @@ Function Parse_Nowplaying(String InNowplaying$){
 				NowplayingCurrentSong[j] = 0;
 				NowplayingID[j] = 0;
 				NowplayingTitle[j] = "";
-				NowplayingTitle$[j] = " ";
 				NowplayingArtist[j] = "";
-				NowplayingArtist$[j] = " ";
 				NowplayingAlbum[j] = "";
-				NowplayingAlbum$[j] = " ";
+				Nowplaying[i] = " ";
 				NowplayingIndex[i] = 65534; //dummy value to test for disabling button action if empty
+				If (NowplayingSeparate_Enable = 1){
+					NowplayingAlbum$[j] = " ";
+					NowplayingArtist$[j] = " ";
+					NowplayingTitle$[j] = " ";
+				}
 			}
 			Break;
 		}
@@ -2095,7 +2346,9 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingTitle[i] = "";
 		}
-		NowplayingTitle$[i] = NowplayingTitle[i];
+		If (NowplayingSeparate_Enable = 1){
+			NowplayingTitle$[i] = NowplayingTitle[i];
+		}
 		indexStart = find(" artist%3A",InNowplaying$,indexEnd) + 10;
 		If (indexStart > 10){
 			indexEnd = find(" ",InNowplaying$, indexStart);
@@ -2105,7 +2358,9 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingArtist[i] = "";
 		}
-		NowplayingArtist$[i] = NowplayingArtist[i];
+		If (NowplayingSeparate_Enable = 1){
+			NowplayingArtist$[i] = NowplayingArtist[i];
+		}
 		indexStart = find(" album%3A",InNowplaying$,indexEnd) + 9;
 		If (indexStart > 9){
 			indexEnd = find(" ",InNowplaying$, indexStart);
@@ -2121,7 +2376,11 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingAlbum[i] = "";
 		}
-		NowplayingAlbum$[i] = NowplayingAlbum[i];
+		If (NowplayingSeparate_Enable = 1){
+			NowplayingAlbum$[i] = NowplayingAlbum[i];
+		}
+	Nowplaying_int[i] = left(NowplayingTitle[i],NowplayingWidthTitle) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+	Nowplaying[i] = left(Nowplaying_int[i],255);
 	}
 }
 Function Parse_Time(String InTime$){
@@ -2154,8 +2413,8 @@ Function Parse_Pandora(String InPandora$){
 		OutListBar = OutPandoraBar;
 		OutListCount = OutPandoraCount;
 	}
-	If (TotalPandora - PandoraFirstNumber >= NumberOfPandora){
-		ListLengthPandora = NumberOfPandora;
+	If (TotalPandora - PandoraFirstNumber >= NumberOfList){
+		ListLengthPandora = NumberOfList;
 	}
 	else {
 		ListLengthPandora = TotalPandora - PandoraFirstNumber;
@@ -2214,9 +2473,9 @@ Function Parse_Pandora(String InPandora$){
 	}
 }
 Function Parse_FAR(String InFavorites$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthFavorites;
-
+	String FavoritesParseItem[16384];
 	indexStart = find(" items ",InFavorites$) + 7;
 	indexEnd = find(" ",InFavorites$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2251,8 +2510,8 @@ Function Parse_FAR(String InFavorites$){
 			OutListBar = OutFavoritesBar;
 			OutListCount = OutFavoritesCount;
 		}
-		If (TotalFavorites - FavoritesFirstNumber >= NumberOfFavorites){
-			ListLengthFavorites = NumberOfFavorites;
+		If (TotalFavorites - FavoritesFirstNumber >= NumberOfList){
+			ListLengthFavorites = NumberOfList;
 		}
 		Else {
 			ListLengthFavorites = TotalFavorites - FavoritesFirstNumber;
@@ -2274,44 +2533,70 @@ Function Parse_FAR(String InFavorites$){
 			ListName[1] = FavoritesTitle;
 			ListName$ = FavoritesTitle;
 		}
+		indexNext = indexEnd;
 		For (i = 1 to ListLengthFavorites){
-			indexStart = find(" id%3A",InFavorites$,indexEnd) + 6;
-			if (indexStart = 6){
+			indexStart = find(" id%3A",InFavorites$,indexNext) + 6;
+			if (indexStart > 6){
+				indexEnd = find(" ",InFavorites$,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesID[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
+				trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
+			}
+			Else {
+				FavoritesID[i] = "";
 				trace("indexStart of id%3A not found; breaking.");
 				break;
 			}
-			indexEnd = find(" ",InFavorites$,indexStart);
-			Length = indexEnd - indexStart;
-			FavoritesID[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
-			trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
-			
-			indexStart = find(" name%3A",InFavorites$,indexEnd) + 8;
-			indexEnd = find(" ",InFavorites$,indexStart);
-			Length = indexEnd - indexStart;
-			FavoritesName[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
-			trace("Favorites name[%u]: %s",i,FavoritesName[i]);
+			indexNext = find(" id%3A",InFavorites$,indexEnd);
+			if (indexNext > 0){
+				Length = indexNext - indexEnd;
+				FavoritesParseItem = mid(InFavorites$,indexEnd,Length);
+			}
+			Else {
+				FavoritesParseItem = mid(InFavorites$,indexEnd,len(InFavorites$) - indexEnd - 1);
+			}
+			indexStart = find(" name%3A",FavoritesParseItem,1) + 8;
+			If (indexStart > 8){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesName[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites name[%u]: %s",i,FavoritesName[i]);
+			}
+			Else {
+				FavoritesName[i] = "";
+			}
 			If (ListType[1] = 10){
 				List$[i] = FavoritesName[i];
 			}
-/*			indexStart = find(" type%3A",InFavorites$,indexEnd) + 8;
-			trace("indexStart = %u",indexStart);
-			indexEnd = find(" ",InFavorites$,indexStart);
-			trace("indexEnd = %u",indexEnd);
-			Length = indexEnd - indexStart;
-			FavoritesType[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
-			trace("Favorites type[%u]: %s",i,FavoritesType[i]);
-*/
-			indexStart = find(" isaudio%3A",InFavorites$,indexEnd) + 11;
-			indexEnd = find(" ",InFavorites$,indexStart);
-			Length = indexEnd - indexStart;
-			FavoritesIsAudio[i] = AtoI(mid(InFavorites$,indexStart,Length));
-			trace("Favorites IsAudio[%u]: %u",i,FavoritesIsAudio[i]);
-			
-			indexStart = find(" hasitems%3A",InFavorites$,indexEnd) + 12;
-			indexEnd = find(" ",InFavorites$,indexStart);
-			Length = indexEnd - indexStart;
-			FavoritesHasItems[i] = AtoI(mid(InFavorites$,indexStart,Length));
-			trace("Favorites HasItems[%u]: %u",i,FavoritesHasItems[i]);
+			indexStart = find(" type%3A",FavoritesParseItem,indexEnd) + 8;
+			If (indexStart > 8){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesType[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites type[%u]: %s",i,FavoritesType[i]);
+			}
+			Else {
+				FavoritesType[i] = "";
+			}
+			indexStart = find(" isaudio%3A",FavoritesParseItem,indexEnd) + 11;
+			if (indexStart > 11){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesIsAudio[i] = AtoI(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites IsAudio[%u]: %u",i,FavoritesIsAudio[i]);
+			}
+			Else {
+				FavoritesIsAudio[i] = 0;
+			}
+			indexStart = find(" hasitems%3A",FavoritesParseItem,indexEnd) + 12;
+			If (indexStart > 12){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesHasItems[i] = AtoI(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites HasItems[%u]: %u",i,FavoritesHasItems[i]);
+			}
+			Else {FavoritesHasItems[i] = 0;
+			}
 		}
 	}
 }
@@ -2333,12 +2618,11 @@ Function Parse_Dynamic(String InDynamic$){
 		OutListBar = OutDynamicBar;
 		OutListCount = OutDynamicCount;
     }
-	If (TotalDynamic - DynamicFirstNumber >= NumberOfDynamic){
-		ListLengthDynamic = NumberOfDynamic;
+	If (TotalDynamic - DynamicFirstNumber >= NumberOfList){
+		ListLengthDynamic = NumberOfList;
 	}
 	else {
 		ListLengthDynamic = TotalDynamic - DynamicFirstNumber;
-//		SetArray(Dynamic$,"");
 		SetArray(DynamicName,"");
 		SetArray(DynamicFile,"");
 		If (ListType[1] = 6)
@@ -2359,7 +2643,6 @@ Function Parse_Dynamic(String InDynamic$){
 		}
 		Length = indexEnd - indexStart;
 		DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
-//		Dynamic$[i] = DynamicName[i];
 		If (ListType[1] = 6){
 			List$[i] = DynamicName[i];
 		}
@@ -2387,12 +2670,11 @@ Function Parse_Genres(String InGenres$){
 		OutListBar = OutGenresBar;
 		OutListCount = OutGenreCount;
     }
-	If (TotalGenres - GenreFirstNumber >= NumberOfGenres){
-		ListLengthGenres = NumberOfGenres;
+	If (TotalGenres - GenreFirstNumber >= NumberOfList){
+		ListLengthGenres = NumberOfList;
 	}
 	else {
 		ListLengthGenres = TotalGenres - GenreFirstNumber;
-//		SetArray(Genre$,"");
 		SetArray(Genre,"");
 		SetArray(GenreID,0);
 		If (ListType[1] = 1){
@@ -2410,7 +2692,6 @@ Function Parse_Genres(String InGenres$){
 			indexEnd = find(" ",InGenres$, indexStart);
 			Length = indexEnd - indexStart;
 			Genre[i] = ParsePercent(mid(InGenres$,indexStart,Length));
-	//			Genre$[i] = Genre[i];
 			If (ListType[1] = 1) {
 	            List$[i] = Genre[i];
 			}
@@ -2447,12 +2728,11 @@ Function Parse_Artists(String InArtists$){
 		OutListBar = OutArtistsBar;
 		OutListCount = OutArtistCount;
     }
-	If (TotalArtists - ArtistFirstNumber >= NumberOfArtists){
-		ListLengthArtists = NumberOfArtists;
+	If (TotalArtists - ArtistFirstNumber >= NumberOfList){
+		ListLengthArtists = NumberOfList;
 	}
 	else {
 		ListLengthArtists = TotalArtists - ArtistFirstNumber;
-//		SetArray(Artist$,"");
 		SetArray(Artist,"");
 		SetArray(ArtistID,0);
 		If (ListType[1] = 2)
@@ -2469,15 +2749,15 @@ Function Parse_Artists(String InArtists$){
 		indexEnd = find(" ",InArtists$, indexStart);
 		Length = indexEnd - indexStart;		
 		Artist[i] = ParsePercent(mid(InArtists$,indexStart,Length));
-//		Artist$[i] = Artist[i];
 		If (ListType[1] = 2){
 			List$[i] = Artist[i];
 		}
 	}
 }
 Function Parse_Albums(String InAlbums$){
-	Integer i, indexStart, indexEnd, Length;
-	Integer ListLengthAlbums;
+	Integer i, j, indexStart, indexEnd, indexNext, Length;
+	Integer ListLengthAlbums, AlbumTrackID[10];
+	String AlbumArtist[10][128], AlbumsParseItem[2048];
 
 	indexEnd = find(" ",InAlbums$,9);
 	Length = indexEnd - 8;
@@ -2502,27 +2782,95 @@ Function Parse_Albums(String InAlbums$){
 	}
 	else {
 		ListLengthAlbums = TotalAlbums - AlbumFirstNumber;
-//		SetArray(Album$,"");
 		SetArray(Album,"");
 		SetArray(AlbumID,0);
-		If (ListType[1] = 3)
+		If (ListType[1] = 3){
 			SetArray(List$," ");
+		}
+		If (Coverflow_Enable = 1){ 
+			SetArray(ListCoverURL,BlankCoverURL);
+			SetArray(ListCoverflowArtist," ");
+		}
 	}
-	indexEnd = 1;
+	indexNext = 1;
 	For (i = 1 to ListLengthAlbums) {
-		If (find(" id%3A",InAlbums$,indexEnd)){
-			indexStart = find(" id%3A",InAlbums$,indexEnd) + 6;
+		indexStart = find(" id%3A",InAlbums$,indexNext) + 6;
+		If (indexStart > 6){
 			indexEnd = find(" ",InAlbums$,indexStart);
 			Length = indexEnd - indexStart;
 			AlbumID[i] = AtoI(mid(InAlbums$,indexStart,Length));
-			indexStart = indexEnd + 9;
-			indexEnd = find(" ",InAlbums$, indexStart);
+			trace("Album ID[%u]: %u",i,AlbumID[i]);
+		}	
+		Else {
+			AlbumID[i] = 0;
+			for (j = i to ListLengthAlbums){
+				AlbumID[j] = 0;
+				Album[j] = "";
+				List$[j] = " ";
+				If (Coverflow_Enable = 1){
+					ListCoverURL[j] = BlankCoverURL;
+					ListCoverflowArtist[j] = " ";
+				}
+			}
+			Break;
+		}
+		indexNext = find(" id%3A",InAlbums$,indexEnd);
+		if (indexNext > 0){
+			Length = indexNext - indexEnd;
+			AlbumsParseItem = mid(InAlbums$,indexEnd,Length);
+		}
+		Else {
+			AlbumsParseItem = mid(InAlbums$,indexEnd,len(InAlbums$) - indexEnd - 1);
+		}
+		indexStart = find(" album%3A",AlbumsParseItem,1) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			Album[i] = ParsePercent(mid(InAlbums$,indexStart,Length));
-//			Album$[i] = Album[i];             
-			If (ListType[1] = 3){
+			Album[i] = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
+		}
+		Else {
+			Album[i] = " ";
+		}
+		indexStart = find(" artwork_track_id%3A",AlbumsParseItem,indexEnd) + 20;
+		If (indexStart > 20){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			AlbumTrackID[i] = AtoI(mid(AlbumsParseItem,indexStart,Length));
+		}
+		Else {
+			AlbumTrackID[i] = 0;
+		}
+		indexStart = find(" artist%3A",AlbumsParseItem,indexEnd) + 10;
+		If (indexStart > 10){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			AlbumArtist[i] = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
+			trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
+		}
+		Else {
+			AlbumArtist[i] = "";
+			trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
+		}
+		If (ListType[1] = 3){
+			trace("ListType[1] = 3");
+			If (Coverflow_Enable = 1){
+				trace("Coverflow_Enable = 1");
+				List$[i] = left(Album[i], CoverflowWidthAlbum);
+			}
+			Else {
+				trace("Coverflow_Enable = 0");
 				List$[i] = Album[i];
 			}
+		}
+		If (Coverflow_Enable = 1){
+			trace("Coverflow_Enable = 1; making additional outputs");
+			If (AlbumTrackID[i] = 0){
+				ListCoverURL[i] = BlankCoverURL;
+			}
+			Else {
+				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", SqueezeCenterIPAddr$, AlbumTrackID[i]);
+			}
+			ListCoverflowArtist[i] = left(AlbumArtist[i],CoverflowWidthArtist);
 		}
 	}
 }
@@ -2548,12 +2896,11 @@ Function Parse_Titles(String InTitles$){
 		OutListBar = OutTitlesBar;
 		OutListCount = OutTitleCount;
     }
-	If (TotalTitles - TitleFirstNumber >= NumberOfTitles){
-		ListLengthTitles = NumberOfTitles;
+	If (TotalTitles - TitleFirstNumber >= NumberOfList){
+		ListLengthTitles = NumberOfList;
 	}
 	Else {
 		ListLengthTitles = TotalTitles - TitleFirstNumber;
-//		SetArray(Title$,"");
 		SetArray(Title,"");
 		SetArray(TrackID,0);
 		If (ListType[1] = 4)
@@ -2570,7 +2917,6 @@ Function Parse_Titles(String InTitles$){
 			indexEnd = find(" ",InTitles$, indexStart);
 			Length = indexEnd - indexStart;
     		Title[i] = ParsePercent(mid(InTitles$,indexStart,Length));
-//			Title$[i] = Title[i];
 			If (ListType[1] = 4){
 				List$[i] = Title[i];		
 			}
@@ -2614,8 +2960,8 @@ Function Parse_Playlists(String InPlaylists$){
 		OutListBar = OutPlaylistsBar;
 		OutListCount = OutPlaylistCount;
     }
-	If (TotalPlaylists - PlaylistFirstNumber >= NumberOfPlaylists){
-		ListLengthPlaylists = NumberOfPlaylists;
+	If (TotalPlaylists - PlaylistFirstNumber >= NumberOfList){
+		ListLengthPlaylists = NumberOfList;
 	}
 	else {
 		ListLengthPlaylists = TotalPlaylists - PlaylistFirstNumber;
@@ -2668,8 +3014,8 @@ Function Parse_Apps(String InApps$){
 		OutListBar = OutAppsBar;
 		OutListCount = OutAppsCount;
 	}
-	If (TotalApps - AppsFirstNumber >= NumberOfApps){
-		ListLengthApps = NumberOfApps;
+	If (TotalApps - AppsFirstNumber >= NumberOfList){
+		ListLengthApps = NumberOfList;
 	}
 	else {
 		ListLengthApps = TotalApps - AppsFirstNumber;
@@ -2738,8 +3084,8 @@ Function Parse_Radios(String InRadios$){
 		OutListBar = OutRadiosBar;
 		OutListCount = OutRadiosCount;
 	}
-	If (TotalRadios - RadiosFirstNumber >= NumberOfRadios){
-		ListLengthRadios = NumberOfRadios;
+	If (TotalRadios - RadiosFirstNumber >= NumberOfList){
+		ListLengthRadios = NumberOfList;
 	}
 	else {
 		ListLengthRadios = TotalRadios - RadiosFirstNumber;
@@ -2801,13 +3147,12 @@ Function Parse_Search(String InSearch$){
 	else {
 		OutSearchBar = 0;
 	}
-	ListType[1] = 8;
 	If (ListType[1] = 8){
 		OutListBar = OutSearchBar;
 		OutListCount = OutSearchCount;
     }
-	If (TotalSearch - SearchFirstNumber >= NumberOfSearch){
-		ListLengthSearch = NumberOfSearch;
+	If (TotalSearch - SearchFirstNumber >= NumberOfList){
+		ListLengthSearch = NumberOfList;
 	}
 	else {
 		ListLengthSearch = TotalSearch - SearchFirstNumber;
@@ -2888,8 +3233,7 @@ Function Parse_Search(String InSearch$){
 }
 Function Parse_Players(String InPlayers$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthPlayers;
-	
+		
 	indexEnd = find(" ",InPlayers$,10);
 	Length = indexEnd - 9;
 	PlayersFirstNumber = AtoI(mid(InPlayers$,9,Length));
@@ -3052,6 +3396,154 @@ PUSH List_Back{
 }
 PUSH Nowplaying_Refresh{
 	Nowplaying_PgReset_fn();
+}
+PUSH Coverflow_Enable {
+	NumberOfAlbums = NumberOfCoverflow;
+	If (ListType[1] = 0){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 1){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 2){
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListSearchRS[1] = 0;
+		If (ActiveGenre <> ""){
+			ListName[1] = "Albums in " + ActiveGenre;
+			ListActiveGenre[1] = ActiveGenre;
+			restrictorAlbums = restrictorArtists;
+		}
+		Else {
+			ListName[1] = "All Albums";
+			restrictorAlbums = "";
+			ListActiveGenre[1] = "";
+		}
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 3){
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 4){
+		// tracks
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 5){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 6){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 8){ 
+		restrictorAlbums = "search:" + search_in;
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListName[1] = search_in + " in Albums";
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 9){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}             
+	Else If (ListType[1] = 10){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 11){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 12){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+}
+RELEASE Coverflow_Enable {
+	NumberOfAlbums = NumberOfList;
 }
 CHANGE InPageList{
 	If (ListType[1] = 0){
@@ -3599,6 +4091,8 @@ PUSH BrowseCurrentSongGenre {
 	If (ListType[1] != 2){
 	    ListShiftFwd_fn();
 		ListType[1] = 2;
+		ListActiveGenre[1] = CurrentTrackGenre$;
+		
 	}
 	ListFirst[1] = 0;
 	ActiveGenreID = CurrentGenreID;
@@ -3614,8 +4108,10 @@ PUSH BrowseCurrentSongArtist {
 	If (ListType[1] != 3){
 	    ListShiftFwd_fn();
 		ListType[1] = 3;
+		ListActiveGenre[1] = "";
 	}
 	ListFirst[1] = 0;
+	ActiveGenre = "";
 	ActiveArtistID = CurrentArtistID;
 	ActiveArtist = CurrentTrackArtist$;
 	makestring(ListName[1], "Albums for %s",CurrentTrackArtist$);
@@ -3629,10 +4125,12 @@ PUSH BrowseCurrentSongAlbum {
 	If (ListType[1] != 4){
 	    ListShiftFwd_fn();
 		ListType[1] = 4;
+		ListActiveGenre[1] = "";
 	}
 	ListFirst[1] = 0;
 	ActiveAlbumID = CurrentAlbumID;
 	ActiveAlbum = CurrentTrackAlbum$;
+	ActiveGenre = "";
 	makestring(ListName[1], "Titles in %s",CurrentTrackAlbum$);
 	makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",CurrentAlbumID);
 	ListRestrictor[1] = restrictorTitles;
@@ -3650,101 +4148,40 @@ PUSH PandoraRate_Dn {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient, OUT$);
 }
-PUSH search_clear {
-	clearbuffer (search_in$);
-	search_in = "";
-	search_in_fb = " ";
-	If (ListType[1] = 0){
-		ListName[1] = "\"\" anywhere";
-		ListName$ = ListName[1];
-	}
-	If (ListType[1] = 1){
-		makestring(ListName[1], "\"%s\" in Genres",search_in); //Genres code
-		ListName$ = ListName[1];
-	}
-	Else If (ListType[1] = 2){
-		makestring(ListName[1], "\"%s\" in Artists",search_in); //Artists code
-		ListName$ = ListName[1];
-	}
-	Else If (ListType[1] = 3){
-		makestring(ListName[1], "\"%s\" in Albums",search_in); //Albums code
-		ListName$ = ListName[1];
-	}
-	Else If (ListType[1] = 4){
-		makestring(ListName[1], "\"%s\" in Tracks",search_in); //Titles code
-		ListName$ = ListName[1];
-	}
-	Else If (ListType[1] = 8){
-		makestring(ListName[1],"\"%s\" anywhere",search_in); //DynamicPlaylists code
-		ListName$ = ListName[1];
-	}
-	Else If (ListType[1] = 12){
-		ListName[1] = "\"\" anywhere";
-		ListName$ = ListName[1];
-	}		
-}
-/*
-PUSH search_resubmit
-{
-	If (ListType[1] = 1){
-		search_genres_fn(); //Genres code
-	}
-	Else If (ListType[1] = 2){
-		search_artists_fn(); //Artists code
-	}
-	Else If (ListType[1] = 3){
-		search_albums_fn(); //Albums code
-	}
-	Else If (ListType[1] = 4){
-		search_titles_fn(); //Titles code
-	}
-	Else If (ListType[1] = 5){
-		search_playlists_fn(); //Playlists code
-	}
-	Else If (ListType[1] = 6){
-		search_playlists_fn(); //DynamicPlaylists code
-	}		
-	Else If (ListType[1] = 8){
-		search_fn();
-	}
-}
-*/
-PUSH search_backspace {
-	search_in = left(search_in,len(search_in)-1); //take the left portion of search_in, leaving out one character
-	makestring(search_in_fb,"%s",search_in); // copy the search_in variable to the feedback output
-	If (ListType[1] = 1){
-		search_genres_fn(); //Genres search code
-	}
-	Else If (ListType[1] = 2){
-		search_artists_fn(); //Artists search code
-	}
-	Else If (ListType[1] = 3){
-		search_albums_fn(); //Albums search code
-	}
-	Else If (ListType[1] = 4){
-		search_titles_fn(); //Titles search code
-	}
-	Else If (ListType[1] = 5){
-		search_playlists_fn(); //Playlists search code
-	}
-	Else If (ListType[1] = 6){
-		search_playlists_fn(); //DynamicPlaylists search code
-	}
-	Else If (ListType[1] = 0) {
-		search_fn(); //General Search function //yyy
-	} 
-	Else If (ListType[1] = 12){
-		Search_Radios_fn(); // radio search
-	}
-}
 CHANGE search_in$ {
-	do {
-		nextChar = getc(search_in$);  //get the next character
-		search_in = search_in + chr(nextChar); //add that character to the search_in variable
-	} 
-	until (len(search_in$) = 0);  //empty the buffer
+	search_in = search_in$;
 	trace("search_in = %s",search_in);
-	search_in_fb = search_in; // search_in > feedback output
+	trace("ListSearchRS[1] = %u",ListSearchRS[1]);
+	If ((len(search_in) > 0) && (ListSearchRS[1] = 0)){
+		
+		If (ListType[1] = 0 || ListType[1] = 8){
+			trace("matched ListType[1] = 0 or 8");
+			search_fn(); // General Search
+		}
+		Else If (ListType[1] = 1){
+			search_genres_fn(); // Genres search
+		}
+		Else If (ListType[1] = 2){
+			search_artists_fn(); // Artists search
+		}
+		Else If (ListType[1] = 3){
+			search_albums_fn(); // Albums search
+		}
+		Else If (ListType[1] = 4){
+			search_titles_fn(); // Titles search
+		}
+		Else If (ListType[1] = 5){
+			search_playlists_fn(); // Playlists search
+		}
+		Else If (ListType[1] = 6){
+			search_playlists_fn(); // DynamicPlaylists search
+		}
+		Else If (ListType[1] = 12){
+			Search_Radios_fn(); // radios search
+		}
+	}
+}
+PUSH Search_submit {
 	If (ListType[1] = 0){
 		search_fn(); // General Search
 	}
@@ -3766,9 +4203,15 @@ CHANGE search_in$ {
 	Else If (ListType[1] = 6){
 		search_playlists_fn(); // DynamicPlaylists search
 	}
+	Else If (ListType[1] = 10){
+		Search_Favorites_fn();
+	}
 	Else If (ListType[1] = 12){
 		Search_Radios_fn(); // radios search
 	}
+}
+CHANGE NumberOfList{
+	NumberOfAlbums = NumberOfList;
 }
 SOCKETRECEIVE TCPClient {
 	String In$[16384],Find$[64];
@@ -3793,11 +4236,13 @@ Else If (find(" time",Find$)) { // time parsing
 	Parse_Time(In$);
 //	In$ = "";
 }
+/*
 Else If (find(" pandora items ",Find$)) { // pandora parsing
 	trace("parsing pandora");
 	Parse_Pandora(In$);
 //	In$ = "";
 }
+*/
 Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
 	trace("parsing favorites, apps, or radios");
 	Parse_FAR(In$);
@@ -3843,6 +4288,9 @@ Else If (find("radios ",Find$)){ // Top-level Radios parsing
 	Parse_Radios(In$);
 //	In$ = "";
 }
+Else If (find("search playlist",Find$)){
+	// just a fake to prevent regular search parsing when playing radio search
+}
 Else If (find("search ",Find$)){  // Search parsing
 	trace("parsing search");
 	Parse_Search(In$);
@@ -3864,26 +4312,13 @@ CHANGE TCPIP_Tx$ {
 */
 // /////////// Initialization script
 Function Main() {
+	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", SqueezeCenterIPAddr$);
 	PlayerID$ = PlayerID$_Startup;
-	CurrentPlayerID = PlayerID$;
 	PlayersID_raw[0] = FormatPlayerID(PlayerID$);
-
 	StatusFind$ = PlayersID_raw[0] + " status - 1";
 	NowplayingFind$ = PlayersID_raw[0] + " status ";
 	TimeFind$ = PlayersID_raw[0] + " time ";
     FAR_parse = "favorites items ";
-    NumberOfHome = NumberOfList;
-    NumberOfGenres = NumberOfList;
-	NumberOfArtists = NumberOfList;
-	NumberOfAlbums = NumberOfList;
-	NumberOfTitles = NumberOfList;
-	NumberOfPlaylists = NumberOfList;
-	NumberOfDynamic = NumberOfList;
-	NumberOfSearch = NumberOfList;
-	NumberOfPandora = NumberOfList;        
-	NumberOfFavorites = NumberOfList;    
-	NumberOfApps = NumberOfList;
-	NumberOfRadios = NumberOfList;
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
@@ -3902,6 +4337,8 @@ Function Main() {
 	restrictorPlaylists = "";
 	restrictorPandora = "";
 	restrictorFavorites = "";
+	ActiveFAR_ID = "";
+	SetArray(ListSearchRS,0);
 	SetArray(ListType,0);
 	SetArray(ListName,"Home");
 	SetArray(ListRestrictor,"");
@@ -3918,8 +4355,11 @@ Function Main() {
 	ListHome[9] = "Pandora";
 	ListHome[10] = "Tracks";
  	TotalHome = 10;
- 	Home_PgReset_fn();
-
+ 	Wait (200){
+	 	Home_PgReset_fn();
+		CurrentPlayerID = PlayerID$;
+		NumberOfAlbums = NumberOfList;
+	}
 	While (1) {
 		If (status_request_time = 1) {
 			makestring(Out$,"%s time ? \n",PlayerID$);
