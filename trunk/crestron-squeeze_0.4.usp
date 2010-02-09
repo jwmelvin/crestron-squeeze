@@ -101,7 +101,8 @@ ANALOG_INPUT  CoverflowWidthArtist, CoverflowWidthAlbum;
 ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
 // Scroll Feedback
 ANALOG_OUTPUT  OutListCount, OutListBar;
-ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar;
+ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar; 
+ANALOG_OUTPUT  OutPlayersCount, OutPlayersBar;
 STRING_OUTPUT  ListName$;
 // Player feedback
 STRING_OUTPUT  CurrentPlayerName;
@@ -202,8 +203,6 @@ INTEGER OutPandoraCount,OutPandoraBar;
 INTEGER OutFavoritesCount,OutFavoritesBar;
 INTEGER OutAppsCount,OutAppsBar;
 INTEGER OutRadiosCount,OutRadiosBar;
-//
-INTEGER OutPlayersCount, OutPlayersBar;
 //
 INTEGER Nowplaying_refresh_enable, ListLengthNowplaying_old;
 //
@@ -1635,7 +1634,7 @@ Function Search_fn(){
 	ActiveGenre = "";
 	ListFirst[1]=0;
 	makestring(ListName[1],"\"%s\" anywhere",search_in_raw);
-	makestring(restrictorSearch,"%s",search_in);
+	restrictorSearch = search_in;
 	ListRestrictor[1] = search_in;
 	FirstSearch = 0;
 	SearchRefresh_fn();
@@ -2290,7 +2289,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		OutNowplayingBar = 65535 - ((65535 / TotalNowplaying) * NowplayingFirstNumber );
 	}
 	Else {
-		OutNowplayingBar = 0;
+		OutNowplayingBar = 65535;
 	}
 	ListLengthNowplaying = TotalNowplaying - NowplayingFirstNumber;
 	if (NumberOfNowplaying < ListLengthNowplaying){
@@ -2424,7 +2423,12 @@ Function Parse_Pandora(String InPandora$){
 	Length = indexEnd - indexStart;
 	TotalPandora = AtoI(mid(InPandora$,indexStart,Length));
 	OutPandoraCount = TotalPandora;
-	OutPandoraBar = 65535 - ((65535 / TotalPandora) * PandoraFirstNumber );
+	If (TotalPandora > 0){
+		OutPandoraBar = 65535 - ((65535 / TotalPandora) * PandoraFirstNumber );
+	}
+	Else {
+		OutPandoraBar = 65535;
+	}
 	If (ListType[1] = 9){
 		OutListBar = OutPandoraBar;
 		OutListCount = OutPandoraCount;
@@ -2629,7 +2633,12 @@ Function Parse_Dynamic(String InDynamic$){
 	Length = indexEnd - indexStart;
 	TotalDynamic = AtoI(mid(InDynamic$,indexStart,Length));
 	OutDynamicCount = TotalDynamic;
-	OutDynamicBar = 65535 - ((65535 / TotalDynamic) * DynamicFirstNumber );
+	If (TotalDynamic > 0){
+		OutDynamicBar = 65535 - ((65535 / TotalDynamic) * DynamicFirstNumber );
+	}
+	Else {
+		OutDynamicBar = 65535;
+	}
 	If (ListType[1] = 6){
 		OutListBar = OutDynamicBar;
 		OutListCount = OutDynamicCount;
@@ -2680,7 +2689,7 @@ Function Parse_Genres(String InGenres$){
 		OutGenresBar = 65535 - ((65535 / TotalGenres) * GenreFirstNumber);
 	}
 	else {
-		OutGenresBar = 0;
+		OutGenresBar = 65535;
 	}
 	If (ListType[1] = 1){
 		OutListBar = OutGenresBar;
@@ -2738,7 +2747,7 @@ Function Parse_Artists(String InArtists$){
 		OutArtistsBar = 65535 - ((65535 / TotalArtists) * ArtistFirstNumber);
 	}
 	else {
-		OutArtistsBar = 0;
+		OutArtistsBar = 65535;
 	}
 	If (ListType[1] = 2){
 		OutListBar = OutArtistsBar;
@@ -2787,7 +2796,7 @@ Function Parse_Albums(String InAlbums$){
 		OutAlbumsBar = 65535 - ((65535 / TotalAlbums) * AlbumFirstNumber);
 	}
 	else {
-		OutAlbumsBar = 0;
+		OutAlbumsBar = 65535;
 	}
 	If (ListType[1] = 3){
 		OutListBar = OutAlbumsBar;
@@ -2906,7 +2915,7 @@ Function Parse_Titles(String InTitles$){
 		OutTitlesBar = 65535 - ((65535 / TotalTitles) * TitleFirstNumber );
 	}
 	else {
-		OutTitlesBar = 0;
+		OutTitlesBar = 65535;
 	}
 	If (ListType[1] = 4){
 		OutListBar = OutTitlesBar;
@@ -2971,7 +2980,12 @@ Function Parse_Playlists(String InPlaylists$){
 	Length = indexEnd - indexStart;
 	TotalPlaylists = AtoI(mid(InPlaylists$,indexStart,Length));
 	OutPlaylistCount = TotalPlaylists;
-	OutPlaylistsBar = 65535 - ((65535 / TotalPlaylists) * PlaylistFirstNumber );
+	If (TotalPlaylists > 0){
+		OutPlaylistsBar = 65535 - ((65535 / TotalPlaylists) * PlaylistFirstNumber );
+	}
+	Else {
+		OutPlaylistsBar = 65535;
+	}
 	If (ListType[1] = 5) {
 		OutListBar = OutPlaylistsBar;
 		OutListCount = OutPlaylistCount;
@@ -3025,7 +3039,12 @@ Function Parse_Apps(String InApps$){
 	TotalApps = AtoI(mid(InApps$,indexStart,Length));
 	OutAppsCount = TotalApps;
 	trace("TotalApps = %u",TotalApps);
-	OutAppsBar = 65535 - ((65535 / TotalApps) * AppsFirstNumber );
+	If (TotalApps > 0){
+		OutAppsBar = 65535 - ((65535 / TotalApps) * AppsFirstNumber );
+	}
+	Else {
+		OutAppsBar = 65535;
+	}
 	If (ListType[1] = 11){
 		OutListBar = OutAppsBar;
 		OutListCount = OutAppsCount;
@@ -3095,7 +3114,12 @@ Function Parse_Radios(String InRadios$){
 	TotalRadios = AtoI(mid(InRadios$,indexStart,Length));
 	OutRadiosCount = TotalRadios;
 	trace("TotalRadios = %u",TotalRadios);
-	OutRadiosBar = 65535 - ((65535 / TotalRadios) * RadiosFirstNumber );
+	If (TotalRadios > 0){
+		OutRadiosBar = 65535 - ((65535 / TotalRadios) * RadiosFirstNumber );
+	}
+	Else {
+		OutRadiosBar = 65535;
+	}
 	If (ListType[1] = 12){
 		OutListBar = OutRadiosBar;
 		OutListCount = OutRadiosCount;
@@ -3180,7 +3204,7 @@ Function Parse_Search(String InSearch$){
 	}
 	indexEnd = 1;
 	For (i = 1 to ListLengthSearch){
-		If (find(" contributor_id",InSearch$,indexEnd)) {//parsing for artists in search results
+		If (find(" contributor_id",InSearch$,indexEnd)) { // parsing for artists in search results
 			trace("parsing contributor_id in search result");
 			indexStart = find(" contributor_id%3A",InSearch$,indexEnd) + 18;
 			indexEnd = find(" ",InSearch$,indexStart);
@@ -3197,7 +3221,7 @@ Function Parse_Search(String InSearch$){
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
 			trace("contributor:%s",Search[i]);
 		}
-		Else If (find(" album_id%3A",InSearch$,indexEnd)) {//parsing for albums in search results
+		Else If (find(" album_id%3A",InSearch$,indexEnd)) { // parsing for albums in search results
 			trace("parsing album_id in search result");
 			indexStart = find(" album_id%3A",InSearch$,indexEnd) + 12;
 			indexEnd = find(" ",InSearch$,indexStart);
@@ -3212,7 +3236,7 @@ Function Parse_Search(String InSearch$){
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
 		}
-		Else If (find(" genre_id%3A",InSearch$,indexEnd)) {//parsing for genres in search results
+		Else If (find(" genre_id%3A",InSearch$,indexEnd)) { // parsing for genres in search results
 			trace("parsing genre_id in search result");
 			indexStart = find(" genre_id%3A",InSearch$,indexEnd) + 12;
 			indexEnd = find(" ",InSearch$,indexStart);
@@ -3227,7 +3251,7 @@ Function Parse_Search(String InSearch$){
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
 		}
-		Else If (find(" track_id%3A",InSearch$,indexEnd)) {//parsing for tracks in search results
+		Else If (find(" track_id%3A",InSearch$,indexEnd)) { // parsing for tracks in search results
 			trace("parsing track_id in search result");
 			indexStart = find(" track_id%3A",InSearch$,indexEnd) + 12;
 			indexEnd = find(" ",InSearch$,indexStart);
@@ -3263,7 +3287,12 @@ Function Parse_Players(String InPlayers$){
 	
 	
 	OutPlayersCount = TotalPlayers;
-	OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber );
+	If (TotalPlayers > 0){
+		OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber);
+	}
+	else {
+		OutPlayersBar = 65535;
+	}
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
 	If (ListType[1] = 13) {
@@ -4165,8 +4194,10 @@ PUSH PandoraRate_Dn {
 	socketsend(TCPClient, OUT$);
 }
 CHANGE search_in$ {
-	search_in_raw = search_in$;
-	search_in = FormatSearch(search_in_raw);
+	String temp[64];
+	temp = search_in$;
+	search_in_raw = temp;
+	search_in = FormatSearch(temp);
 	trace("search_in = %s",search_in);
 	trace("ListSearchRS[1] = %u",ListSearchRS[1]);
 	If ((len(search_in) > 0) && (ListSearchRS[1] = 0)){
