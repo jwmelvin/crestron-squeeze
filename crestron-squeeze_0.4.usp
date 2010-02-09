@@ -188,7 +188,7 @@ INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
 //
 // INTEGER	nextChar;
- STRING	search_in[64];
+ STRING	search_in[64], search_in_raw[64];
 //
 INTEGER OutHomeCount, OutHomeBar;
 INTEGER OutGenreCount, OutGenresBar;
@@ -1604,21 +1604,21 @@ Function NowplayingPlay_fn(integer i){
 Function NowplayingRemove_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
 		Activeplaylist = "";
-		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);//xxx
+		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 }
 Function NowplayingMoveUp_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
-		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);//xxx
+		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 }
 Function NowplayingMoveDown_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
-		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);//xxx
+		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
@@ -1634,7 +1634,7 @@ Function Search_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1]=0;
-	makestring(ListName[1],"\"%s\" anywhere",search_in);
+	makestring(ListName[1],"\"%s\" anywhere",search_in_raw);
 	makestring(restrictorSearch,"%s",search_in);
 	ListRestrictor[1] = search_in;
 	FirstSearch = 0;
@@ -1651,7 +1651,7 @@ Function Search_genres_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	makestring(ListName[1], "\"%s\" in Genres",search_in);
+	makestring(ListName[1], "\"%s\" in Genres",search_in_raw);
     makestring(restrictorGenres,"search:%s",search_in);
 	ListRestrictor[1] = restrictorGenres;
 	FirstGenre = 0;
@@ -1668,7 +1668,7 @@ Function Search_artists_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	makestring(ListName[1], "\"%s\" in Artists",search_in);
+	makestring(ListName[1], "\"%s\" in Artists",search_in_raw);
     makestring(restrictorArtists,"search:%s",search_in);
 	ListRestrictor[1] = restrictorArtists;
 	FirstArtist = 0;
@@ -1685,7 +1685,7 @@ Function Search_albums_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	makestring(ListName[1], "\"%s\" in Albums",search_in);
+	makestring(ListName[1], "\"%s\" in Albums",search_in_raw);
     makestring(restrictorAlbums,"search:%s",search_in);
 	ListRestrictor[1] = restrictorAlbums;
 	FirstAlbum = 0;
@@ -1702,7 +1702,7 @@ Function Search_titles_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	makestring(ListName[1], "\"%s\" in Titles",search_in);
+	makestring(ListName[1], "\"%s\" in Titles",search_in_raw);
     makestring(restrictorTitles,"search:%s tags:te",search_in);
 	ListRestrictor[1] = restrictorTitles;
 	FirstTitle = 0;
@@ -1719,7 +1719,7 @@ Function Search_playlists_fn(){
 	}
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	makestring(ListName[1], "\"%s\" in Playlists",search_in);
+	makestring(ListName[1], "\"%s\" in Playlists",search_in_raw);
     makestring(restrictorPlaylists,"search:%s",search_in);
 	ListRestrictor[1] = restrictorPlaylists;
 	FirstPlaylist = 0;
@@ -1789,6 +1789,22 @@ String_Function FormatPlayerID(String PlayerID){
 		PlayerIDLocal = KeepL$ + "%3A" + PlayerIDLocal;
 	}
 	Return (PlayerIDLocal);
+}
+String_Function FormatSearch(String input){
+	Integer indexMatch;
+	String output[64], dump$[64], KeepL$[64];
+	If (find(" ",input)) {
+		While (find(" ",input)) {
+			indexMatch = find(" ",input);
+			KeepL$ = removebylength(indexMatch - 1,input); 
+			dump$ = removebylength(1,input); 
+			output = KeepL$ + "%20" + input;
+		}
+	}
+	Else {
+		output = input;
+	}
+	Return (output);
 }
 // //////////// PARSING FUNCTIONS
 Function Parse_Status(String InStatus$){
@@ -2302,7 +2318,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 			indexEnd = find(" ",InNowplaying$,indexStart);
 			Length = indexEnd - indexStart;
 			NowplayingIndex[i] = AtoI(mid(InNowplaying$,indexStart,Length));
-			trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); //xxx
+			trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); 
 			If (NowplayingIndex[i] = CurrentsongIndex){  // compare Index w/ CurrentsongIndex for NowplayingCurrentSong
 				NowplayingCurrentSong[i] = 1;
 			}
@@ -4149,7 +4165,8 @@ PUSH PandoraRate_Dn {
 	socketsend(TCPClient, OUT$);
 }
 CHANGE search_in$ {
-	search_in = search_in$;
+	search_in_raw = search_in$;
+	search_in = FormatSearch(search_in_raw);
 	trace("search_in = %s",search_in);
 	trace("ListSearchRS[1] = %u",ListSearchRS[1]);
 	If ((len(search_in) > 0) && (ListSearchRS[1] = 0)){
