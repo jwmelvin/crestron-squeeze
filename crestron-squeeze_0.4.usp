@@ -58,6 +58,8 @@ DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
 DIGITAL_INPUT Playlist_Save_Enable;
 DIGITAL_INPUT NowplayingSeparateOuts_Enable;
 //
+DIGITAL_INPUT Select_DefaultPlayer;
+//
 DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
 DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
@@ -99,6 +101,7 @@ ANALOG_INPUT  InPageList;
 ANALOG_INPUT  InPageNowplaying;
 ANALOG_INPUT  NowplayingShowPrev;
 ANALOG_INPUT  InPagePlayers;
+ANALOG_INPUT  InTimeBar;
 ANALOG_INPUT  NowplayingWidthTitle, NowplayingWidthArtist;
 ANALOG_INPUT  CoverflowWidthArtist, CoverflowWidthAlbum;
 ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
@@ -106,6 +109,7 @@ ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlaye
 ANALOG_OUTPUT  OutListCount, OutListBar;
 ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar; 
 ANALOG_OUTPUT  OutPlayersCount, OutPlayersBar;
+ANALOG_OUTPUT  OutTimeBar;
 STRING_OUTPUT  ListName$;
 // Player feedback
 STRING_OUTPUT  CurrentPlayerName;
@@ -187,11 +191,13 @@ INTEGER NumberOfAlbums;
 //
 // INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
+INTEGER CTDuration_sec;
 INTEGER CurrentPlaylistID, CurrentPlaylistModified;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
 //
-// INTEGER	nextChar;
+INTEGER progInTimeBar;
+//
  STRING	search_in[64], search_in_raw[64];
 //
 INTEGER OutHomeCount, OutHomeBar;
@@ -1809,6 +1815,42 @@ String_Function FormatSearch(String input){
 	Return (output);
 }
 // //////////// PARSING FUNCTIONS
+Function Parse_Time(String InTime$){
+	Integer indexEnd, Length; // indexStart
+	Integer Time_min, Time_sec, Time_rmd;	
+	Long_Integer BarTemp;
+
+	Time_sec = AtoI(InTime$);
+	Time_min = Time_sec / 60;
+	Time_rmd = Time_sec - (Time_min * 60);
+	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
+	
+/*	indexEnd = find(".",InTime$,1);
+	If (indexEnd > 0) {
+		Time_sec = AtoI(mid(InTime$,1,indexEnd));
+		Time_min = Time_sec / 60;
+		Time_rmd = Time_sec - (Time_min * 60);
+		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd); 
+	}
+	Else if (InTime$ = "0") {
+		makestring(CurrentsongTime,"0:00");
+		Time_sec = 0;
+	}
+	Else {
+		CurrentsongTime = InTime$;
+	}
+*/
+	If ((CTDuration_sec > 0) && (Time_sec > 0)){
+		BarTemp =  (65535 * Time_sec) / CTDuration_sec;
+		OutTimeBar = BarTemp;
+	}
+	Else If (Time_sec = 0){
+		OutTimeBar = 0;
+	}
+	Else {
+		OutTimeBar = 32767;
+	}
+}
 Function Parse_Status(String InStatus$){
 	Integer i, j;
 	Integer indexStart, indexEnd, Length;
@@ -2168,39 +2210,28 @@ Function Parse_Status(String InStatus$){
 	CurrentsongAlbum = CurrentTrackAlbum$;
 	CurrentsongArtist = CurrentTrackArtist$;
 	CurrentsongGenre = CurrentTrackGenre$;
-	indexStart = 1;
- 	indexEnd = find(".",CurrentTrackTime$,1);
-	If (indexEnd > 0) {
-		Time_sec = AtoI(mid(CurrentTrackTime$,1,indexEnd));
-		Time_min = Time_sec / 60;
-		Time_rmd = Time_sec - (Time_min * 60);
-		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd); 
-	}
-	Else if (CurrentTrackTime$ = "0") {
-		makestring(CurrentsongTime,"0:00");
-	}
-	Else {
-		CurrentsongTime = CurrentTrackTime$;
-	}
+	Parse_Time(CurrentTrackTime$);
 	CurrentsongRate = CurrentTrackRate$;
  	indexEnd = find(".",CurrentTrackDuration$,1);
 	If (indexEnd > 0) {
-		Time_sec = AtoI(mid(CurrentTrackDuration$,1,indexEnd));
-		Time_min = Time_sec / 60;
-		Time_rmd = Time_sec - (Time_min * 60);
+		CTDuration_sec = AtoI(mid(CurrentTrackDuration$,1,indexEnd));
+		Time_min = CTDuration_sec / 60;
+		Time_rmd = CTDuration_sec - (Time_min * 60);
 		makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
 	}
 	Else if (CurrentTrackDuration$ = "0") {
 		makestring(CurrentsongDuration,"0:00");
+		CTDuration_sec = 0;
 	}
 	Else if (CurrentTrackDuration$ != "<n/a>") {
-		Time_sec = AtoI(CurrentTrackDuration$);
-		Time_min = Time_sec / 60;
-		Time_rmd = Time_sec - (Time_min * 60);
+		CTDuration_sec = AtoI(CurrentTrackDuration$);
+		Time_min = CTDuration_sec / 60;
+		Time_rmd = CTDuration_sec - (Time_min * 60);
 		makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
 	}
 	Else {
 		CurrentsongDuration = CurrentTrackDuration$;
+		CTDuration_sec = 0;
 	}
 	CurrentsongIsRemote = CurrentTrackRemote;
 	trace("CurrentPlayerMode = %s",CurrentPlayerMode);
@@ -2400,17 +2431,6 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Nowplaying_int[i] = left(NowplayingTitle[i],NowplayingWidthTitle) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
 	Nowplaying[i] = left(Nowplaying_int[i],255);
 	}
-}
-Function Parse_Time(String InTime$){
-	Integer indexEnd, Length; // indexStart
-	Integer Time_min, Time_sec, Time_rmd;	
-
-	indexEnd = find(".",InTime$,34);
-	Length = indexEnd - 34;
-	Time_sec = AtoI(mid(InTime$,34,Length));
-	Time_min = Time_sec / 60;
-	Time_rmd = Time_sec - (Time_min * 60);
-	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd); 
 }
 Function Parse_Pandora(String InPandora$){
 	Integer i, indexStart, indexEnd, Length;
@@ -2663,11 +2683,9 @@ Function Parse_Dynamic(String InDynamic$){
 		Length = indexEnd - indexStart;
 		DynamicFile[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
 		indexStart = indexEnd + 16;
-		If (find(" ",InDynamic$, indexStart) = 0){
-			indexEnd = Len(InDynamic$);
-		}
-		else {
-			indexEnd = find(" ",InDynamic$, indexStart);
+		indexEnd = find(" ",InDynamic$, indexStart);
+		If (indexEnd = 0){
+			indexEnd = Len(InDynamic$) - 1;
 		}
 		Length = indexEnd - indexStart;
 		DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
@@ -3404,6 +3422,7 @@ SOCKETCONNECT TCPClient{
                 PortNumber, RemoteIPAddress);
 	TCPIP_Connected = 1;
 //	SOCKET Startup procedure
+	
 	// subscribe to status updates including currentsong (different than other subscribes)
 	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  
 	socketsend(TCPClient, out$);
@@ -3939,6 +3958,20 @@ PUSH NowplayingMoveDown {
 	i = GetLastModifiedArrayIndex ();
 	NowplayingMoveDown_fn(i);
 }
+PUSH Select_DefaultPlayer{
+	If (PlayerID$ <> PlayerID$_Default){
+		makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		PlayerID$ = PlayerID$_Default;
+		CurrentPlayerID = PlayerID$;
+		StatusFind$ = PlayersID_raw[0] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[0] + " status ";
+		TimeFind$ = PlayersID_raw[0] + " time ";
+		delay(20);
+		makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$); 
+		socketsend(TCPClient, out$);
+	}
+}
 PUSH Players_Refresh {
 	Players_Pgreset_fn();
 }
@@ -4077,6 +4110,22 @@ PUSH Shuffle_Album {
 	makestring(OUT$,"%s playlist shuffle 2\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
+}
+CHANGE InTimeBar{
+	Long_Integer seek;
+	If (progInTimeBar = 0){
+		progInTimeBar = 1;
+		If (CurrentTrackRemote = 0){
+			If (CTDuration_sec > 0){
+				seek = (InTimeBar * CTDuration_sec) / 65535;
+				makestring(OUT$,"%s time %lu \n",PlayerID$,seek);
+				trace("sending: %s",OUT$);
+				socketsend(TCPClient,OUT$);
+				delay(10);
+			}
+		}
+		progInTimeBar = 0;
+	}
 }
 CHANGE PlaylistPlay$ {
 	ActivePlaylist = "";
@@ -4298,69 +4347,51 @@ SOCKETRECEIVE TCPClient {
 If (find(StatusFind$,Find$)) { // status parsing
 	trace("parsing status");
 	Parse_Status(In$);
-//	In$ = "";
 } 
 Else If (Find(NowplayingFind$,Find$)) { // Nowplaying parsing
 	trace("parsing nowplaying");
 	Parse_Nowplaying(In$);
-//	In$ = "";
 }
 Else If (find(" time",Find$)) { // time parsing
 //	trace("parsing time");
+	In$ = mid(In$,34,len(In$) - 35);
 	Parse_Time(In$);
-//	In$ = "";
 }
-/*
-Else If (find(" pandora items ",Find$)) { // pandora parsing
-	trace("parsing pandora");
-	Parse_Pandora(In$);
-//	In$ = "";
-}
-*/
 Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
 	trace("parsing favorites, apps, or radios");
 	Parse_FAR(In$);
-//	In$ = "";
 }
 Else If (find("dynamicplaylist playlists",Find$)) { // dynamic playlist parsing
 	trace("parsing dynamic playlists");
 	Parse_Dynamic(In$);
-//	In$ = "";
 }
 Else If (find("genres ",Find$)) { // genre parsing
 	trace("parsing genres");
 	Parse_Genres(In$);
-//	In$ = "";
 }
 Else If (find("artists ",Find$)) { // Artist parsing
 	trace("parsing Artists");
 	Parse_Artists(In$);
-//	In$ = "";
 }
 Else If (find("albums ",Find$)) { // Album parsing
 	trace("parsing albums");
 	Parse_Albums(In$);
-//	In$ = "";
 }
 Else If (find("titles ",Find$)) { // Titles (tracks) parsing
 	trace("parsing titles");
 	Parse_Titles(In$);
-//	In$ = "";
 }
 Else If (find("playlists ",Find$)) {  // Playlist parsing
 	trace("parsing playlists");
 	Parse_Playlists(In$);
-//	In$ = "";
 }
 Else If (find("apps ",Find$)){ // Top-level Apps parsing
 	trace("parsing apps");
 	Parse_Apps(In$);
-//	In$ = "";
 }
 Else If (find("radios ",Find$)){ // Top-level Radios parsing
 	trace("parsing radios");
 	Parse_Radios(In$);
-//	In$ = "";
 }
 Else If (find("search playlist",Find$)){
 	// just a fake to prevent regular search parsing when playing radio search
@@ -4368,22 +4399,13 @@ Else If (find("search playlist",Find$)){
 Else If (find("search ",Find$)){  // Search parsing
 	trace("parsing search");
 	Parse_Search(In$);
-//	In$ = "";
 }
 Else If (find("players ",Find$)) { // Players parsing
 	trace("parsing players");
 	Parse_Players(In$);
-//	In$ = "";
 }
 } // end of SocketReceive parsing
-/*
-CHANGE TCPIP_Tx$ {
-    signed_integer iStatus;
-    iStatus = socketsend(TCPClient, TCPIP_Tx$ );
-    if (iStatus < 0)
-        print ("Error Sending to TCPClient: %d\n", iStatus);
-}
-*/
+
 // /////////// Initialization script
 Function Main() {
 	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", SqueezeCenterIPAddr$);
@@ -4393,6 +4415,7 @@ Function Main() {
 	NowplayingFind$ = PlayersID_raw[0] + " status ";
 	TimeFind$ = PlayersID_raw[0] + " time ";
     FAR_parse = "favorites items ";
+	progInTimeBar = 0;
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
