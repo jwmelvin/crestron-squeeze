@@ -51,9 +51,12 @@ Comments:
 DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
+DIGITAL_INPUT OnDisconnect_Pause;
+DIGITAL_INPUT OnConnect_Play;
+DIGITAL_INPUT OnConnect_DefaultPlayer;
+DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
 DIGITAL_INPUT Playlist_Save_Enable;
-DIGITAL_INPUT DirectIn_Fixed_Default;
-DIGITAL_INPUT NowplayingSeparate_Enable;
+DIGITAL_INPUT NowplayingSeparateOuts_Enable;
 //
 DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
@@ -160,7 +163,7 @@ STRING_OUTPUT  PlayersID$[10,10];
 DIGITAL_OUTPUT PlayersSynced[10,10];
 //
 ///////////////////////////// Parameters
-STRING_PARAMETER PlayerID$_Startup[17], SqueezeCenterIPAddr$[16];   // for PlayerID please use the MAC address as found on SB Server player information page.
+STRING_PARAMETER PlayerID$_Default[17], SqueezeCenterIPAddr$[16];   // for PlayerID please use the MAC address as found on SB Server player information page.
 INTEGER_PARAMETER SqueezeCenterPort;
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
@@ -2334,7 +2337,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 				NowplayingAlbum[j] = "";
 				Nowplaying[i] = " ";
 				NowplayingIndex[i] = 65534; //dummy value to test for disabling button action if empty
-				If (NowplayingSeparate_Enable = 1){
+				If (NowplayingSeparateOuts_Enable = 1){
 					NowplayingAlbum$[j] = " ";
 					NowplayingArtist$[j] = " ";
 					NowplayingTitle$[j] = " ";
@@ -2361,7 +2364,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingTitle[i] = "";
 		}
-		If (NowplayingSeparate_Enable = 1){
+		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingTitle$[i] = NowplayingTitle[i];
 		}
 		indexStart = find(" artist%3A",InNowplaying$,indexEnd) + 10;
@@ -2373,7 +2376,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingArtist[i] = "";
 		}
-		If (NowplayingSeparate_Enable = 1){
+		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingArtist$[i] = NowplayingArtist[i];
 		}
 		indexStart = find(" album%3A",InNowplaying$,indexEnd) + 9;
@@ -2391,7 +2394,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingAlbum[i] = "";
 		}
-		If (NowplayingSeparate_Enable = 1){
+		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingAlbum$[i] = NowplayingAlbum[i];
 		}
 	Nowplaying_int[i] = left(NowplayingTitle[i],NowplayingWidthTitle) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
@@ -3355,7 +3358,15 @@ Function Parse_Players(String InPlayers$){
 // //////////// TCPIP Connection
 PUSH TCPIP_Connect{
     SIGNED_INTEGER status;
-    status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
+    
+	If (OnConnect_DefaultPlayer = 1){
+		PlayerID$ = PlayerID$_Default;
+		CurrentPlayerID = PlayerID$;
+		StatusFind$ = PlayersID_raw[0] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[0] + " status ";
+		TimeFind$ = PlayersID_raw[0] + " time ";
+	}
+	status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
     if (status < 0){
         print ("Error connecting socket to address %s on port  %d", 
             SqueezeCenterIPAddr$, SqueezeCenterPort);
@@ -3363,7 +3374,12 @@ PUSH TCPIP_Connect{
 }
 RELEASE TCPIP_Connect{
     SIGNED_INTEGER status;
-    status = SocketDisconnectClient (TCPClient);
+    If (OnDisconnect_Pause = 1){
+		makestring(out$,"%s pause 1\n",PlayerID$);
+		socketsend(TCPClient, out$);
+		delay(10);
+	}
+	status = SocketDisconnectClient (TCPClient);
 	if (status < 0){
     print ("Error disconnecting socket to address %s on port  %d", 
             SqueezeCenterIPAddr$, SqueezeCenterPort);
@@ -3374,7 +3390,6 @@ SOCKETCONNECT TCPClient{
     SIGNED_INTEGER LocalStatus;
     STRING RemoteIPAddress[20];
     STRING RequestedAddress[256];
-    TCPIP_Connected = 1;
     LocalStatus = SocketGetAddressAsRequested(TCPClient, RequestedAddress);
     if (LocalStatus < 0)
         print ("Error getting remote ip address. %d\n", LocalStatus);
@@ -3387,10 +3402,21 @@ SOCKETCONNECT TCPClient{
         print ("Error getting remote ip address. %d\n", LocalStatus);
     print ("OnConnect: Connected to port %ld on address %s\n", 
                 PortNumber, RemoteIPAddress);
+	TCPIP_Connected = 1;
 //	SOCKET Startup procedure
-	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  //subscribe to status updates including currentsong (different than other subscribes)
+	// subscribe to status updates including currentsong (different than other subscribes)
+	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  
 	socketsend(TCPClient, out$);
-	delay(100);
+	trace("sending: %s",OUT$);
+	delay(50);
+	// play if that option is enabled
+	If (OnConnect_Play = 1){
+		makestring(out$,"%s play \n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		delay (50);
+	}
+	// retrieve players listing
 	Players_Pgreset_fn();
 }
 SOCKETDISCONNECT TCPClient{
@@ -4058,8 +4084,8 @@ CHANGE PlaylistPlay$ {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient, OUT$);
     
-    If (DirectIn_Fixed_Default = 1){
-		makestring(OUT$,"%s playlist play %s\n",PlayerID$_Startup,PlaylistPlay$);
+    If (DirectIn_DefaultPlayerOnly = 1){
+		makestring(OUT$,"%s playlist play %s\n",PlayerID$_Default,PlaylistPlay$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);    
     }
@@ -4079,8 +4105,8 @@ CHANGE PlaylistResume$ {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient, OUT$);
 
-    If (DirectIn_Fixed_Default = 1){
-		makestring(OUT$,"%s playlist resume %s\n",PlayerID$_Startup, PlaylistResume$); // start the desired playlist where playing when last saved
+    If (DirectIn_DefaultPlayerOnly = 1){
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$_Default, PlaylistResume$); // start the desired playlist where playing when last saved
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 		ActivePlaylist = PlaylistResume$;
@@ -4103,9 +4129,9 @@ PUSH PlaylistSave
 }
 */
 CHANGE FavoritePlay$ {
-    If (DirectIn_Fixed_Default = 1){
+    If (DirectIn_DefaultPlayerOnly = 1){
 		ActivePlaylist = "";
-	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n",PlayerID$_Startup, FavoritePlay$);
+	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n",PlayerID$_Default, FavoritePlay$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
 	}
@@ -4117,9 +4143,9 @@ CHANGE FavoritePlay$ {
 	}
 }
 CHANGE DynamicResume$ {
-    If (DirectIn_Fixed_Default = 1){
+    If (DirectIn_DefaultPlayerOnly = 1){
 		ActivePlaylist = "";
-		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$_Startup, DynamicResume$);
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$_Default, DynamicResume$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
 	}
@@ -4361,8 +4387,8 @@ CHANGE TCPIP_Tx$ {
 // /////////// Initialization script
 Function Main() {
 	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", SqueezeCenterIPAddr$);
-	PlayerID$ = PlayerID$_Startup;
-	PlayersID_raw[0] = FormatPlayerID(PlayerID$);
+	PlayerID$ = PlayerID$_Default;
+	PlayersID_raw[0] = FormatPlayerID(PlayerID$_Default);
 	StatusFind$ = PlayersID_raw[0] + " status - 1";
 	NowplayingFind$ = PlayersID_raw[0] + " status ";
 	TimeFind$ = PlayersID_raw[0] + " time ";
