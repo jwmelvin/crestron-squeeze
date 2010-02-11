@@ -196,7 +196,7 @@ INTEGER CurrentPlaylistID, CurrentPlaylistModified;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
 INTEGER status_request_time;
 //
-INTEGER progInTimeBar;
+INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
 //
  STRING	search_in[64], search_in_raw[64];
 //
@@ -1824,22 +1824,6 @@ Function Parse_Time(String InTime$){
 	Time_min = Time_sec / 60;
 	Time_rmd = Time_sec - (Time_min * 60);
 	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
-	
-/*	indexEnd = find(".",InTime$,1);
-	If (indexEnd > 0) {
-		Time_sec = AtoI(mid(InTime$,1,indexEnd));
-		Time_min = Time_sec / 60;
-		Time_rmd = Time_sec - (Time_min * 60);
-		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd); 
-	}
-	Else if (InTime$ = "0") {
-		makestring(CurrentsongTime,"0:00");
-		Time_sec = 0;
-	}
-	Else {
-		CurrentsongTime = InTime$;
-	}
-*/
 	If ((CTDuration_sec > 0) && (Time_sec > 0)){
 		BarTemp =  (65535 * Time_sec) / CTDuration_sec;
 		OutTimeBar = BarTemp;
@@ -2333,11 +2317,11 @@ Function Parse_Nowplaying(String InNowplaying$){
 	If (ListLengthNowplaying < ListLengthNowplaying_old ){
 		trace("blanking Nowplaying");
 		SetArray(Nowplaying," ");
-//		SetArray(NowplayingTitle$," ");
+		SetArray(NowplayingTitle$," ");
 		SetArray(NowplayingTitle,"");
-//		SetArray(NowplayingArtist$," ");
+		SetArray(NowplayingArtist$," ");
 		SetArray(NowplayingArtist,"");
-//		SetArray(NowplayingAlbum$," ");
+		SetArray(NowplayingAlbum$," ");
 		SetArray(NowplayingAlbum,"");
 		SetArray(NowplayingCurrentSong,0);
 		SetArray(NowplayingID,0);
@@ -3637,71 +3621,86 @@ RELEASE Coverflow_Enable {
 	AlbumsRefresh_fn();
 }
 CHANGE InPageList{
-	If (ListType[1] = 0){
-		FirstHome = (65535 - InPageList) * TotalHome / 65535;
-		ListFirst[1] = FirstHome;
-		HomeRefresh_fn();
+	If (ProgInPageList = 0){
+		ProgInPageList = 1;
+		If (ListType[1] = 0){
+			FirstHome = (65535 - InPageList) * TotalHome / 65535;
+			ListFirst[1] = FirstHome;
+			HomeRefresh_fn();
+		}
+		Else If (ListType[1] = 1){
+			FirstGenre = (65535 - InPageList) * TotalGenres / 65535;
+			ListFirst[1] = FirstGenre;
+			GenresRefresh_fn();
+		}
+		Else If (ListType[1] = 2){
+			FirstArtist = (65535 - InPageList) * TotalArtists / 65535;
+			ListFirst[1] = FirstArtist;
+			ArtistsRefresh_fn();
+		}
+		Else If (ListType[1] = 3){
+			FirstAlbum = (65535 - InPageList) * TotalAlbums / 65535;
+			ListFirst[1] = FirstAlbum;
+			AlbumsRefresh_fn();
+		}
+		Else If (ListType[1] = 4){
+			FirstTitle = (65535 - InPageList) * TotalTitles / 65535;
+			ListFirst[1] = FirstTitle;
+			TitlesRefresh_fn();
+		}
+		Else If (ListType[1] = 5){
+			FirstPlaylist = (65535 - InPageList) * TotalPlaylists / 65535;
+			ListFirst[1] = FirstPlaylist;
+			PlaylistsRefresh_fn();
+		}
+		Else If (ListType[1] = 6){
+			FirstDynamic = (65535 - InPageList) * TotalDynamic / 65535;
+			ListFirst[1] = FirstDynamic;
+			DynamicRefresh_fn();
+		}
+		Else If (ListType[1] = 9){
+			FirstPandora = (65535 - InPageList) * TotalPandora / 65535;
+			ListFirst[1] = FirstPandora;
+			PandoraRefresh_fn();
+		}             
+		Else If (ListType[1] = 10){ 
+			FirstFavorites = (65535 - InPageList) * TotalFavorites / 65535;
+			ListFirst[1] = FirstFavorites;
+			FavoritesRefresh_fn();
+		}
+		Else If (ListType[1] = 11){ 
+			FirstApps = (65535 - InPageList) * TotalApps / 65535;
+			ListFirst[1] = FirstApps;
+			AppsRefresh_fn();
+		}
+		Else If (ListType[1] = 12){ 
+			FirstRadios = (65535 - InPageList) * TotalRadios / 65535;
+			ListFirst[1] = FirstRadios;
+			RadiosRefresh_fn();
+		}
+		// ListType[1] = 13 reserved for Players
+		// not yet a possible List type
 	}
-	Else If (ListType[1] = 1){
-		FirstGenre = (65535 - InPageList) * TotalGenres / 65535;
-		ListFirst[1] = FirstGenre;
-		GenresRefresh_fn();
-	}
-	Else If (ListType[1] = 2){
-		FirstArtist = (65535 - InPageList) * TotalArtists / 65535;
-		ListFirst[1] = FirstArtist;
-		ArtistsRefresh_fn();
-	}
-	Else If (ListType[1] = 3){
-		FirstAlbum = (65535 - InPageList) * TotalAlbums / 65535;
-		ListFirst[1] = FirstAlbum;
-		AlbumsRefresh_fn();
-	}
-	Else If (ListType[1] = 4){
-		FirstTitle = (65535 - InPageList) * TotalTitles / 65535;
-		ListFirst[1] = FirstTitle;
-		TitlesRefresh_fn();
-	}
-	Else If (ListType[1] = 5){
-		FirstPlaylist = (65535 - InPageList) * TotalPlaylists / 65535;
-		ListFirst[1] = FirstPlaylist;
-		PlaylistsRefresh_fn();
-	}
-	Else If (ListType[1] = 6){
-		FirstDynamic = (65535 - InPageList) * TotalDynamic / 65535;
-		ListFirst[1] = FirstDynamic;
-		DynamicRefresh_fn();
-	}
-	Else If (ListType[1] = 9){
-		FirstPandora = (65535 - InPageList) * TotalPandora / 65535;
-		ListFirst[1] = FirstPandora;
-		PandoraRefresh_fn();
-	}             
-	Else If (ListType[1] = 10){ 
-		FirstFavorites = (65535 - InPageList) * TotalFavorites / 65535;
-		ListFirst[1] = FirstFavorites;
-		FavoritesRefresh_fn();
-	}
-	Else If (ListType[1] = 11){ 
-		FirstApps = (65535 - InPageList) * TotalApps / 65535;
-		ListFirst[1] = FirstApps;
-		AppsRefresh_fn();
-	}
-	Else If (ListType[1] = 12){ 
-		FirstRadios = (65535 - InPageList) * TotalRadios / 65535;
-		ListFirst[1] = FirstRadios;
-		RadiosRefresh_fn();
-	}
-	// ListType[1] = 13 reserved for Players
-	// not yet a possible List type
+	Delay (50);
+	ProgInPageList = 0;
 }
 CHANGE InPageNowplaying{
-	FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
-	NowplayingRefresh_fn();
+	If (ProgInPageNowplaying = 0){
+		ProgInPageNowplaying = 1;
+		FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
+		NowplayingRefresh_fn();
+	}
+	Delay (50);
+	ProgInPageNowplaying = 0;
 }
 CHANGE InPagePlayers{
-	FirstPlayers = (65535 - InPagePlayers) * TotalPlayers / 65535;
-	PlayersRefresh_fn();
+	If (ProgInPagePlayers = 0){
+		ProgInPagePlayers = 1;
+		FirstPlayers = (65535 - InPagePlayers) * TotalPlayers / 65535;
+		PlayersRefresh_fn();
+	}
+	Delay (50);
+	ProgInPagePlayers = 0;
 }
 PUSH List_PgUp{
 	If (ListType[1] = 0){
@@ -4122,7 +4121,7 @@ CHANGE InTimeBar{
 				makestring(OUT$,"%s time %lu \n",PlayerID$,seek);
 				trace("sending: %s",OUT$);
 				socketsend(TCPClient,OUT$);
-				delay(10);
+				delay(30);
 			}
 		}
 		progInTimeBar = 0;
