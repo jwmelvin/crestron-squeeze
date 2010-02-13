@@ -38,7 +38,7 @@ Comments:
 #ENABLE_STACK_CHECKING
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
 #PRINT_TO_TRACE
-// #ENABLE_TRACE
+//#ENABLE_TRACE
 /*
 #HELP_BEGIN
    (add additional lines of help lines)
@@ -338,7 +338,17 @@ Function ListShiftBk_fn(){
 	}
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
-}       
+}
+Function Nowplaying_wait(){
+	Wait(Nowplaying_refresh_enable_time, Nowplaying_refresh_enable_timer){
+		Nowplaying_refresh_enable = 1;
+	}
+}
+Function Nowplaying_wait_fn(){
+	Nowplaying_refresh_enable = 0;
+	Cancelwait(Nowplaying_refresh_enable_timer);
+	Nowplaying_wait();
+}
 Function HomeRefresh_fn(){
 	integer i;
  	ListName$ = ListName[1];
@@ -671,7 +681,8 @@ Function Radios_PgReset_fn() {
 }
 Function Nowplaying_PgReset_fn(){
 	FirstNowplaying = 0;
-    Nowplaying_refresh_enable = 1;
+    Cancelwait(Nowplaying_refresh_enable_timer);
+	Nowplaying_refresh_enable = 1;
 	NowplayingRefresh_fn();
 	// ListType[1] = 7 reserved for Nowplaying
 	// not yet a possible List type
@@ -787,8 +798,7 @@ Function Search_PgUp_fn(){
 	SearchRefresh_fn();
 }
 Function Nowplaying_PgUp_fn(){
-//	Cancelwait(Nowplaying_refresh_enable_timer_pgup);
-    Nowplaying_refresh_enable = 0;
+	Nowplaying_wait_fn();
 	If (FirstNowplaying = 0 && (NumberOfNowplaying <= TotalNowplaying)){
 		FirstNowplaying = TotalNowplaying - NumberOfNowplaying;
 	}
@@ -799,12 +809,8 @@ Function Nowplaying_PgUp_fn(){
 		FirstNowplaying = FirstNowplaying - NumberOfNowplaying;
     }
 	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
-//	trace("sending: %s",OUT$);
+	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
-
-	Wait(Nowplaying_refresh_enable_time,Nowplaying_refresh_enable_timer_pgup){
-			Nowplaying_refresh_enable = 1;
-	}
 }
 Function Pandora_PgUp_fn(){
 	If (FirstPandora = 0 && (NumberOfList <= TotalPandora)) {
@@ -951,9 +957,7 @@ Function Search_PgDn_fn(){
 	SearchRefresh_fn();
 }
 Function Nowplaying_PgDn_fn(){
-//	Cancelwait(Nowplaying_refresh_enable_timer);
-    Nowplaying_refresh_enable = 0;
-
+	Nowplaying_wait_fn();
     If (FirstNowplaying + NumberOfNowplaying < TotalNowplaying){
 		FirstNowplaying = FirstNowplaying + NumberOfNowplaying;
 	}
@@ -961,12 +965,8 @@ Function Nowplaying_PgDn_fn(){
 		FirstNowplaying = 0;
     }
 	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
-//	trace("sending: %s",OUT$);
+	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
-
-	Wait(Nowplaying_refresh_enable_time,Nowpplaying_refresh_enable_timer_pgdn){
-			Nowplaying_refresh_enable = 1;
-	}
 }
 Function Pandora_PgDn_fn(){
 	If (FirstPandora + NumberOfList < TotalPandora){
@@ -1048,13 +1048,6 @@ Function GenreListSelect_fn(integer i){
 		restrictorTitles = restrictorArtists + " tags:te";
 		FirstArtist = 0;
 		ArtistsRefresh_fn();
-	/*	Wait(50,waitListGenreAlbums)
-		{
-			AlbumsRefresh_fn();
-			Wait(50,waitListGenreTitles)
-				TitlesRefresh_fn();
-		}
-	*/
 		ListName$ = ListName[1];
 	}
 }
@@ -1081,10 +1074,6 @@ Function ArtistListSelect_fn(integer i){
 		ListRestrictor[1] = restrictorAlbums;
 		FirstAlbum = 0;
 		AlbumsRefresh_fn();
-	/*	restrictorTitles = restrictorAlbums + " tags:te";
-		Wait(20,waitListArtistTitles)
-		TitlesRefresh_fn();
-	*/
 		ListName$ = ListName[1];
 	}
 }
@@ -1604,6 +1593,8 @@ Function NowplayingPlay_fn(integer i){
 		Nowplaying_PgReset_fn();
 	}
 	Else {
+		Cancelwait(Nowplaying_refresh_enable_timer);
+		Nowplaying_refresh_enable = 1;
 		makestring(OUT$,"%s playlist index %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -1611,6 +1602,8 @@ Function NowplayingPlay_fn(integer i){
 }
 Function NowplayingRemove_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
+		Cancelwait(Nowplaying_refresh_enable_timer);
+		Nowplaying_refresh_enable = 1;
 		Activeplaylist = "";
 		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
@@ -1619,6 +1612,8 @@ Function NowplayingRemove_fn(integer i){
 }
 Function NowplayingMoveUp_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
+		Cancelwait(Nowplaying_refresh_enable_timer);
+		Nowplaying_refresh_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -1626,6 +1621,8 @@ Function NowplayingMoveUp_fn(integer i){
 }
 Function NowplayingMoveDown_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
+		Cancelwait(Nowplaying_refresh_enable_timer);
+		Nowplaying_refresh_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -1848,11 +1845,17 @@ Function Parse_Status(String InStatus$){
 		Length = indexEnd - indexStart;
 		CurrentPlayerName = parsepercent(mid(InStatus$,indexStart,Length));
 	}
+	Else {
+		CurrentPlayerName = "<n/a>";
+	}
    	indexStart = find(" player_connected%3A",InStatus$,indexEnd) + 20;
 	if (indexStart > 20){
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentPlayerConnected = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	Else {
+		CurrentPlayerConnected = 0;
 	}
    	indexStart = find(" power%3A",InStatus$,indexEnd) + 9;
 	if (indexStart > 9){
@@ -1860,11 +1863,17 @@ Function Parse_Status(String InStatus$){
 		Length = indexEnd - indexStart;
 		CurrentPlayerPower = AtoI(mid(InStatus$,indexStart,Length));
 	}
+	Else {
+		CurrentPlayerPower = 0;
+	}
 	indexStart = find(" mode%3A",InStatus$,indexEnd) + 8;
 	if (indexStart > 8){
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentPlayerMode = mid(InStatus$,indexStart, Length);
+	}
+	Else {
+		CurrentPlayerMode = "stop";
 	}
 	indexStart = find(" remote%3A",InStatus$,indexEnd) + 10;
 	if (indexStart > 10) {
@@ -4338,72 +4347,72 @@ CHANGE NumberOfList{
 }
 SOCKETRECEIVE TCPClient {
 	String In$[16384],Find$[64];
-
+	trace("SocketReceive");
 	In$ = Gather("\n",TCPClient.SocketRxBuf);
-	clearbuffer (TCPClient.SocketRxBuf);
+
 	Find$ = left(In$,64);
 //	debug = left (in$,255);  
 
-If (find(StatusFind$,Find$)) { // status parsing
-	trace("parsing status");
-	Parse_Status(In$);
-} 
-Else If (Find(NowplayingFind$,Find$)) { // Nowplaying parsing
-	trace("parsing nowplaying");
-	Parse_Nowplaying(In$);
-}
-Else If (find(" time",Find$)) { // time parsing
-//	trace("parsing time");
-	In$ = mid(In$,34,len(In$) - 35);
-	Parse_Time(In$);
-}
-Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
-	trace("parsing favorites, apps, or radios");
-	Parse_FAR(In$);
-}
-Else If (find("dynamicplaylist playlists",Find$)) { // dynamic playlist parsing
-	trace("parsing dynamic playlists");
-	Parse_Dynamic(In$);
-}
-Else If (find("genres ",Find$)) { // genre parsing
-	trace("parsing genres");
-	Parse_Genres(In$);
-}
-Else If (find("artists ",Find$)) { // Artist parsing
-	trace("parsing Artists");
-	Parse_Artists(In$);
-}
-Else If (find("albums ",Find$)) { // Album parsing
-	trace("parsing albums");
-	Parse_Albums(In$);
-}
-Else If (find("titles ",Find$)) { // Titles (tracks) parsing
-	trace("parsing titles");
-	Parse_Titles(In$);
-}
-Else If (find("playlists ",Find$)) {  // Playlist parsing
-	trace("parsing playlists");
-	Parse_Playlists(In$);
-}
-Else If (find("apps ",Find$)){ // Top-level Apps parsing
-	trace("parsing apps");
-	Parse_Apps(In$);
-}
-Else If (find("radios ",Find$)){ // Top-level Radios parsing
-	trace("parsing radios");
-	Parse_Radios(In$);
-}
-Else If (find("search playlist",Find$)){
-	// just a fake to prevent regular search parsing when playing radio search
-}
-Else If (find("search ",Find$)){  // Search parsing
-	trace("parsing search");
-	Parse_Search(In$);
-}
-Else If (find("players ",Find$)) { // Players parsing
-	trace("parsing players");
-	Parse_Players(In$);
-}
+	If (find(StatusFind$,Find$)) { // status parsing
+		trace("parsing status");
+		Parse_Status(In$);
+	} 
+	Else If (Find(NowplayingFind$,Find$)) { // Nowplaying parsing
+		trace("parsing nowplaying");
+		Parse_Nowplaying(In$);
+	}
+	Else If (find(" time",Find$)) { // time parsing
+	//	trace("parsing time");
+		In$ = mid(In$,34,len(In$) - 35);
+		Parse_Time(In$);
+	}
+	Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
+		trace("parsing favorites, apps, or radios");
+		Parse_FAR(In$);
+	}
+	Else If (find("dynamicplaylist playlists",Find$)) { // dynamic playlist parsing
+		trace("parsing dynamic playlists");
+		Parse_Dynamic(In$);
+	}
+	Else If (find("genres ",Find$)) { // genre parsing
+		trace("parsing genres");
+		Parse_Genres(In$);
+	}
+	Else If (find("artists ",Find$)) { // Artist parsing
+		trace("parsing Artists");
+		Parse_Artists(In$);
+	}
+	Else If (find("albums ",Find$)) { // Album parsing
+		trace("parsing albums");
+		Parse_Albums(In$);
+	}
+	Else If (find("titles ",Find$)) { // Titles (tracks) parsing
+		trace("parsing titles");
+		Parse_Titles(In$);
+	}
+	Else If (find("playlists ",Find$)) {  // Playlist parsing
+		trace("parsing playlists");
+		Parse_Playlists(In$);
+	}
+	Else If (find("apps ",Find$)){ // Top-level Apps parsing
+		trace("parsing apps");
+		Parse_Apps(In$);
+	}
+	Else If (find("radios ",Find$)){ // Top-level Radios parsing
+		trace("parsing radios");
+		Parse_Radios(In$);
+	}
+	Else If (find("search playlist",Find$)){
+		// just a fake to prevent regular search parsing when playing radio search
+	}
+	Else If (find("search ",Find$)){  // Search parsing
+		trace("parsing search");
+		Parse_Search(In$);
+	}
+	Else If (find("players ",Find$)) { // Players parsing
+		trace("parsing players");
+		Parse_Players(In$);
+	}
 } // end of SocketReceive parsing
 
 // /////////// Initialization script
@@ -4416,6 +4425,9 @@ Function Main() {
 	TimeFind$ = PlayersID_raw[0] + " time ";
     FAR_parse = "favorites items ";
 	progInTimeBar = 0;
+	progInPageList = 0;
+	progInPageNowplaying = 0;
+	progInPagePlayers = 0;
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
