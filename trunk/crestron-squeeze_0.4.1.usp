@@ -84,7 +84,7 @@ DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAl
 STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16];
 STRING_INPUT  DynamicResume$[256];
 // Pandora inputs
-DIGITAL_INPUT PandoraRate_Up, PandoraRate_Dn;
+DIGITAL_INPUT RadioRate_Up, RadioRate_Dn;
 // Search inputs
 DIGITAL_INPUT	Search_Submit;
 STRING_INPUT	Search_in$[64];
@@ -130,7 +130,7 @@ DIGITAL_OUTPUT shuffle_track_fb;
 DIGITAL_OUTPUT shuffle_album_fb;
 // CurrentSong feedback
 DIGITAL_OUTPUT CurrentsongIsRemote;
-DIGITAL_OUTPUT CurrentsongIsPandora;
+DIGITAL_OUTPUT CurrentSongRadioRateable;
 STRING_OUTPUT  CurrentsongTitle;
 STRING_OUTPUT  CurrentsongAlbum;
 STRING_OUTPUT  CurrentsongArtist;
@@ -193,7 +193,7 @@ INTEGER NumberOfAlbums;
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
 INTEGER CTDuration_sec;
 INTEGER CurrentPlaylistID, CurrentPlaylistModified;
-INTEGER Repeat, Shuffle, CurrentTrackRemote, CurrentTrackIsPandora;
+INTEGER Repeat, Shuffle, CurrentTrackRemote, CTRemoteService;
 INTEGER status_request_time;
 //
 INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
@@ -1838,6 +1838,7 @@ Function Parse_Status(String InStatus$){
 	Integer indexStart2, indexEnd2, Length2;
 	Integer CurrentPlayerSlave_local, CurrentPlayerMaster_local;
 	Integer Time_min, Time_sec, Time_rmd;	
+	String CoverURL_check[3];
 		
    	indexStart = find(" player_name%3A",InStatus$,1) + 15;
 	if (indexStart > 15){
@@ -2170,16 +2171,29 @@ Function Parse_Status(String InStatus$){
 			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
 		If (find("pandora",CurrentTrackURL$) > 0) {
-			CurrentTrackIsPandora = 1;
-			CurrentSongIsPandora = 1;
+			CTRemoteService = 1;
+			CurrentSongRadioRateable = 1;
+			trace("CurrentSong is Pandora");
 		}
+		Else If (find("slacker:",CurrentTrackURL$)){
+			CTRemoteService = 2;
+			CurrentSongRadioRateable = 1;
+			trace("CurrentSong is Slacker");
+		}
+		Else If (find("lfm:",CurrentTrackURL$)){
+			CTRemoteService = 3;
+			CurrentSongRadioRateable = 1;
+			trace("CurrentSong is LastFM");
+		}		
 		Else {
-			CurrentSongIsPandora = 0;
-			CurrentTrackIsPandora = 0;
+			CTRemoteService = 0;
+			CurrentSongRadioRateable = 0;
 		}
 	}
 	Else {
 		CurrentTrackURL$ = "";
+		CTRemoteService = 0;
+		CurrentSongRadioRateable = 0;
 	}
 	indexStart = find(" artwork_url%3A",InStatus$,indexEnd) + 15;
 	if (indexStart > 15) {
@@ -2187,13 +2201,15 @@ Function Parse_Status(String InStatus$){
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
 			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			CurrentsongCoverURL = CurrentTrackRemoteCover$;
 		}
 		Else {
 			Length = len(InStatus$) - indexStart - 1; 
 			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
-			CurrentsongCoverURL = CurrentTrackRemoteCover$;
 		}
+		If (find("slacker.com",CurrentTrackRemoteCover$)){
+			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
+		}
+		CurrentsongCoverURL = CurrentTrackRemoteCover$;
 	}
 	Else {
 		CurrentTrackRemoteCover$ = "";
@@ -4271,15 +4287,40 @@ PUSH BrowseCurrentSongAlbum {
 	TitlesRefresh_fn();
 	ListName$ = ListName[1];
 }
-PUSH PandoraRate_Up {
-	makestring(OUT$,"%s pandora rate 1\n",PlayerID$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
+PUSH RadioRate_Up {
+	If (CTRemoteService = 1){
+		makestring(OUT$,"%s pandora rate 1\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 2){
+		makestring(OUT$,"%s slacker rate F\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+//	<playerid> slacker rate U // slacker unrating command (unmark as favorite)
+	}
+	Else If (CTRemoteService = 3){
+		makestring(OUT$,"%s lfm rate L\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
 }
-PUSH PandoraRate_Dn {
-	makestring(OUT$,"%s pandora rate 0\n",PlayerID$);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient, OUT$);
+PUSH RadioRate_Dn {
+	If (CTRemoteService = 1){
+		makestring(OUT$,"%s pandora rate 0\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 2){
+		makestring(OUT$,"%s slacker rate B\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 3){
+		makestring(OUT$,"%s lfm rate B\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
 }
 CHANGE search_in$ {
 	String temp[64];
