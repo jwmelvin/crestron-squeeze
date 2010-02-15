@@ -1763,7 +1763,7 @@ Function Search_Favorites_fn(){
 }
 String_Function ParsePercent(STRING Parse$){
 	Integer i, length, char;
-	String output$[512], char$[1], chunk$[6], dump[3];
+	String output$[1024], char$[1], chunk$[6], dump[3];
 	i = 1;
 	output$ = "";
 	While(i <= len (parse$)) {
@@ -2285,7 +2285,6 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Integer indexStart, indexEnd, Length;
 	Integer ListLengthNowplaying;
 
-	ListLengthNowplaying_old = ListLengthNowplaying;
 	indexStart = find(" status",InNowplaying$,28) + 8;
 	indexEnd = find(" ",InNowplaying$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2338,6 +2337,8 @@ Function Parse_Nowplaying(String InNowplaying$){
 		If (ListType[1] = 7)
 			SetArray(List$," ");
 	}
+	ListLengthNowplaying_old = ListLengthNowplaying;
+	trace("ListLengthNowplaying_old = %u",ListLengthNowplaying_old);
 	For (i = 1 to ListLengthNowplaying)	{
 		indexStart = find(" playlist%20index%3A",InNowplaying$,indexEnd) + 20;
 		If (indexStart > 20){
