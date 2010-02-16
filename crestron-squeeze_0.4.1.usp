@@ -181,7 +181,7 @@ INTEGER FirstPlaylist, TotalPlaylists, PlaylistFirstNumber, ActivePlaylistID;
 INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
 INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
 INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
-INTEGER FirstPandora, TotalPandora, PandoraFirstNumber;
+// INTEGER FirstPandora, TotalPandora, PandoraFirstNumber;
 INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
 INTEGER FirstApps, TotalApps, AppsFirstNumber; 
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
@@ -208,7 +208,7 @@ INTEGER OutTitleCount, OutTitlesBar;
 INTEGER OutPlaylistCount, OutPlaylistsBar;
 INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
-INTEGER OutPandoraCount,OutPandoraBar;
+// INTEGER OutPandoraCount,OutPandoraBar;
 INTEGER OutFavoritesCount,OutFavoritesBar;
 INTEGER OutAppsCount,OutAppsBar;
 INTEGER OutRadiosCount,OutRadiosBar;
@@ -219,7 +219,7 @@ INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10], NowplayingID[10];
-INTEGER PandoraIsAudio[10], PandoraHasItems[10];
+// INTEGER PandoraIsAudio[10], PandoraHasItems[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 //
 STRING ActivePlayerID[32], StatusFind$[64], NowplayingFind$[64], TimeFind$[64];
@@ -232,19 +232,19 @@ STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[2048], BlankCoverURL[64];
 //
 STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256];
 STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
-STRING restrictorPandora[256];
+// STRING restrictorPandora[256];
 STRING restrictorFavorites[256], ActiveFAR_ID[64];
 STRING ListName[5][256], ListRestrictor[5][256], ListActiveGenre[5][256];
 STRING ListHome[10][16];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
-STRING ActivePandoraName[256], ActivePandoraID[256], PandoraTitle[256];
+// STRING ActivePandoraName[256], ActivePandoraID[256], PandoraTitle[256];
 STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
 //
 STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist[10][256],PlaylistRaw[10][256], DynamicName[10][256], DynamicFile[10][256], Search[10][256];
 STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
 STRING  Nowplaying_int[10][512];
 STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
-STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
+// STRING PandoraName[10][256], PandoraID[10][64], PandoraType[10][256];
 STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];  
 STRING AppsCmd[10][64],AppsName[10][64],AppsIcon[10][256],AppsType[10][64];
 STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][256],RadiosType[10][64];
@@ -322,10 +322,10 @@ Function ListShiftBk_fn(){
 		FirstSearch = ListFirst[1];
 		restrictorSearch = ListRestrictor[1];
 	}
-	Else If (ListType[1] = 9) {
-		FirstPandora = ListFirst[1];
-		restrictorPandora = ListRestrictor[1];
-	} 
+//	Else If (ListType[1] = 9) {
+//		FirstPandora = ListFirst[1];
+//		restrictorPandora = ListRestrictor[1];
+//	} 
 	Else If (ListType[1] = 10) {
 		FirstFavorites = ListFirst[1];
 		restrictorFavorites = ListRestrictor[1];
@@ -426,11 +426,13 @@ Function SearchRefresh_fn(){
 	socketsend(TCPClient,OUT$);
 //	ListType = 8
 } 
+/*
 Function PandoraRefresh_fn(){
 	makestring(OUT$,"pandora items %u %u %s charset:ascii \n",FirstPandora,NumberOfList, restrictorPandora);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }   
+*/
 Function FavoritesRefresh_fn(){
 	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_name, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
@@ -488,9 +490,9 @@ Function ListRefresh_fn(){
 	Else If (ListType[1] = 8){
 		SearchRefresh_fn();
 	}
-	Else If (ListType[1] = 9){
-		PandoraRefresh_fn();
-	}  
+//	Else If (ListType[1] = 9){
+//		PandoraRefresh_fn();
+//	}  
 	Else If (ListType[1] = 10){
 		FavoritesRefresh_fn();
 	}
@@ -795,6 +797,7 @@ Function Nowplaying_PgUp_fn(){
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+/*
 Function Pandora_PgUp_fn(){
 	If (FirstPandora = 0 && (NumberOfList <= TotalPandora)) {
 		FirstPandora = TotalPandora - NumberOfList;
@@ -808,6 +811,7 @@ Function Pandora_PgUp_fn(){
 	ListFirst[1] = FirstPandora;
 	PandoraRefresh_fn();
 }
+*/
 Function Favorites_PgUp_fn() {
 	If (FirstFavorites = 0 && (NumberOfList <= TotalFavorites)) {
 		FirstFavorites = TotalFavorites - NumberOfList;
@@ -951,6 +955,7 @@ Function Nowplaying_PgDn_fn(){
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+/*
 Function Pandora_PgDn_fn(){
 	If (FirstPandora + NumberOfList < TotalPandora){
     	FirstPandora = FirstPandora + NumberOfList;
@@ -960,7 +965,8 @@ Function Pandora_PgDn_fn(){
 	}
 	ListFirst[1] = FirstPandora;
 	PandoraRefresh_fn();
-}   
+} 
+*/  
 Function Favorites_PgDn_fn(){
 	If (FirstFavorites + NumberOfList < TotalFavorites){
     	FirstFavorites = FirstFavorites + NumberOfList;
@@ -2194,6 +2200,9 @@ Function Parse_Status(String InStatus$){
 		If (find("slacker.com",CurrentTrackRemoteCover$)){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
+		Else If (find("plugins/",CurrentTrackRemoteCover$)){
+			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",SqueezeCenterIPAddr$,CurrentTrackRemoteCover$);
+		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
 	}
 	Else {
@@ -2430,6 +2439,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Nowplaying[i] = left(Nowplaying_int[i],255);
 	}
 }
+/*
 Function Parse_Pandora(String InPandora$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthPandora;
@@ -2513,6 +2523,7 @@ Function Parse_Pandora(String InPandora$){
 			trace("pandora HasItems[%u]: %u",i,PandoraHasItems[i]);
 	}
 }
+*/
 Function Parse_FAR(String InFavorites$){
 	Integer i, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthFavorites;
@@ -3672,11 +3683,11 @@ CHANGE InPageList{
 			ListFirst[1] = FirstDynamic;
 			DynamicRefresh_fn();
 		}
-		Else If (ListType[1] = 9){
-			FirstPandora = (65535 - InPageList) * TotalPandora / 65535;
-			ListFirst[1] = FirstPandora;
-			PandoraRefresh_fn();
-		}             
+//		Else If (ListType[1] = 9){
+//			FirstPandora = (65535 - InPageList) * TotalPandora / 65535;
+//			ListFirst[1] = FirstPandora;
+//			PandoraRefresh_fn();
+//		}             
 		Else If (ListType[1] = 10){ 
 			FirstFavorites = (65535 - InPageList) * TotalFavorites / 65535;
 			ListFirst[1] = FirstFavorites;
@@ -3741,9 +3752,9 @@ PUSH List_PgUp{
 	Else If (ListType[1] = 8){
 		Search_PgUp_fn(); //Search results code
 	}
-	Else If (ListType[1] = 9){
-		Pandora_PgUp_fn(); //Pandora results code
-    } 
+//	Else If (ListType[1] = 9){
+//		Pandora_PgUp_fn(); //Pandora results code
+//	} 
     Else If (ListType[1] = 10){
 		Favorites_PgUp_fn(); //Favorites results code
     }
@@ -3787,9 +3798,9 @@ PUSH List_PgDn{
 	Else If (ListType[1] = 8){
 		Search_PgDn_fn(); //Search results code
 	}
-	Else If (ListType[1] = 9){
-		Pandora_PgDn_fn(); //Pandora results code
-    }   
+//	Else If (ListType[1] = 9){
+//		Pandora_PgDn_fn(); //Pandora results code
+ //	}   
     Else If (ListType[1] = 10){
 		Favorites_PgDn_fn(); //Favorites results code
     }
@@ -4473,7 +4484,7 @@ Function Main() {
 	FirstPlaylist = 0;
 	FirstNowplaying = 0;
 	FirstDynamic = 0;
-	FirstPandora = 0;   
+//	FirstPandora = 0;   
 	FirstFavorites = 0; 
 	FirstPlayers = 0;
 	ActivePlaylist = "";
@@ -4482,7 +4493,7 @@ Function Main() {
 	restrictorAlbums = "";
 	restrictorTitles = "tags:te";
 	restrictorPlaylists = "";
-	restrictorPandora = "";
+//	restrictorPandora = "";
 	restrictorFavorites = "";
 	ActiveFAR_ID = "";
 	SetArray(ListSearchRS,0);
