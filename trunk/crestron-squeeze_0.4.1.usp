@@ -38,7 +38,7 @@ Comments:
 #ENABLE_STACK_CHECKING
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
 #PRINT_TO_TRACE
-//#ENABLE_TRACE
+#ENABLE_TRACE
 /*
 #HELP_BEGIN
    (add additional lines of help lines)
@@ -191,7 +191,8 @@ INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 INTEGER NumberOfAlbums;
 //
 // INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
-INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID, CurrentTrackID;
+INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID;
+LONG_INTEGER CurrentTrackID;
 INTEGER CTDuration_sec;
 INTEGER CurrentPlaylistID, CurrentPlaylistModified;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CTRemoteService;
@@ -217,9 +218,11 @@ INTEGER OutRadiosCount,OutRadiosBar;
 INTEGER Nowplaying_refresh_enable; // ListLengthNowplaying_old
 //
 INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
-INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10], TitleTracknum[10], TrackID[10];
+INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10];
+INTEGER TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
-INTEGER NowplayingIndex[10], NowplayingID[10];
+INTEGER NowplayingIndex[10];
+LONG_INTEGER NowplayingID[10];
 // INTEGER PandoraIsAudio[10], PandoraHasItems[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 //
@@ -2046,7 +2049,7 @@ Function Parse_Status(String InStatus$){
 		indexEnd = find( " ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentTrackID = AtoI(mid(InStatus$,indexStart, Length));
-		trace("current trackID = %u",CurrentTrackID);
+		trace("current trackID = %lu",CurrentTrackID);
 	}
 	Else {
 		CurrentTrackID = 0;
@@ -2211,7 +2214,7 @@ Function Parse_Status(String InStatus$){
 	}
 	Else {
 		CurrentTrackRemoteCover$ = "";
-		makestring(CurrentsongCoverURL,"http://%s:9000/music/%u/cover.jpg",SqueezeCenterIPAddr$,CurrentTrackID);
+		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",SqueezeCenterIPAddr$,CurrentTrackID);
 	}
 	CurrentsongTitle = CurrentTrackTitle$;
 	CurrentsongAlbum = CurrentTrackAlbum$;
@@ -2296,8 +2299,9 @@ Function Parse_Status(String InStatus$){
 }
 Function Parse_Nowplaying(String InNowplaying$){
 	Integer i, j;
-	Integer indexStart, indexEnd, Length;
+	Integer indexStart, indexEnd, Length, indexNext;
 	Integer ListLengthNowplaying;
+	String NowplayingParseItem[16384];
 
 	indexStart = find(" status",InNowplaying$,28) + 8;
 	indexEnd = find(" ",InNowplaying$,indexStart);
@@ -2331,33 +2335,10 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Else {
 		OutNowplayingBar = 65535;
 	}
-/*
-	ListLengthNowplaying = TotalNowplaying - NowplayingFirstNumber;
-	if (NumberOfNowplaying < ListLengthNowplaying){
-		ListLengthNowplaying  = NumberOfNowplaying;
-	}
-	trace("ListLengthNowplaying = %u",ListLengthNowplaying);
-	If (ListLengthNowplaying < ListLengthNowplaying_old ){
-		trace("blanking Nowplaying");
-		SetArray(Nowplaying," ");
-		SetArray(NowplayingTitle$," ");
-		SetArray(NowplayingTitle,"");
-		SetArray(NowplayingArtist$," ");
-		SetArray(NowplayingArtist,"");
-		SetArray(NowplayingAlbum$," ");
-		SetArray(NowplayingAlbum,"");
-		SetArray(NowplayingCurrentSong,0);
-		SetArray(NowplayingID,0);
-		SetArray(NowplayingIndex,65534); //dummy value to test for disabling button action if empty
-		If (ListType[1] = 7)
-			SetArray(List$," ");
-	}
-	ListLengthNowplaying_old = ListLengthNowplaying;
-	trace("ListLengthNowplaying_old = %u",ListLengthNowplaying_old);
-*/
 	ListLengthNowplaying  = NumberOfNowplaying;
+	indexNext = indexEnd;
 	For (i = 1 to ListLengthNowplaying)	{
-		indexStart = find(" playlist%20index%3A",InNowplaying$,indexEnd) + 20;
+		indexStart = find(" playlist%20index%3A",InNowplaying$,indexNext) + 20;
 		If (indexStart > 20){
 			indexEnd = find(" ",InNowplaying$,indexStart);
 			Length = indexEnd - indexStart;
@@ -2387,21 +2368,29 @@ Function Parse_Nowplaying(String InNowplaying$){
 			}
 			Break;
 		}
-		indexStart = find(" id%3A",InNowplaying$,indexEnd) + 6;
+		indexNext = find(" playlist%20index%3A",InNowplaying$,indexEnd);
+		if (indexNext > 0){
+			Length = indexNext - indexEnd;
+			NowplayingParseItem = mid(InNowplaying$,indexEnd,Length);
+		}
+		Else {
+			NowplayingParseItem = mid(InNowplaying$,indexEnd,len(InNowplaying$) - indexEnd - 1);
+		}
+		indexStart = find(" id%3A",NowplayingParseItem,1) + 6;
 		If (indexStart > 6){
-			indexEnd = find(" ",InNowplaying$, indexStart);
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			NowplayingID[i] = AtoI(mid(InNowplaying$,indexStart,Length));
-			trace("NowplayingID (i=%u)= %u",i,NowplayingID[i]);
+			NowplayingID[i] = AtoI(mid(NowplayingParseItem,indexStart,Length));
+			trace("NowplayingID (i=%u)= %lu",i,NowplayingID[i]);
 		}
 		Else {
 			NowplayingID[i] = 0;
 		}
-		indexStart = find(" title%3A",InNowplaying$,indexEnd) + 9;
+		indexStart = find(" title%3A",NowplayingParseItem,indexEnd) + 9;
 		If (indexStart > 9){
-			indexEnd = find(" ",InNowplaying$, indexStart);
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			NowplayingTitle[i] = ParsePercent(mid(InNowplaying$,indexStart,Length));
+			NowplayingTitle[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
 			NowplayingTitle[i] = "";
@@ -2409,11 +2398,11 @@ Function Parse_Nowplaying(String InNowplaying$){
 		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingTitle$[i] = NowplayingTitle[i];
 		}
-		indexStart = find(" artist%3A",InNowplaying$,indexEnd) + 10;
+		indexStart = find(" artist%3A",NowplayingParseItem,indexEnd) + 10;
 		If (indexStart > 10){
-			indexEnd = find(" ",InNowplaying$, indexStart);
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			NowplayingArtist[i] = ParsePercent(mid(InNowplaying$,indexStart,Length));
+			NowplayingArtist[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
 			NowplayingArtist[i] = "";
@@ -2421,17 +2410,17 @@ Function Parse_Nowplaying(String InNowplaying$){
 		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingArtist$[i] = NowplayingArtist[i];
 		}
-		indexStart = find(" album%3A",InNowplaying$,indexEnd) + 9;
+		indexStart = find(" album%3A",NowplayingParseItem,indexEnd) + 9;
 		If (indexStart > 9){
-			indexEnd = find(" ",InNowplaying$, indexStart);
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
 			If (indexEnd > 0){
 				Length = indexEnd - indexStart;
 			}
 			Else {
-				indexEnd = Len(InNowplaying$) - 1;
+				indexEnd = Len(NowplayingParseItem) - 1;
 				Length = indexEnd - indexStart;
 			}
-			NowplayingAlbum[i] = ParsePercent(mid(InNowplaying$,indexStart,Length));
+			NowplayingAlbum[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
 			NowplayingAlbum[i] = "";
@@ -3299,6 +3288,10 @@ Function Parse_Search(String InSearch$){
 			}
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
+		}
+		Else {
+			SearchID[i] = 0;
+			Search[i] = " ";
 		}
 		If (ListType[1] = 8){
             List$[i] = Search[i];
