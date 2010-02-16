@@ -57,6 +57,7 @@ DIGITAL_INPUT OnConnect_DefaultPlayer;
 DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
 DIGITAL_INPUT Playlist_Save_Enable;
 DIGITAL_INPUT NowplayingSeparateOuts_Enable;
+DIGITAL_INPUT BrowseCS_AlwaysSearch;
 //
 DIGITAL_INPUT Select_DefaultPlayer;
 //
@@ -79,7 +80,7 @@ DIGITAL_INPUT Jump_Dynamic;
 DIGITAL_INPUT Jump_Pandora;
 DIGITAL_INPUT Jump_Favorites;
 // Direct Browse inputs
-DIGITAL_INPUT BrowseCurrentSongGenre,BrowseCurrentSongArtist,BrowseCurrentSongAlbum;
+DIGITAL_INPUT BrowseCurrentGenre,BrowseCurrentArtist,BrowseCurrentAlbum,BrowseCurrentSong;
 // Direct string inputs
 STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16];
 STRING_INPUT  DynamicResume$[256];
@@ -2050,6 +2051,9 @@ Function Parse_Status(String InStatus$){
 	Else {
 		CurrentTrackID = 0;
 	}
+	If (CurrentTrackRemote = 0){
+		CurrentTrackID = 0;
+	}
 	indexStart = find(" title%3A",InStatus$,indexEnd) + 9;
 	If (indexStart > 20){
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -3245,7 +3249,7 @@ Function Parse_Search(String InSearch$){
 			indexStart = indexEnd + 15;
 			indexEnd = find(" ",InSearch$, indexStart);
 			If (indexEnd = 0){
-				indexEnd = len(InSearch$);
+				indexEnd = len(InSearch$) - 1;
 			}
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
@@ -3261,7 +3265,7 @@ Function Parse_Search(String InSearch$){
 			indexStart = indexEnd + 9;
 			indexEnd = find(" ",InSearch$, indexStart);
 			If (indexEnd = 0) {
-				indexEnd = len(InSearch$);
+				indexEnd = len(InSearch$) - 1;
 			}
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
@@ -3276,7 +3280,7 @@ Function Parse_Search(String InSearch$){
 			indexStart = indexEnd + 9;
 			indexEnd = find(" ",InSearch$, indexStart);
 			If (indexEnd = 0) {
-				indexEnd = len(InSearch$);
+				indexEnd = len(InSearch$) - 1;
 			}
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
@@ -3291,7 +3295,7 @@ Function Parse_Search(String InSearch$){
 			indexStart = indexEnd + 9;
 			indexEnd = find(" ",InSearch$, indexStart);
 			If (indexEnd = 0) {
-				indexEnd = len(InSearch$);
+				indexEnd = len(InSearch$) - 1;
 			}
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
@@ -4238,58 +4242,101 @@ CHANGE DynamicResume$ {
 		socketsend(TCPClient, OUT$);
 	}
 }
-PUSH BrowseCurrentSongGenre {
-// set artist restrictor to CurrentGenreID
-// CurrentTrackGenre$ is the name of the Genre
-	If (ListType[1] != 2){
-	    ListShiftFwd_fn();
-		ListType[1] = 2;
-		ListActiveGenre[1] = CurrentTrackGenre$;
+PUSH BrowseCurrentGenre {
+	String temp[16];
+
+	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackGenre$ <> "<genre n/a>"){
+			search_in_raw = left(CurrentTrackGenre$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_genres_fn();
+		}
+	}
+	Else If (CurrentGenreID > 0){
+		If (ListType[1] != 2){
+			ListShiftFwd_fn();
+			ListType[1] = 2;
+			ListActiveGenre[1] = CurrentTrackGenre$;
+		}
+		ListFirst[1] = 0;
+		ActiveGenreID = CurrentGenreID;
+		ActiveGenre = CurrentTrackGenre$;
+		makestring(ListName[1], "%s",CurrentTrackGenre$);
+		makestring(restrictorArtists,"genre_id:%u",CurrentGenreID);
+		ListRestrictor[1] = restrictorArtists;
+		FirstArtist = 0;
+		ArtistsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+PUSH BrowseCurrentArtist {
+	String temp[16];
+
+	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackArtist$ <> "<artist n/a>"){
+			search_in_raw = left(CurrentTrackArtist$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_artists_fn();
+		}
+	}
+	Else If (CurrentArtistID > 0){
+		If (ListType[1] != 3){
+			ListShiftFwd_fn();
+			ListType[1] = 3;
+			ListActiveGenre[1] = "";
+		}
+		ListFirst[1] = 0;
+		ActiveGenre = "";
+		ActiveArtistID = CurrentArtistID;
+		ActiveArtist = CurrentTrackArtist$;
+		makestring(ListName[1], "Albums for %s",CurrentTrackArtist$);
+		makestring(restrictorAlbums,"artist_id:%u",CurrentArtistID);
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		AlbumsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+PUSH BrowseCurrentAlbum {
+	String temp[16];
 		
+	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackAlbum$ <> "<album n/a>"){
+			search_in_raw = left(CurrentTrackAlbum$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_albums_fn();
+		}
 	}
-	ListFirst[1] = 0;
-	ActiveGenreID = CurrentGenreID;
-	ActiveGenre = CurrentTrackGenre$;
-	makestring(ListName[1], "%s",CurrentTrackGenre$);
-	makestring(restrictorArtists,"genre_id:%u",CurrentGenreID);
-	ListRestrictor[1] = restrictorArtists;
-	FirstArtist = 0;
-	ArtistsRefresh_fn();
-	ListName$ = ListName[1];
+	Else If (CurrentAlbumID > 0){
+		If (ListType[1] != 4){
+			ListShiftFwd_fn();
+			ListType[1] = 4;
+			ListActiveGenre[1] = "";
+		}
+		ListFirst[1] = 0;
+		ActiveAlbumID = CurrentAlbumID;
+		ActiveAlbum = CurrentTrackAlbum$;
+		ActiveGenre = "";
+		makestring(ListName[1], "Titles in %s",CurrentTrackAlbum$);
+		makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",CurrentAlbumID);
+		ListRestrictor[1] = restrictorTitles;
+		FirstTitle = 0;
+		TitlesRefresh_fn();
+		ListName$ = ListName[1];
+	}
 }
-PUSH BrowseCurrentSongArtist {
-	If (ListType[1] != 3){
-	    ListShiftFwd_fn();
-		ListType[1] = 3;
-		ListActiveGenre[1] = "";
+PUSH BrowseCurrentSong {
+	String temp[8];
+	
+	If (CurrentTrackTitle$ <> "<title n/a>"){
+		search_in_raw = left(CurrentTrackTitle$,8);
+		temp = search_in_raw;
+		search_in = FormatSearch(temp);
+		Search_fn();
 	}
-	ListFirst[1] = 0;
-	ActiveGenre = "";
-	ActiveArtistID = CurrentArtistID;
-	ActiveArtist = CurrentTrackArtist$;
-	makestring(ListName[1], "Albums for %s",CurrentTrackArtist$);
-	makestring(restrictorAlbums,"artist_id:%u",CurrentArtistID);
-	ListRestrictor[1] = restrictorAlbums;
-	FirstAlbum = 0;
-	AlbumsRefresh_fn();
-	ListName$ = ListName[1];
-}
-PUSH BrowseCurrentSongAlbum {
-	If (ListType[1] != 4){
-	    ListShiftFwd_fn();
-		ListType[1] = 4;
-		ListActiveGenre[1] = "";
-	}
-	ListFirst[1] = 0;
-	ActiveAlbumID = CurrentAlbumID;
-	ActiveAlbum = CurrentTrackAlbum$;
-	ActiveGenre = "";
-	makestring(ListName[1], "Titles in %s",CurrentTrackAlbum$);
-	makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",CurrentAlbumID);
-	ListRestrictor[1] = restrictorTitles;
-	FirstTitle = 0;
-	TitlesRefresh_fn();
-	ListName$ = ListName[1];
 }
 PUSH RadioRate_Up {
 	If (CTRemoteService = 1){
