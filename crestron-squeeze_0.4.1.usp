@@ -57,7 +57,9 @@ DIGITAL_INPUT OnConnect_DefaultPlayer;
 DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
 DIGITAL_INPUT Playlist_Save_Enable;
 DIGITAL_INPUT NowplayingSeparateOuts_Enable;
-DIGITAL_INPUT BrowseCS_AlwaysSearch;
+DIGITAL_INPUT BrowseCS_AlwaysSearch; 
+DIGITAL_INPUT CurrentSongTime_Enable;
+
 //
 DIGITAL_INPUT Select_DefaultPlayer;
 //
@@ -139,7 +141,8 @@ STRING_OUTPUT  CurrentsongGenre;
 STRING_OUTPUT  CurrentsongCoverURL;
 STRING_OUTPUT  CurrentsongTime;
 STRING_OUTPUT  CurrentsongRate;
-STRING_OUTPUT  CurrentsongDuration;
+STRING_OUTPUT  CurrentsongDuration; 
+STRING_OUTPUT  CurrentsongConsolidatedText;
 // ARRAYS
 // Nowplaying i/o
 DIGITAL_INPUT  NowplayingPlay[10];
@@ -1807,24 +1810,28 @@ String_Function FormatSearch(String input){
 	Return (output);
 }
 // //////////// PARSING FUNCTIONS
-Function Parse_Time(String InTime$){
+Function Parse_Time(String InTime$){     
 	Integer indexEnd, Length; // indexStart
 	Integer Time_min, Time_sec, Time_rmd;	
-	Long_Integer BarTemp;
+	Long_Integer BarTemp;  
+	
+	If(CurrentSongTime_Enable = 1)
+	{
 
-	Time_sec = AtoI(InTime$);
-	Time_min = Time_sec / 60;
-	Time_rmd = Time_sec - (Time_min * 60);
-	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
-	If ((CTDuration_sec > 0) && (Time_sec > 0)){
-		BarTemp =  (65535 * Time_sec) / CTDuration_sec;
-		OutTimeBar = BarTemp;
-	}
-	Else If (Time_sec = 0){
-		OutTimeBar = 0;
-	}
-	Else {
-		OutTimeBar = 32767;
+		Time_sec = AtoI(InTime$);
+		Time_min = Time_sec / 60;
+		Time_rmd = Time_sec - (Time_min * 60);
+		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
+		If ((CTDuration_sec > 0) && (Time_sec > 0)){
+			BarTemp =  (65535 * Time_sec) / CTDuration_sec;
+			OutTimeBar = BarTemp;
+		}
+		Else If (Time_sec = 0){
+			OutTimeBar = 0;
+		}
+		Else {
+			OutTimeBar = 32767;
+		}
 	}
 }
 Function Parse_Status(String InStatus$){
@@ -1834,6 +1841,8 @@ Function Parse_Status(String InStatus$){
 	Integer CurrentPlayerSlave_local, CurrentPlayerMaster_local;
 	Integer Time_min, Time_sec, Time_rmd;	
 	String CoverURL_check[3];
+	String CurrentSongConsolidated[200];
+	
 		
    	indexStart = find(" player_name%3A",InStatus$,1) + 15;
 	if (indexStart > 15){
@@ -2219,7 +2228,30 @@ Function Parse_Status(String InStatus$){
 	CurrentsongTitle = CurrentTrackTitle$;
 	CurrentsongAlbum = CurrentTrackAlbum$;
 	CurrentsongArtist = CurrentTrackArtist$;
-	CurrentsongGenre = CurrentTrackGenre$;
+	CurrentsongGenre = CurrentTrackGenre$; 
+	
+	//create CurrentsongConsolidatedText which will display nicely formatted to the tp screen   
+	CurrentsongConsolidatedText = "";   
+	CurrentSongConsolidated = "";
+	if(find("n/a",CurrentTrackTitle$) = 0)
+	{
+		CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackTitle$ + "\r";	
+	}
+	if(find("n/a",CurrentTrackAlbum$) = 0)
+	{
+		CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackAlbum$ + "\r";	
+	}
+	if(find("n/a",CurrentTrackArtist$) = 0)
+	{
+		CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackArtist$ + "\r";	
+	}
+	if(find("n/a",CurrentTrackGenre$) = 0)
+	{
+		CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackGenre$ + "\r";	
+	}	
+	CurrentsongConsolidatedText = CurrentSongConsolidated;
+	//makestring(CurrentsongConsolidatedText, "%s%s%s%s%s%s%s ", CurrentTrackTitle$ ,"\r",CurrentTrackAlbum$, "\r\n test",CurrentTrackArtist$, "\n", CurrentTrackGenre$);
+	
 	Parse_Time(CurrentTrackTime$);
 	CurrentsongRate = CurrentTrackRate$;
  	indexEnd = find(".",CurrentTrackDuration$,1);
@@ -4552,18 +4584,21 @@ Function Main() {
 	ListHome[8] = "Apps";
 	ListHome[9] = "Pandora";
 	ListHome[10] = "Tracks";
- 	TotalHome = 10;
- 	Wait (200){
+ 	TotalHome = 10;    
+  	Wait (200){
 	 	Home_PgReset_fn();
 		CurrentPlayerID = PlayerID$;
 		NumberOfAlbums = NumberOfList;
-	}
-	While (1) {
-		If (status_request_time = 1) {
-			makestring(Out$,"%s time ? \n",PlayerID$);
-//			trace("sending: %s",OUT$);
-			socketsend(TCPClient,OUT$);
+	}  
+	if (CurrentSongTime_enable = 1)
+	{
+		While (1) {
+			If (status_request_time = 1) {
+				makestring(Out$,"%s time ? \n",PlayerID$);
+	//			trace("sending: %s",OUT$);
+				socketsend(TCPClient,OUT$);
+			}
+			delay(100);
 		}
-		delay(100);
 	}
 } // end main function
