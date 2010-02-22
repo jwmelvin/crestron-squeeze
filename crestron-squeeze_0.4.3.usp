@@ -1702,7 +1702,7 @@ String_Function ParsePercent(STRING Parse$){
 	i = 1;
 	output$ = "";
 	While(i <= len (parse$)) {
-		char = Byte (parse$, i); // char = integer equivalent of the byte at position "in" from output$
+		char = Byte (parse$, i); // char = integer of the byte at position i
 		if (char = '%'){ // if char is the escape character, %
 			if (i > 1){
 				output$ = output$ + removebylength(i - 1,parse$);
@@ -1898,7 +1898,12 @@ Function Parse_Nowplaying(String InNowplaying$){
 		If (NowplayingSeparateOuts_Enable = 1){
 			NowplayingAlbum$[i] = NowplayingAlbum[i];
 		}
-	Nowplaying_int[i] = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+	If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
+		Nowplaying_int[i] = NowplayingTitle[i] + " - " + NowplayingArtist[i];
+	}
+	Else {
+		Nowplaying_int[i] = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+	}
 	Nowplaying[i] = Nowplaying_int[i];
 	}
 }
@@ -2593,7 +2598,7 @@ Function Parse_Search(String InSearch$){
 		OutSearchBar = 65535 - ((65535 / TotalSearch) * SearchFirstNumber);
 	}
 	else {
-		OutSearchBar = 0;
+		OutSearchBar = 65535;
 	}
 	If (ListType[1] = 8){
 		OutListBar = OutSearchBar;
