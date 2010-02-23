@@ -3159,6 +3159,16 @@ Function Parse_Status(String InStatus$){
 			CurrentSongRadioRateable = 1;
 			trace("CurrentSong is LastFM");
 		}		
+		Else If (find("rhapd:",CurrentTrackURL$)){
+			CTRemoteService = 4;
+			CurrentSongRadioRateable = 0;
+			trace("CurrentSong is Rhapsody");
+		}
+		Else If (find("archive.org",CurrentTrackURL$)){
+			CTRemoteService = 5;
+			CurrentSongRadioRateable = 0;
+			trace("CurrentSong is LiveMusicArchive");
+		}
 		Else {
 			CTRemoteService = 0;
 			CurrentSongRadioRateable = 0;
@@ -4049,14 +4059,14 @@ CHANGE InTimeBar{
 	Long_Integer seek;
 	If (progInTimeBar = 0){
 		progInTimeBar = 1;
-		If (CurrentTrackRemote = 0){
+		If ((CurrentTrackRemote = 0) | (CTRemoteService = 4) | (CTRemoteService = 5)){
 			If (CTDuration_sec > 0){
 				timeclock_run = 0;
 				seek = (InTimeBar * CTDuration_sec) / 65535;
 				makestring(OUT$,"%s time %lu \n",PlayerID$,seek);
 				trace("sending: %s",OUT$);
 				socketsend(TCPClient,OUT$);
-				delay(30);
+				delay(60);
 			}
 		}
 		progInTimeBar = 0;
