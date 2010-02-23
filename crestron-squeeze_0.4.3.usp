@@ -38,7 +38,7 @@ Comments:
 #ENABLE_STACK_CHECKING
 #DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
 #PRINT_TO_TRACE
-#ENABLE_TRACE
+// #ENABLE_TRACE
 /*
 #HELP_BEGIN
    (add additional lines of help lines)
@@ -57,6 +57,7 @@ DIGITAL_INPUT OnConnect_DefaultPlayer;
 DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
 DIGITAL_INPUT Playlist_Save_Enable;
 DIGITAL_INPUT NowplayingSeparateOuts_Enable;
+DIGITAL_INPUT NowplayingConsolidatedOut_Enable;
 DIGITAL_INPUT BrowseCS_AlwaysSearch; 
 DIGITAL_INPUT CurrentSongTime_Enable;
 DIGITAL_INPUT CurrentSongSeparateOut_Enable;
@@ -254,7 +255,6 @@ STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
 //
 STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist[10][256],PlaylistRaw[10][256], DynamicName[10][256], DynamicFile[10][256], Search[10][256];
 STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
-STRING  Nowplaying_int[10][512];
 STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
 
 STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];  
@@ -1772,7 +1772,9 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Integer indexStart, indexEnd, Length, indexNext;
 	Integer ListLengthNowplaying;
 	String NowplayingParseItem[16384];
-
+	String  Nowplaying_int[512];
+	Integer Nowplaying_intLen;
+	
 	indexStart = find(" status",InNowplaying$,28) + 8;
 	indexEnd = find(" ",InNowplaying$,indexStart);
 	Length = indexEnd - indexStart;
@@ -1865,9 +1867,6 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingTitle[i] = "";
 		}
-		If (NowplayingSeparateOuts_Enable = 1){
-			NowplayingTitle$[i] = NowplayingTitle[i];
-		}
 		indexStart = find(" artist%3A",NowplayingParseItem,indexEnd) + 10;
 		If (indexStart > 10){
 			indexEnd = find(" ",NowplayingParseItem, indexStart);
@@ -1876,9 +1875,6 @@ Function Parse_Nowplaying(String InNowplaying$){
 		}
 		Else {
 			NowplayingArtist[i] = "";
-		}
-		If (NowplayingSeparateOuts_Enable = 1){
-			NowplayingArtist$[i] = NowplayingArtist[i];
 		}
 		indexStart = find(" album%3A",NowplayingParseItem,indexEnd) + 9;
 		If (indexStart > 9){
@@ -1895,16 +1891,23 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingAlbum[i] = "";
 		}
+		If (NowplayingConsolidatedOut_Enable = 1){
+			If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
+				Nowplaying_int = NowplayingTitle[i] + " - " + NowplayingArtist[i];
+			}
+			Nowplaying_int = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+			Nowplaying_intLen = len(Nowplaying_int);
+			If (Nowplaying_intLen < NowplayingWidthTotal){
+				Nowplaying_int = NowplayingTitle[i] + " - " + left(NowplayingArtist[i], NowplayingWidthArtist + NowplayingWidthTotal - Nowplaying_intLen);
+			}
+			Nowplaying[i] = Nowplaying_int;
+		}
 		If (NowplayingSeparateOuts_Enable = 1){
+
+			NowplayingTitle$[i] = NowplayingTitle[i];
+			NowplayingArtist$[i] = NowplayingArtist[i];
 			NowplayingAlbum$[i] = NowplayingAlbum[i];
 		}
-	If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
-		Nowplaying_int[i] = NowplayingTitle[i] + " - " + NowplayingArtist[i];
-	}
-	Else {
-		Nowplaying_int[i] = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
-	}
-	Nowplaying[i] = Nowplaying_int[i];
 	}
 }
 Function Parse_FAR(String InFavorites$){
