@@ -72,6 +72,7 @@ DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
 DIGITAL_INPUT Pwr_On, Pwr_Off;
 DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
 DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
+DIGITAL_INPUT Playlist_Clear;
 // DIGITAL_INPUT PlaylistSave;
 //
 // Jump inputs
@@ -209,7 +210,7 @@ INTEGER TCPIP_Connected_int;
 //
 INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
 //
- STRING	search_in[64], search_in_raw[64];
+STRING	search_in[64], search_in_raw[64];
 //
 INTEGER OutHomeCount, OutHomeBar;
 INTEGER OutGenreCount, OutGenresBar;
@@ -219,7 +220,6 @@ INTEGER OutTitleCount, OutTitlesBar;
 INTEGER OutPlaylistCount, OutPlaylistsBar;
 INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
-// INTEGER OutPandoraCount,OutPandoraBar;
 INTEGER OutFavoritesCount,OutFavoritesBar;
 INTEGER OutAppsCount,OutAppsBar;
 INTEGER OutRadiosCount,OutRadiosBar;
@@ -1304,13 +1304,18 @@ Function DynamicListPlay_fn(integer i){
 }
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient, OUT$);
-	//	pulse(20,NowplayingPageFlip);
-		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
+		If (FAR_name <> "favorites"){
+			FavoritesListSelect_fn(i);
+		}
+		Else {
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+		//	pulse(20,NowplayingPageFlip);
+			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
 	}
 }
 Function SearchListPlay_fn(integer i){
@@ -1404,12 +1409,17 @@ Function PlaylistListAdd_fn(integer i){
 }
 Function FavoritesListAdd_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient, OUT$);
-		ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
-		ActivePlaylist = ""; // clear the active playlist
-	//	pulse(20,NowplayingPageFlip);
+		If (FAR_name <> "favorites"){
+			FavoritesListSelect_fn(i);
+		}
+		Else {
+			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
+			ActivePlaylist = ""; // clear the active playlist
+		//	pulse(20,NowplayingPageFlip);
+		}
 	}
 }
 Function SearchListAdd_fn(integer i){
@@ -1487,12 +1497,17 @@ Function PlaylistListInsert_fn(integer i){
 }
 Function FavoritesListInsert_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient, OUT$);
-	//	pulse(20,NowplayingPageFlip);
-		ActivePlaylistID = 0; // clear the active playlist ID 
-		ActivePlaylist = ""; // clear the active playlist
+		If (FAR_name <> "favorites"){
+			FavoritesListSelect_fn(i);
+		}
+		Else {
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+		//	pulse(20,NowplayingPageFlip);
+			ActivePlaylistID = 0; // clear the active playlist ID 
+			ActivePlaylist = ""; // clear the active playlist
+		}
 	}
 }
 Function SearchListInsert_fn(integer i){
@@ -4052,6 +4067,11 @@ PUSH Shuffle_Track {
 }
 PUSH Shuffle_Album {
 	makestring(OUT$,"%s playlist shuffle 2\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Playlist_Clear {
+	makestring(OUT$,"%s playlist clear \n:",PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
