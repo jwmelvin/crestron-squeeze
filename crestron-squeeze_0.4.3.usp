@@ -36,7 +36,7 @@ Comments:
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
-#DEFINE_CONSTANT Nowplaying_refresh_enable_time 1000
+#DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
 #PRINT_TO_TRACE
 // #ENABLE_TRACE
 /*
@@ -106,9 +106,9 @@ DIGITAL_INPUT Players_Refresh, Players_PgUp, Players_PgDn;
 // Analog scroll inputs
 ANALOG_INPUT  InPageList;
 ANALOG_INPUT  InPageNowplaying;
-ANALOG_INPUT  NowplayingShowPrev;
 ANALOG_INPUT  InPagePlayers;
 ANALOG_INPUT  InTimeBar;
+ANALOG_INPUT  NowplayingShowPrev;
 ANALOG_INPUT  NowplayingWidthArtist, NowplayingWidthTotal;
 ANALOG_INPUT  CoverflowWidthArtist, CoverflowWidthAlbum;
 ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
@@ -224,7 +224,7 @@ INTEGER OutFavoritesCount,OutFavoritesBar;
 INTEGER OutAppsCount,OutAppsBar;
 INTEGER OutRadiosCount,OutRadiosBar;
 //
-INTEGER Nowplaying_refresh_enable; // ListLengthNowplaying_old
+INTEGER Nowplaying_reset_enable; // ListLengthNowplaying_old
 //
 INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10];
@@ -348,13 +348,13 @@ Function ListShiftBk_fn(){
 	// not yet a possible List type
 }
 Function Nowplaying_wait(){
-	Wait(Nowplaying_refresh_enable_time, Nowplaying_refresh_enable_timer){
-		Nowplaying_refresh_enable = 1;
+	Wait(Nowplaying_reset_enable_time, Nowplaying_reset_enable_timer){
+		Nowplaying_reset_enable = 1;
 	}
 }
 Function Nowplaying_wait_fn(){
-	Nowplaying_refresh_enable = 0;
-	Cancelwait(Nowplaying_refresh_enable_timer);
+	Nowplaying_reset_enable = 0;
+	Cancelwait(Nowplaying_reset_enable_timer);
 	Nowplaying_wait();
 }
 Function HomeRefresh_fn(){
@@ -450,10 +450,6 @@ Function RadiosRefresh_fn(){
 	socketsend(TCPClient,OUT$);
 }
 Function NowplayingRefresh_fn(){
-	If (CurrentsongIndex - NowplayingShowPrev S< 0)
-		FirstNowplaying = 0;
-	Else
-		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;
 	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
@@ -652,8 +648,8 @@ Function Radios_PgReset_fn() {
 	FirstRadios = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 12;
-	ListSearchRS[1] = 1;
-	Search_RequiresSubmit = 1;
+//	ListSearchRS[1] = 1;
+//	Search_RequiresSubmit = 1;
 	ListActiveGenre[1] = "";
 	ActiveGenre = "";
 	ListName[1] = "Radios";
@@ -663,9 +659,12 @@ Function Radios_PgReset_fn() {
 	RadiosRefresh_fn();
 }
 Function Nowplaying_PgReset_fn(){
-	FirstNowplaying = 0;
-    Cancelwait(Nowplaying_refresh_enable_timer);
-	Nowplaying_refresh_enable = 1;
+	If (CurrentsongIndex - NowplayingShowPrev S< 0)
+		FirstNowplaying = 0;
+	Else
+		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;
+    Cancelwait(Nowplaying_reset_enable_timer);
+	Nowplaying_reset_enable = 1;
 	NowplayingRefresh_fn();
 	// ListType[1] = 7 reserved for Nowplaying
 	// not yet a possible List type
@@ -791,9 +790,7 @@ Function Nowplaying_PgUp_fn(){
 	Else {
 		FirstNowplaying = FirstNowplaying - NumberOfNowplaying;
     }
-	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	NowplayingRefresh_fn();
 }
 Function Favorites_PgUp_fn() {
 	If (FirstFavorites = 0 && (NumberOfList <= TotalFavorites)) {
@@ -934,9 +931,7 @@ Function Nowplaying_PgDn_fn(){
 	else {
 		FirstNowplaying = 0;
     }
-	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	NowplayingRefresh_fn();
 }
 Function Favorites_PgDn_fn(){
 	If (FirstFavorites + NumberOfList < TotalFavorites){
@@ -1183,7 +1178,9 @@ Function FavoritesListSelect_fn(integer i){
 			// restrictorFavorites = "item_id:" + FavoritesID[i];
 			ActiveFAR_ID = FavoritesID[i];
 		}
-		Else If (FavoritesIsAudio[i] = 0 && FavoritesHasItems[i] = 1){
+//		Else If (FavoritesIsAudio[i] = 0 && FavoritesHasItems[i] = 1){
+//		Changing this to continue browsing when an item has sub-items
+		Else If (FavoritesHasItems[i] = 1){
 			ListShiftFwd_fn();
 			FirstFavorites = 0;
 			restrictorFavorites = "item_id:" + FavoritesID[i];
@@ -1223,20 +1220,26 @@ Function AppsListSelect_fn(integer i){
 }
 Function RadiosListSelect_fn(integer i){
 	If (RadiosCmd[i] <> ""){
-		ListShiftFwd_fn();
-		ListType[1] = 10;
-		ListFirst[1] = 0;
-		ListSearchRS[1] = 0;
-		Search_RequiresSubmit = 0;
-		FAR_name = RadiosCmd[i];
-		FAR_parse = FAR_name + " items ";
-		trace("FAR_parse = %s",FAR_parse);
-		ActiveFAR_ID = "";
-		restrictorFavorites = "";
-		ListName[1] = RadiosName[i];
-		ListName$ = ListName[1];
-		FirstFavorites = 0;
-		FavoritesRefresh_fn();
+		If (RadiosCmd[i] = "search"){
+			Search_RequiresSubmit = 1;
+			Pulse (20,Search_KeyboardPopup);
+		}
+		Else {
+			ListShiftFwd_fn();
+			ListType[1] = 10;
+			ListFirst[1] = 0;
+			ListSearchRS[1] = 0;
+			Search_RequiresSubmit = 0;
+			FAR_name = RadiosCmd[i];
+			FAR_parse = FAR_name + " items ";
+			trace("FAR_parse = %s",FAR_parse);
+			ActiveFAR_ID = "";
+			restrictorFavorites = "";
+			ListName[1] = RadiosName[i];
+			ListName$ = ListName[1];
+			FirstFavorites = 0;
+			FavoritesRefresh_fn();
+		}
 	}
 }
 Function GenreListPlay_fn(integer i){
@@ -1289,7 +1292,7 @@ Function PlaylistListPlay_fn(integer i){
 		socketsend(TCPClient,OUT$);
 		ActivePlaylistID = PlaylistID[i];
 		ActivePlaylist = PlaylistRaw[i];
-		pulse(20,NowplayingPageFlip);
+//		pulse(20,NowplayingPageFlip);
 	}
 }
 Function DynamicListPlay_fn(integer i){
@@ -1305,7 +1308,9 @@ Function DynamicListPlay_fn(integer i){
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
 		If (FAR_name <> "favorites"){
-			FavoritesListSelect_fn(i);
+			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
 		}
 		Else {
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
@@ -1543,8 +1548,8 @@ Function NowplayingPlay_fn(integer i){
 		Nowplaying_PgReset_fn();
 	}
 	Else {
-		Cancelwait(Nowplaying_refresh_enable_timer);
-		Nowplaying_refresh_enable = 1;
+		Cancelwait(Nowplaying_reset_enable_timer);
+		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist index %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -1552,8 +1557,8 @@ Function NowplayingPlay_fn(integer i){
 }
 Function NowplayingRemove_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_refresh_enable_timer);
-		Nowplaying_refresh_enable = 1;
+		Cancelwait(Nowplaying_reset_enable_timer);
+		Nowplaying_reset_enable = 1;
 		Activeplaylist = "";
 		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
@@ -1562,8 +1567,8 @@ Function NowplayingRemove_fn(integer i){
 }
 Function NowplayingMoveUp_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_refresh_enable_timer);
-		Nowplaying_refresh_enable = 1;
+		Cancelwait(Nowplaying_reset_enable_timer);
+		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -1571,8 +1576,8 @@ Function NowplayingMoveUp_fn(integer i){
 }
 Function NowplayingMoveDown_fn(integer i){
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_refresh_enable_timer);
-		Nowplaying_refresh_enable = 1;
+		Cancelwait(Nowplaying_reset_enable_timer);
+		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -3303,7 +3308,10 @@ Function Parse_Status(String InStatus$){
 		CTTime_sec = 0;
 		Parse_Time(CTTime_sec);
 	}
-	if (Nowplaying_refresh_enable = 1) {
+	if (Nowplaying_reset_enable = 1) {
+		Nowplaying_PgReset_fn();
+	}
+	Else {
 		NowplayingRefresh_fn();
 	}
 	If (repeat = 2)	{
@@ -4079,7 +4087,7 @@ CHANGE InTimeBar{
 	Long_Integer seek;
 	If (progInTimeBar = 0){
 		progInTimeBar = 1;
-		If ((CurrentTrackRemote = 0) | (CTRemoteService = 4) | (CTRemoteService = 5)){
+		If ((CurrentTrackRemote = 0) || (CTRemoteService = 4) || (CTRemoteService = 5)){
 			If (CTDuration_sec > 0){
 				timeclock_run = 0;
 				seek = (InTimeBar * CTDuration_sec) / 65535;
@@ -4173,7 +4181,7 @@ CHANGE DynamicResume$ {
 PUSH BrowseCurrentGenre {
 	String temp[16];
 
-	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
 		If (CurrentTrackGenre$ <> "<genre n/a>"){
 			search_in_raw = left(CurrentTrackGenre$,16);
 			temp = search_in_raw;
@@ -4201,7 +4209,7 @@ PUSH BrowseCurrentGenre {
 PUSH BrowseCurrentArtist {
 	String temp[16];
 
-	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
 		If (CurrentTrackArtist$ <> "<artist n/a>"){
 			search_in_raw = left(CurrentTrackArtist$,16);
 			temp = search_in_raw;
@@ -4230,7 +4238,7 @@ PUSH BrowseCurrentArtist {
 PUSH BrowseCurrentAlbum {
 	String temp[16];
 		
-	If ((CurrentTrackRemote = 1) | (BrowseCS_AlwaysSearch = 1)){
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
 		If (CurrentTrackAlbum$ <> "<album n/a>"){
 			search_in_raw = left(CurrentTrackAlbum$,16);
 			temp = search_in_raw;
@@ -4326,15 +4334,13 @@ CHANGE search_in$ {
 		Else If (ListType[1] = 4){
 			search_titles_fn(); // Titles search
 		}
-		Else If (ListType[1] = 5){
+		Else If ((ListType[1] = 5) || (ListType[1] = 6)){
 			search_playlists_fn(); // Playlists search
 		}
-		Else If (ListType[1] = 6){
-			search_playlists_fn(); // DynamicPlaylists search
-		}
-		Else If (ListType[1] = 12){
+/* 		Else If (ListType[1] = 12){
 			Search_Radios_fn(); // radios search
 		}
+*/
 	}
 }
 PUSH Search_submit {
@@ -4475,7 +4481,7 @@ Function Main() {
 	SetArray(ListType,0);
 	SetArray(ListName,"Home");
 	SetArray(ListRestrictor,"");
-	Nowplaying_refresh_enable = 1;
+	Nowplaying_reset_enable = 1;
 	SetArray(ListHome,"");	
 	ListHome[1] = "Favorites";
 	ListHome[2] = "Genres";
