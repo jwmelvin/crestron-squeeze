@@ -39,14 +39,7 @@ Comments:
 #DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
 #PRINT_TO_TRACE
 // #ENABLE_TRACE
-/*
-#HELP_BEGIN
-   (add additional lines of help lines)
-#HELP_END
-*/
-// /////////  Include Libraries
-// #CRESTRON_LIBRARY ""
-// #USER_LIBRARY ""
+
 // ///////////// Inputs & Outputs
 DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
@@ -175,8 +168,13 @@ STRING_OUTPUT  PlayersID$[10,10];
 DIGITAL_OUTPUT PlayersSynced[10,10];
 //
 ///////////////////////////// Parameters
-STRING_PARAMETER PlayerID$_Default[17], SqueezeCenterIPAddr$[16];   // for PlayerID please use the MAC address as found on SB Server player information page.
-INTEGER_PARAMETER SqueezeCenterPort;
+STRING_PARAMETER PlayerID$_Default[17];
+STRING_PARAMETER ServerIPAddr$[16];
+INTEGER_PARAMETER ServerPort;
+#BEGIN_PARAMETER_PROPERTIES ServerPort
+	propValidUnits=unitDecimal;
+	propDefaultValue=9090d;
+#END_PARAMETER_PROPERTIES
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
 // //////////////// Global Variables
@@ -2329,7 +2327,7 @@ Function Parse_Albums(String InAlbums$){
 				ListCoverURL[i] = BlankCoverURL;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", SqueezeCenterIPAddr$, AlbumTrackID[i]);
+				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", ServerIPAddr$, AlbumTrackID[i]);
 			}
 			ListCoverflowArtist[i] = left(AlbumArtist[i],CoverflowWidthArtist);
 		}
@@ -3214,13 +3212,13 @@ Function Parse_Status(String InStatus$){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
 		Else If (find("plugins/",CurrentTrackRemoteCover$)){
-			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",SqueezeCenterIPAddr$,CurrentTrackRemoteCover$);
+			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",ServerIPAddr$,CurrentTrackRemoteCover$);
 		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
 	}
 	Else {
 		CurrentTrackRemoteCover$ = "";
-		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",SqueezeCenterIPAddr$,CurrentTrackID);
+		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",ServerIPAddr$,CurrentTrackID);
 	}
 	If (CurrentSongSeparateOut_Enable = 1){
 		CurrentsongTitle = CurrentTrackTitle$;
@@ -3356,10 +3354,10 @@ PUSH TCPIP_Connect{
 		NowplayingFind$ = PlayersID_raw[0] + " status ";
 		TimeFind$ = PlayersID_raw[0] + " time ";
 	}
-	status = SocketConnectClient (TCPClient, SqueezeCenterIPAddr$, SqueezeCenterPort, TCPIP_ReconnectEnable);
+	status = SocketConnectClient (TCPClient, ServerIPAddr$, ServerPort, TCPIP_ReconnectEnable);
     if (status < 0){
         print ("Error connecting socket to address %s on port  %d", 
-            SqueezeCenterIPAddr$, SqueezeCenterPort);
+            ServerIPAddr$, ServerPort);
 	}
 }
 RELEASE TCPIP_Connect{
@@ -3372,7 +3370,7 @@ RELEASE TCPIP_Connect{
 	status = SocketDisconnectClient (TCPClient);
 	if (status < 0){
     print ("Error disconnecting socket to address %s on port  %d", 
-            SqueezeCenterIPAddr$, SqueezeCenterPort);
+            ServerIPAddr$, ServerPort);
     }
 }
 SOCKETCONNECT TCPClient{
@@ -4449,7 +4447,7 @@ SOCKETRECEIVE TCPClient {
 // /////////// Initialization script
 Function Main() {
 	WaitForInitializationComplete();
-	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", SqueezeCenterIPAddr$);
+	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", ServerIPAddr$);
 	PlayerID$ = PlayerID$_Default;
 	PlayersID_raw[0] = FormatPlayerID(PlayerID$_Default);
 	StatusFind$ = PlayersID_raw[0] + " status - 1";
