@@ -234,7 +234,7 @@ LONG_INTEGER NowplayingID[10];
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 
 STRING ActivePlayerID[32], StatusFind$[64], NowplayingFind$[64], TimeFind$[64];
-STRING FAR_parse[32], FAR_name[32];
+STRING FAR_parse[32], FAR_cmd[32];
 STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], CurrentTrackDuration$[32];
 STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
 STRING CurrentPlaylistName[256];
@@ -433,7 +433,7 @@ Function SearchRefresh_fn(){
 //	ListType = 8
 } 
 Function FavoritesRefresh_fn(){
-	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_name, FirstFavorites, NumberOfList, restrictorFavorites);
+	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -595,8 +595,8 @@ Function Dynamic_PgReset_fn(){
 	DynamicRefresh_fn();
 }
 Function Pandora_PgReset_fn() {
-	FAR_name = "pandora";
-	FAR_parse = FAR_name + " items ";
+	FAR_cmd = "pandora";
+	FAR_parse = FAR_cmd + " items ";
 	FirstFavorites = 0;
 	restrictorFavorites = "";
 	ActiveFAR_ID = "";
@@ -612,8 +612,8 @@ Function Pandora_PgReset_fn() {
 	FavoritesRefresh_fn();
 }
 Function Favorites_PgReset_fn() {
-	FAR_name = "favorites";
-	FAR_parse = FAR_name + " items ";
+	FAR_cmd = "favorites";
+	FAR_parse = FAR_cmd + " items ";
 	FirstFavorites = 0;
 	restrictorFavorites = "";
 	ActiveFAR_ID = "";
@@ -1190,7 +1190,7 @@ Function FavoritesListSelect_fn(integer i){
 			FavoritesRefresh_fn();
 		}
 		Else If (FavoritesIsAudio[i] = 1){
-			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 			pulse(20,NowplayingPageFlip);
@@ -1210,8 +1210,8 @@ Function AppsListSelect_fn(integer i){
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
-		FAR_name = AppsCmd[i];
-		FAR_parse = FAR_name + " items ";
+		FAR_cmd = AppsCmd[i];
+		FAR_parse = FAR_cmd + " items ";
 		trace("FAR_parse = %s",FAR_parse);
 		ActiveFAR_ID = "";
 		restrictorFavorites = "";
@@ -1233,8 +1233,8 @@ Function RadiosListSelect_fn(integer i){
 			ListFirst[1] = 0;
 			ListSearchRS[1] = 0;
 			Search_RequiresSubmit = 0;
-			FAR_name = RadiosCmd[i];
-			FAR_parse = FAR_name + " items ";
+			FAR_cmd = RadiosCmd[i];
+			FAR_parse = FAR_cmd + " items ";
 			trace("FAR_parse = %s",FAR_parse);
 			ActiveFAR_ID = "";
 			restrictorFavorites = "";
@@ -1310,13 +1310,13 @@ Function DynamicListPlay_fn(integer i){
 }
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If ((FAR_name <> "favorites") && (FavoritesIsAudio[i] = 1)){
-			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+		If ((FAR_cmd <> "favorites") && (FavoritesIsAudio[i] = 1)){
+			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 		}
 		Else If (FavoritesIsAudio[i] = 1){
-			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 		//	pulse(20,NowplayingPageFlip);
@@ -1420,16 +1420,22 @@ Function PlaylistListAdd_fn(integer i){
 }
 Function FavoritesListAdd_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If (FAR_name <> "favorites"){
+		If ((FAR_cmd = "rhapsodydirect") && (FavoritesIsAudio[i] = 1)){
+			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			ActivePlaylistID = 0;
+			ActivePlaylist = ""; 
+		}
+		Else If (FAR_cmd <> "favorites"){
 			FavoritesListSelect_fn(i);
 		}
 		Else If (FavoritesIsAudio[i] = 1) {
-			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
-			ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
-			ActivePlaylist = ""; // clear the active playlist
-		//	pulse(20,NowplayingPageFlip);
+			ActivePlaylistID = 0; 
+			ActivePlaylist = ""; 
 		}
 		Else {
 			FavoritesListSelect_fn(i);
@@ -1511,14 +1517,20 @@ Function PlaylistListInsert_fn(integer i){
 }
 Function FavoritesListInsert_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If (FAR_name <> "favorites"){
+		If ((FAR_cmd = "rhapsodydirect") && (FavoritesIsAudio[i] = 1)){
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			ActivePlaylistID = 0; 
+			ActivePlaylist = ""; 
+		}
+		Else If (FAR_cmd <> "favorites"){
 			FavoritesListSelect_fn(i);
 		}
 		Else If (FavoritesIsAudio[i] = 1) {
-			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
-		//	pulse(20,NowplayingPageFlip);
 			ActivePlaylistID = 0; // clear the active playlist ID 
 			ActivePlaylist = ""; // clear the active playlist
 		}
@@ -1706,7 +1718,7 @@ Function Search_Radios_fn(){
 	Search_RequiresSubmit = 1;
 	ActiveGenre = "";
 	ListFirst[1] = 0;
-	FAR_name = "search";
+	FAR_cmd = "search";
 	FAR_parse = "search items ";
 	restrictorFavorites = "search:" + search_in;
 	ListRestrictor[1] = restrictorFavorites;
