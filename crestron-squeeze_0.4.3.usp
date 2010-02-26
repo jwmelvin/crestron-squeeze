@@ -1,13 +1,9 @@
-/*******************************************************************************************
-  SIMPL+ Module Information
-  (Fill in comments below)
-*******************************************************************************************/
 /*
 Dealer Name:Harmony Home Theaters
 System Name: SqueezeBox Server
 System Number: 7.4
 Programmer: JWM 
-Comments:
+License:
 	
 	(c) 2009-2010 Jason Melvin    
 
@@ -26,12 +22,6 @@ Comments:
 */
 // ///////////////////Compiler Directives
 #SYMBOL_NAME "SqueezeBox 0.4.3"
-// #HINT ""
-// #CATEGORY "" 
-// #DIGITAL_EXPAND 
-// #ANALOG_SERIAL_EXPAND 
-// #HELP_PDF_FILE ""
-// #DEFAULT_NONVOLATILE
 #OUTPUT_SHIFT 3
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
@@ -55,7 +45,7 @@ DIGITAL_INPUT BrowseCS_AlwaysSearch;
 DIGITAL_INPUT CurrentSongTime_Enable;
 DIGITAL_INPUT CurrentSongSeparateOut_Enable;
 DIGITAL_INPUT CurrentSongConsolidatedOut_Enable;
-
+DIGITAL_INPUT ListCoverURL_Enable;
 //
 DIGITAL_INPUT Select_DefaultPlayer;
 //
@@ -391,18 +381,23 @@ Function ArtistsRefresh_fn(){
 //	ListType = 2;
 }
 Function AlbumsRefresh_fn(){
+//	ListType = 3;
 	ListName$ = ListName[1];
-	If (Coverflow = 0){
-		makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-	}
-	Else {
+	If (Coverflow = 1) {
 		makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
-//	ListType = 3;
+	Else If ((Coverflow = 0) && (ListCoverURL_Enable = 1)){
+		makestring(OUT$,"albums %u %u %s tags:lj charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	Else {
+		makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 Function TitlesRefresh_fn(){
 	ListName$ = ListName[1];
@@ -1310,7 +1305,9 @@ Function DynamicListPlay_fn(integer i){
 }
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If ((FAR_cmd <> "favorites") && (FavoritesIsAudio[i] = 1)){
+		If ((FAR_cmd <> "favorites") && 
+		(FAR_cmd <> "rhapsodydirect") &&
+		(FavoritesIsAudio[i] = 1)){
 			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
@@ -1319,8 +1316,8 @@ Function FavoritesListPlay_fn(integer i){
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
-		//	pulse(20,NowplayingPageFlip);
 			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+			delay(10);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
@@ -1420,14 +1417,7 @@ Function PlaylistListAdd_fn(integer i){
 }
 Function FavoritesListAdd_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If ((FAR_cmd = "rhapsodydirect") && (FavoritesIsAudio[i] = 1)){
-			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
-			trace("sending: %s",OUT$);
-			socketsend(TCPClient, OUT$);
-			ActivePlaylistID = 0;
-			ActivePlaylist = ""; 
-		}
-		Else If (FAR_cmd <> "favorites"){
+		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
 		}
 		Else If (FavoritesIsAudio[i] = 1) {
@@ -1517,14 +1507,7 @@ Function PlaylistListInsert_fn(integer i){
 }
 Function FavoritesListInsert_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If ((FAR_cmd = "rhapsodydirect") && (FavoritesIsAudio[i] = 1)){
-			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
-			trace("sending: %s",OUT$);
-			socketsend(TCPClient, OUT$);
-			ActivePlaylistID = 0; 
-			ActivePlaylist = ""; 
-		}
-		Else If (FAR_cmd <> "favorites"){
+		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
 		}
 		Else If (FavoritesIsAudio[i] = 1) {
@@ -1958,6 +1941,10 @@ Function Parse_FAR(String InFavorites$){
 	Integer i, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthFavorites;
 	String FavoritesParseItem[16384];
+
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexStart = find(" items ",InFavorites$) + 7;
 	indexEnd = find(" ",InFavorites$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2086,6 +2073,9 @@ Function Parse_Dynamic(String InDynamic$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthDynamic;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexStart = find(" playlists 1 ",InDynamic$,30) + 13;
 	indexEnd = find(" ",InDynamic$,indexStart + 13);
 	Length = indexEnd - indexStart;
@@ -2137,6 +2127,9 @@ Function Parse_Genres(String InGenres$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthGenres;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexEnd = find(" ",InGenres$,9);
 	Length = indexEnd - 8;
 	GenreFirstNumber = AtoI(mid(InGenres$,8,Length));
@@ -2187,6 +2180,9 @@ Function Parse_Artists(String InArtists$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthArtists;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexEnd = find(" ",InArtists$,9);
 	Length = indexEnd - 8;
 	ArtistFirstNumber = AtoI(mid(InArtists$,8,Length));
@@ -2262,6 +2258,7 @@ Function Parse_Albums(String InAlbums$){
 		OutListBar = OutAlbumsBar;
 		OutListCount = OutAlbumCount;
     }
+/*
 	If (TotalAlbums - AlbumFirstNumber >= NumberOfAlbums){
 		ListLengthAlbums = NumberOfAlbums;
 	}
@@ -2275,8 +2272,11 @@ Function Parse_Albums(String InAlbums$){
 		If (Coverflow = 1){ 
 			SetArray(ListCoverURL,BlankCoverURL);
 			SetArray(ListCoverflowArtist," ");
+
 		}
 	}
+*/
+	ListLengthAlbums = NumberOfAlbums;
 	indexNext = 1;
 	For (i = 1 to ListLengthAlbums) {
 		indexStart = find(" id%3A",InAlbums$,indexNext) + 6;
@@ -2287,12 +2287,11 @@ Function Parse_Albums(String InAlbums$){
 			trace("Album ID[%u]: %u",i,AlbumID[i]);
 		}	
 		Else {
-			AlbumID[i] = 0;
 			for (j = i to ListLengthAlbums){
 				AlbumID[j] = 0;
 				Album[j] = "";
 				List$[j] = " ";
-				If (Coverflow = 1){
+				If ((Coverflow = 1) || (ListCoverURL_Enable = 1)){
 					ListCoverURL[j] = BlankCoverURL;
 					ListCoverflowArtist[j] = " ";
 				}
@@ -2336,32 +2335,30 @@ Function Parse_Albums(String InAlbums$){
 			AlbumArtist[i] = "";
 			trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
 		}
-		If (ListType[1] = 3){
-			trace("ListType[1] = 3");
-			If (Coverflow = 1){
-				trace("Coverflow = 1");
-				List$[i] = left(Album[i], CoverflowWidthAlbum);
-			}
-			Else {
-				trace("Coverflow = 0");
-				List$[i] = Album[i];
-			}
-		}
 		If (Coverflow = 1){
-			trace("Coverflow = 1; making additional outputs");
+			trace("Coverflow = 1");
+			List$[i] = left(Album[i], CoverflowWidthAlbum);
+			ListCoverflowArtist[i] = left(AlbumArtist[i],CoverflowWidthArtist);
+		}
+		Else {
+			trace("Coverflow = 0");
+			List$[i] = Album[i];
+		}
+		If ((Coverflow = 1) || (ListCoverURL_Enable = 1)){
+			trace("making List CoverURL outputs");
 			If (AlbumTrackID[i] = 0){
 				ListCoverURL[i] = BlankCoverURL;
 			}
 			Else {
 				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", ServerIPAddr$, AlbumTrackID[i]);
 			}
-			ListCoverflowArtist[i] = left(AlbumArtist[i],CoverflowWidthArtist);
 		}
 	}
 }
 Function Parse_Titles(String InTitles$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexNext, indexEnd, Length;
 	Integer ListLengthTitles;
+	String TitlesParseItem[2048];
 
 	indexEnd = find(" ",InTitles$,9);
 	Length = indexEnd - 8;
@@ -2381,6 +2378,7 @@ Function Parse_Titles(String InTitles$){
 		OutListBar = OutTitlesBar;
 		OutListCount = OutTitleCount;
     }
+/*
 	If (TotalTitles - TitleFirstNumber >= NumberOfList){
 		ListLengthTitles = NumberOfList;
 	}
@@ -2391,38 +2389,70 @@ Function Parse_Titles(String InTitles$){
 		If (ListType[1] = 4)
 			SetArray(List$," ");
 	}
+*/
+	ListLengthTitles = NumberOfList;
 	indexEnd = 1;
+	indexNext = 1;
 	For (i = 1 to ListLengthTitles){
-    	If (find(" id%3A",InTitles$,indexEnd)){
-		   	indexStart = find(" id%3A",InTitles$,indexEnd) + 6;
+		indexStart = find(" id%3A",InTitles$,indexNext) + 6;
+		If (indexStart > 6){
 			indexEnd = find(" ",InTitles$,indexStart);
 			Length = indexEnd - indexStart;
 			TrackID[i] = AtoI(mid(InTitles$,indexStart,Length));
-			indexStart = find("title%3A",InTitles$,indexEnd) + 8;
-			indexEnd = find(" ",InTitles$, indexStart);
+		}
+		Else {
+			For (j = i to ListLengthTitles){
+				TrackID[j] = 0;
+				Title[j] = "";
+				List$[j] = " ";
+				TitleTracknum[j] = 0;
+				TitleAlbumID[j] = 0;
+				If (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = BlankCoverURL;
+				}
+			}
+		}
+		indexNext = find(" id%3A",InTitles$,indexEnd);
+		If (indexNext > 0){
+			Length = indexNext - indexEnd;
+			TitlesParseItem = mid(InTitles$,indexEnd,Length);
+		}
+		Else {
+			TitlesParseItem = mid(InTitles$,indexEnd,len(InTitles$) - indexEnd - 1);
+		}
+		indexStart = find(" title%3A",TitlesParseItem,indexEnd) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
 			Length = indexEnd - indexStart;
-    		Title[i] = ParsePercent(mid(InTitles$,indexStart,Length));
-			If (ListType[1] = 4){
-				List$[i] = Title[i];		
-			}
-			If (find("tracknum%3A",InTitles$,indexEnd) != 0){
-				indexStart = find("tracknum%3A",InTitles$,indexEnd) + 11;
-				indexEnd = find(" ",InTitles$, indexStart);
-				Length = indexEnd - indexStart;
-				TitleTracknum[i] = AtoI(mid(InTitles$,indexStart,Length));
-			}
-			else {
-				trace("no tracknum");
-			}
-			If (find("album_id%3A",InTitles$,1) != 0) {
-				indexStart = find("album_id%3A", InTitles$,IndexEnd) + 11;
-				indexEnd = find(" ",InTitles$, indexStart);
-				Length = indexEnd - indexStart;
-				TitleAlbumID[i] = AtoI(mid(InTitles$, indexStart, Length));
-    		}
-			Else {
-				trace("no album_id");
-			}
+			Title[i] = ParsePercent(mid(TitlesParseItem,indexStart,Length));
+		}
+		Else {
+			Title[i] = " ";
+		}
+		indexStart = find(" tracknum%3A",TitlesParseItem,indexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			TitleTracknum[i] = AtoI(mid(TitlesParseItem,indexStart,Length));
+		}
+		Else {
+			trace("no tracknum");
+			TitleTracknum[i] = 0;
+		}
+		indexStart = find(" album_id%3A", TitlesParseItem,IndexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			TitleAlbumID[i] = AtoI(mid(TitlesParseItem, indexStart, Length));
+		}
+		Else {
+			trace("no album_id");
+			TitleAlbumID[i] = 0;
+		}
+		List$[i] = Title[i];		
+		If (ListCoverURL_Enable = 1){
+			trace("making List CoverURL outputs");
+			makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", ServerIPAddr$, TrackID[i]);
 		}
 	}
 }
@@ -2430,6 +2460,9 @@ Function Parse_Playlists(String InPlaylists$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthPlaylists;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexEnd = find(" ",InPlaylists$,12);
 	Length = indexEnd - 11;
 	PlaylistFirstNumber = AtoI(mid(InPlaylists$,11,Length));
@@ -2484,6 +2517,9 @@ Function Parse_Apps(String InApps$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthApps;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexStart = 6;
 	indexEnd = find(" ",InApps$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2560,6 +2596,9 @@ Function Parse_Radios(String InRadios$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthRadios;
 
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexStart = 8;
 	indexEnd = find(" ",InRadios$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2631,6 +2670,9 @@ Function Parse_Search(String InSearch$){
 	Integer i, indexStart, indexEnd, Length;
 	Integer ListLengthSearch;
 	
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,BlankCoverURL);
+	}
 	indexEnd = find(" ",InSearch$,8);
 	Length = indexEnd - 7;
 	SearchFirstNumber = AtoI(mid(InSearch$,7,Length));
@@ -3631,6 +3673,7 @@ PUSH Coverflow {
 	}
 }
 RELEASE Coverflow {
+	SetArray(ListCoverflowArtist," ");
 	NumberOfAlbums = NumberOfList;   
 	AlbumsRefresh_fn();
 }
