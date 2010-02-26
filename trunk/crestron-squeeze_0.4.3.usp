@@ -9,7 +9,7 @@ System Number: 7.4
 Programmer: JWM 
 Comments:
 	
-	(c) 2009 Jason Melvin    
+	(c) 2009-2010 Jason Melvin    
 
 	This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1195,6 +1195,11 @@ Function FavoritesListSelect_fn(integer i){
 			socketsend(TCPClient, OUT$);
 			pulse(20,NowplayingPageFlip);
 		}
+		Else If ((FavoritesHasItems[i] = 0) && (FavoritesIsAudio[i] = 0)){
+			ListName$ = "Empty";
+			delay(100);
+			ListName$ = ListName[1];
+		}
 	}
 }
 Function AppsListSelect_fn(integer i){
@@ -1305,12 +1310,12 @@ Function DynamicListPlay_fn(integer i){
 }
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
-		If (FAR_name <> "favorites"){
+		If ((FAR_name <> "favorites") && (FavoritesIsAudio[i] = 1)){
 			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 		}
-		Else {
+		Else If (FavoritesIsAudio[i] = 1){
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
@@ -1318,6 +1323,9 @@ Function FavoritesListPlay_fn(integer i){
 			makestring(OUT$,"%s playlist index +1\n", PlayerID$);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
+		}
+		Else {
+			FavoritesListSelect_fn(i);
 		}
 	}
 }
@@ -1415,13 +1423,16 @@ Function FavoritesListAdd_fn(integer i){
 		If (FAR_name <> "favorites"){
 			FavoritesListSelect_fn(i);
 		}
-		Else {
+		Else If (FavoritesIsAudio[i] = 1) {
 			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 			ActivePlaylistID = 0; // clear the active playlist ID (used to set to PlaylistID[i])
 			ActivePlaylist = ""; // clear the active playlist
 		//	pulse(20,NowplayingPageFlip);
+		}
+		Else {
+			FavoritesListSelect_fn(i);
 		}
 	}
 }
@@ -1503,13 +1514,16 @@ Function FavoritesListInsert_fn(integer i){
 		If (FAR_name <> "favorites"){
 			FavoritesListSelect_fn(i);
 		}
-		Else {
+		Else If (FavoritesIsAudio[i] = 1) {
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_name ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 		//	pulse(20,NowplayingPageFlip);
 			ActivePlaylistID = 0; // clear the active playlist ID 
 			ActivePlaylist = ""; // clear the active playlist
+		}
+		Else {
+			FavoritesListSelect_fn(i);
 		}
 	}
 }
@@ -1955,8 +1969,8 @@ Function Parse_FAR(String InFavorites$){
 		If (ListType[1] = 10){
 			OutListBar = 65535;
 			OutListCount = 0;
-			ListName$ = "Empty";
 			ListName[1] = "Empty";
+			ListName$ = ListName[1];
 			SetArray(List$," "); 
 		}
 	}
@@ -1987,7 +2001,7 @@ Function Parse_FAR(String InFavorites$){
 		trace("Favorites title: %s",FavoritesTitle);
 		If (ListType[1] = 10){
 			ListName[1] = FavoritesTitle;
-			ListName$ = FavoritesTitle;
+			ListName$ = ListName[1];
 		}
 		indexNext = indexEnd;
 		For (i = 1 to ListLengthFavorites){
