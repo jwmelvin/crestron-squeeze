@@ -3816,7 +3816,13 @@ PUSH ListSelect{
 PUSH ListPlay{
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
-	If (ListType[1] = 1){
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1){
 		GenreListPlay_fn(i); //Genres code
 	}
 	Else If (ListType[1] = 2){
@@ -3840,13 +3846,25 @@ PUSH ListPlay{
     Else If (ListType[1] = 10){
 		FavoritesListPlay_fn(i); //Favorites results code
     }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
 }
 PUSH ListAdd{
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
-	If (ListType[1] = 1){
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1){
 		GenreListAdd_fn(i); //Genres code
 	}
 	Else If (ListType[1] = 2){
@@ -3870,13 +3888,25 @@ PUSH ListAdd{
     Else If (ListType[1] = 10){
 		FavoritesListAdd_fn(i); //Favorites results code
     }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
 }
 PUSH ListInsert{
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
-	If (ListType[1] = 1)	{
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1)	{
 		GenreListInsert_fn(i); //Genres code
 	}
 	Else If (ListType[1] = 2){
@@ -3899,6 +3929,12 @@ PUSH ListInsert{
 	}
     Else If (ListType[1] = 10){
 		FavoritesListInsert_fn(i); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
