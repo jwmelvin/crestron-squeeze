@@ -233,6 +233,7 @@ STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], Curre
 STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
 STRING CurrentPlaylistName[256];
 STRING CurrentTrackTitle$[256], CurrentTrackGenre$[256], CurrentTrackArtist$[256], CurrentTrackAlbum$[256];
+STRING CurrentTrackCTitle$[256], CurrentTrackRTitle$[256];
 STRING CurrentTrackRemoteCover$[512];
 STRING CurrentTrackURL$[2048], BlankCoverURL[64], MissingCoverURL[64];
 
@@ -2954,6 +2955,15 @@ Function Parse_Status(String InStatus$){
 	Else {
 		CurrentTrackRemote = 0;
 	}
+	indexStart = find(" current_title%3A",InStatus$,indexEnd) + 17;
+	if (indexStart > 17) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackCTitle$ = left(parsepercent(mid(InStatus$,indexStart,Length)),255);
+	}
+	Else {
+		CurrentTrackCTitle$ = "";
+	}
 	indexStart = find(" time%3A",InStatus$,indexEnd) + 8;
 	If (indexStart > 8){
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -3304,11 +3314,37 @@ Function Parse_Status(String InStatus$){
 		CurrentTrackRemoteCover$ = "";
 		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",ServerIPAddr$,CurrentTrackID);
 	}
+	If (CurrentTrackRemote = 1){
+		indexStart = find(" remote_title%3A",InStatus$,indexEnd) + 16;
+		if (indexStart > 16) {
+			indexEnd = find(" ",InStatus$,indexStart);
+			if (indexEnd > 0) {
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				Length = len(InStatus$) - indexStart - 1;
+			}
+				CurrentTrackRTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+		Else {
+			CurrentTrackRTitle$ = "";
+		}	
+	}
 	If (CurrentSongSeparateOut_Enable = 1){
 		CurrentsongTitle = CurrentTrackTitle$;
 		CurrentsongAlbum = CurrentTrackAlbum$;
 		CurrentsongArtist = CurrentTrackArtist$;
-		CurrentsongGenre = CurrentTrackGenre$; 
+		If (CurrentTrackRemote = 1){
+			If (len(CurrentTrackRTitle$) > 0){
+				CurrentsongGenre = CurrentTrackRTitle$;
+			}
+			Else {
+				CurrentsongGenre = CurrentTrackCTitle$;
+			}
+		}
+		Else {
+			CurrentsongGenre = CurrentTrackGenre$; 
+		}
 	}
 	If (CurrentSongConsolidatedOut_Enable = 1){
 		// create CurrentsongConsolidatedText which will display nicely formatted to the tp screen   
@@ -3505,7 +3541,7 @@ SOCKETCONNECT TCPClient{
 	TCPIP_Connected = 1;
 //	SOCKET Startup procedure
 	// subscribe to status updates
-	makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$);  
+	makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$);  
 	socketsend(TCPClient, out$);
 	trace("sending: %s",OUT$);
 	delay(50);
@@ -4080,7 +4116,7 @@ PUSH Select_DefaultPlayer{
 		NowplayingFind$ = PlayersID_raw[0] + " status ";
 		TimeFind$ = PlayersID_raw[0] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$); 
+		makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$); 
 		socketsend(TCPClient, out$);
 	}
 }
@@ -4106,7 +4142,7 @@ PUSH PlayersSelect {
 		NowplayingFind$ = PlayersID_raw[i] + " status ";
 		TimeFind$ = PlayersID_raw[i] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluK charset:ascii subscribe:0\n",PlayerID$); 
+		makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$); 
 		socketsend(TCPClient, out$);
 	}
 }   
