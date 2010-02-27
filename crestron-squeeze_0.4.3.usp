@@ -73,13 +73,16 @@ DIGITAL_INPUT BrowseCurrentGenre,BrowseCurrentArtist,BrowseCurrentAlbum,BrowseCu
 // Direct string inputs
 STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16];
 STRING_INPUT  DynamicResume$[256];
-// Pandora inputs
-DIGITAL_INPUT RadioRate_Up, RadioRate_Dn;
 // Search inputs
 DIGITAL_INPUT	Search_Submit;
 STRING_INPUT	Search_in$[64];
 DIGITAL_OUTPUT	Search_KeyboardPopup;
 DIGITAL_OUTPUT	Search_RequiresSubmit;
+// RATING inputs
+DIGITAL_INPUT Rate_Up, Rate_Dn;
+ANALOG_INPUT CurrentsongTrackstatSet;
+ANALOG_INPUT TrackstatIncrement;
+
 // coverflow 
 DIGITAL_INPUT Coverflow;
 // List scroll inputs
@@ -120,7 +123,7 @@ DIGITAL_OUTPUT shuffle_track_fb;
 DIGITAL_OUTPUT shuffle_album_fb;
 // CurrentSong feedback
 DIGITAL_OUTPUT CurrentsongIsRemote;
-DIGITAL_OUTPUT CurrentSongRadioRateable;
+DIGITAL_OUTPUT CurrentSongRateable;
 STRING_OUTPUT  CurrentsongTitle;
 STRING_OUTPUT  CurrentsongAlbum;
 STRING_OUTPUT  CurrentsongArtist;
@@ -130,6 +133,8 @@ STRING_OUTPUT  CurrentsongTime;
 STRING_OUTPUT  CurrentsongRate;
 STRING_OUTPUT  CurrentsongDuration; 
 STRING_OUTPUT  CurrentsongConsolidatedText;
+ANALOG_OUTPUT  CurrentsongTrackstat;
+STRING_OUTPUT  CurrentsongTrackstat$;
 // ARRAYS
 // Nowplaying i/o
 DIGITAL_INPUT  NowplayingPlay[10];
@@ -177,7 +182,6 @@ INTEGER FirstPlaylist, TotalPlaylists, PlaylistFirstNumber, ActivePlaylistID;
 INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
 INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
 INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
-// INTEGER FirstPandora, TotalPandora, PandoraFirstNumber;
 INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
 INTEGER FirstApps, TotalApps, AppsFirstNumber; 
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
@@ -185,7 +189,6 @@ INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 //
 INTEGER NumberOfAlbums;
 //
-// INTEGER progGenres, progArtists, progAlbums, progTitles, progPlaylists, progNowplaying, progDynamic, progSearch;
 INTEGER CurrentsongIndex, CurrentGenreID, CurrentArtistID, CurrentAlbumID;
 LONG_INTEGER CurrentTrackID;
 INTEGER CTDuration_sec, CTTime_sec;
@@ -197,6 +200,7 @@ INTEGER waitUpdateTime_running;
 INTEGER TCPIP_Connected_int;
 //
 INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
+INTEGER progInTrackstat;
 //
 STRING	search_in[64], search_in_raw[64];
 //
@@ -212,7 +216,7 @@ INTEGER OutFavoritesCount,OutFavoritesBar;
 INTEGER OutAppsCount,OutAppsBar;
 INTEGER OutRadiosCount,OutRadiosBar;
 //
-INTEGER Nowplaying_reset_enable; // ListLengthNowplaying_old
+INTEGER Nowplaying_reset_enable; 
 //
 INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10];
@@ -229,7 +233,8 @@ STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], Curre
 STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
 STRING CurrentPlaylistName[256];
 STRING CurrentTrackTitle$[256], CurrentTrackGenre$[256], CurrentTrackArtist$[256], CurrentTrackAlbum$[256];
-STRING CurrentTrackRemoteCover$[512], CurrentTrackURL$[2048], BlankCoverURL[64];
+STRING CurrentTrackRemoteCover$[512];
+STRING CurrentTrackURL$[2048], BlankCoverURL[64], MissingCoverURL[64];
 
 STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256];
 STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
@@ -491,6 +496,11 @@ Function ListRefresh_fn(){
 	}
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+}
+Function trackstat_get(long_integer TrackID){
+	makestring(OUT$,"trackstat getrating %lu\n", TrackID);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
 }
 Function Home_PgReset_fn(){
 	Integer i;
@@ -2347,7 +2357,7 @@ Function Parse_Albums(String InAlbums$){
 		If ((Coverflow = 1) || (ListCoverURL_Enable = 1)){
 			trace("making List CoverURL outputs");
 			If (AlbumTrackID[i] = 0){
-				ListCoverURL[i] = BlankCoverURL;
+				ListCoverURL[i] = MissingCoverURL;
 			}
 			Else {
 				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover.jpg", ServerIPAddr$, AlbumTrackID[i]);
@@ -2418,9 +2428,11 @@ Function Parse_Titles(String InTitles$){
 			TitlesParseItem = mid(InTitles$,indexEnd,Length);
 		}
 		Else {
+			trace("no indexNext match for \" id%3A\"");
 			TitlesParseItem = mid(InTitles$,indexEnd,len(InTitles$) - indexEnd - 1);
 		}
-		indexStart = find(" title%3A",TitlesParseItem,indexEnd) + 9;
+		trace("parseItem=%s",left(TitlesParseItem,100));
+		indexStart = find(" title%3A",TitlesParseItem,1) + 9;
 		If (indexStart > 9){
 			indexEnd = find(" ",TitlesParseItem, indexStart);
 			Length = indexEnd - indexStart;
@@ -3232,38 +3244,42 @@ Function Parse_Status(String InStatus$){
 		}
 		If (find("pandora",CurrentTrackURL$) > 0) {
 			CTRemoteService = 1;
-			CurrentSongRadioRateable = 1;
+			CurrentSongRateable = 1;
 			trace("CurrentSong is Pandora");
 		}
 		Else If (find("slacker:",CurrentTrackURL$)){
 			CTRemoteService = 2;
-			CurrentSongRadioRateable = 1;
+			CurrentSongRateable = 1;
 			trace("CurrentSong is Slacker");
 		}
 		Else If (find("lfm:",CurrentTrackURL$)){
 			CTRemoteService = 3;
-			CurrentSongRadioRateable = 1;
+			CurrentSongRateable = 1;
 			trace("CurrentSong is LastFM");
 		}		
 		Else If (find("rhapd:",CurrentTrackURL$)){
 			CTRemoteService = 4;
-			CurrentSongRadioRateable = 0;
+			CurrentSongRateable = 0;
 			trace("CurrentSong is Rhapsody");
 		}
 		Else If (find("archive.org",CurrentTrackURL$)){
 			CTRemoteService = 5;
-			CurrentSongRadioRateable = 0;
+			CurrentSongRateable = 0;
 			trace("CurrentSong is LiveMusicArchive");
+		}
+		Else If (find("file:",CurrentTrackURL$)){
+			CTRemoteService = 0;
+			CurrentSongRateable = 1;
 		}
 		Else {
 			CTRemoteService = 0;
-			CurrentSongRadioRateable = 0;
+			CurrentSongRateable = 0;
 		}
 	}
 	Else {
 		CurrentTrackURL$ = "";
 		CTRemoteService = 0;
-		CurrentSongRadioRateable = 0;
+		CurrentSongRateable = 0;
 	}
 	indexStart = find(" artwork_url%3A",InStatus$,indexEnd) + 15;
 	if (indexStart > 15) {
@@ -3322,7 +3338,7 @@ Function Parse_Status(String InStatus$){
 		}
 	}
 	CurrentsongRate = CurrentTrackRate$;
- 	indexEnd = find(".",CurrentTrackDuration$,1);
+	indexEnd = find(".",CurrentTrackDuration$,1);
 	If (indexEnd > 0) {
 		CTDuration_sec = AtoI(mid(CurrentTrackDuration$,1,indexEnd));
 		Time_min = CTDuration_sec / 60;
@@ -3344,6 +3360,12 @@ Function Parse_Status(String InStatus$){
 		CTDuration_sec = 0;
 	}
 	CurrentsongIsRemote = CurrentTrackRemote;
+ 	If (CurrentTrackRemote = 0){
+		trackstat_get(CurrentTrackID);
+	}
+	Else {
+		CurrentsongTrackstat$ = " ";
+	}
 	trace("CurrentPlayerMode = %s",CurrentPlayerMode);
 	if (CurrentPlayerMode = "play") {
 		mode_pause_fb = 0;
@@ -3410,6 +3432,26 @@ Function Parse_Status(String InStatus$){
 		shuffle_album_fb = 0;
 		shuffle_off_fb = 1;
 	}
+}
+Function Parse_Trackstat(String InTrackstat$){
+	Integer i, indexStart, indexEnd, Length, TSCurrentID;
+//	trackstat getrating 12345 rating%3A4 ratingpercentage%3A80
+	indexStart = find("rating ",InTrackstat$) + 7;
+	indexEnd = find(" ",InTrackstat$,indexStart);
+	Length = indexEnd - indexStart;
+	TSCurrentID = AtoI(mid(Intrackstat$,indexStart,Length));
+	trace("TSCurrentID = %u",TSCurrentID);
+	If (TSCurrentID = CurrentTrackID){
+		trace("TSCurrentID = CurrentTrackID");
+		indexStart = find(" ratingpercentage%3A",InTrackstat$) + 20;
+		if (indexStart > 20){
+			CurrentsongTrackstat = AtoI(mid(InTrackstat$,indexStart,len(InTrackstat$) - indexStart));
+		}
+		Else {
+			CurrentsongTrackstat = 0;
+		}
+	}
+	makestring(CurrentsongTrackstat$,"%u",CurrentsongTrackstat);
 }
 // //////////// TCPIP Connection
 PUSH TCPIP_Connect{
@@ -3732,27 +3774,27 @@ CHANGE InPageList{
 		}
 		// ListType[1] = 13 reserved for Players
 		// not yet a possible List type
+		Delay (50);
+		ProgInPageList = 0;
 	}
-	Delay (50);
-	ProgInPageList = 0;
 }
 CHANGE InPageNowplaying{
 	If (ProgInPageNowplaying = 0){
 		ProgInPageNowplaying = 1;
 		FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
 		NowplayingRefresh_fn();
+		Delay (50);
+		ProgInPageNowplaying = 0;
 	}
-	Delay (50);
-	ProgInPageNowplaying = 0;
 }
 CHANGE InPagePlayers{
 	If (ProgInPagePlayers = 0){
 		ProgInPagePlayers = 1;
 		FirstPlayers = (65535 - InPagePlayers) * TotalPlayers / 65535;
 		PlayersRefresh_fn();
+		Delay (50);
+		ProgInPagePlayers = 0;
 	}
-	Delay (50);
-	ProgInPagePlayers = 0;
 }
 PUSH List_PgUp{
 	If (ListType[1] = 0){
@@ -4377,8 +4419,23 @@ PUSH BrowseCurrentSong {
 		Search_fn();
 	}
 }
-PUSH RadioRate_Up {
-	If (CTRemoteService = 1){
+PUSH Rate_Up {
+	Integer rating_int;
+	If (CurrentTrackRemote = 0){
+		If (CurrentsongTrackstat = 0){
+			rating_int = 60 + TrackstatIncrement;
+		}
+		Else {
+			rating_int = CurrentsongTrackstat + TrackstatIncrement;
+		}
+		If (rating_int > 100){
+			rating_int = 100;
+		}
+		makestring(OUT$,"trackstat setrating %lu %u%%\n",CurrentTrackID,rating_int);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 1){
 		makestring(OUT$,"%s pandora rate 1\n",PlayerID$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
@@ -4395,8 +4452,23 @@ PUSH RadioRate_Up {
 		socketsend(TCPClient, OUT$);
 	}
 }
-PUSH RadioRate_Dn {
-	If (CTRemoteService = 1){
+PUSH Rate_Dn {
+	Integer rating_int;
+	If (CurrentTrackRemote = 0){
+		If (CurrentsongTrackstat = 0){
+			rating_int = 60 - TrackstatIncrement;
+		}
+		Else {
+			rating_int = CurrentsongTrackstat - TrackstatIncrement;
+		}
+		If (rating_int S< 0){
+			rating_int = 0;
+		}
+		makestring(OUT$,"trackstat setrating %lu %u%%\n",CurrentTrackID,rating_int);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 1){
 		makestring(OUT$,"%s pandora rate 0\n",PlayerID$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
@@ -4410,6 +4482,28 @@ PUSH RadioRate_Dn {
 		makestring(OUT$,"%s lfm rate B\n",PlayerID$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient, OUT$);
+	}
+}
+CHANGE CurrentsongTrackstatSet{
+	Integer rating_int;
+	If (progInTrackstat = 0){
+		progInTrackstat = 1;
+		If (CurrentTrackRemote = 0){
+			If (CurrentsongTrackstatSet > 100){
+				rating_int = 100;
+			}
+			Else If (CurrentsongTrackstatSet S< 0){
+				rating_int = 0;
+			}
+			Else {
+				rating_int = CurrentsongTrackstatSet;
+			}
+			makestring(OUT$,"trackstat setrating %lu %u%%\n",CurrentTrackID,rating_int);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+		}
+		Delay(50);
+		progInTrackstat = 0;
 	}
 }
 CHANGE search_in$ {
@@ -4500,6 +4594,10 @@ SOCKETRECEIVE TCPClient {
 		In$ = mid(In$,34,len(In$) - 35);
 		Parse_Time(AtoI(In$)); // parse_time requires integer input
 	}
+	Else If (find("trackstat ",Find$)){
+		trace("parsing trackstat rating");
+		Parse_Trackstat(In$);
+	}
 	Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
 		trace("parsing favorites, apps, or radios");
 		Parse_FAR(In$);
@@ -4552,7 +4650,9 @@ SOCKETRECEIVE TCPClient {
 // /////////// Initialization script
 Function Main() {
 	WaitForInitializationComplete();
-	makestring(BlankCoverURL,"http://%s:9000/music/0/cover.jpg", ServerIPAddr$);
+//	makestring(BlankCoverURL,"http://%s:9000/html/images/blank.png", ServerIPAddr$);
+	makestring(MissingCoverURL,"http://%s:9000/music/0/cover.jpg", ServerIPAddr$);
+	BlankCoverURL = MissingCoverURL;
 	PlayerID$ = PlayerID$_Default;
 	PlayersID_raw[0] = FormatPlayerID(PlayerID$_Default);
 	StatusFind$ = PlayersID_raw[0] + " status - 1";
@@ -4563,6 +4663,7 @@ Function Main() {
 	progInPageList = 0;
 	progInPageNowplaying = 0;
 	progInPagePlayers = 0;
+	progInTrackstat = 0;
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
