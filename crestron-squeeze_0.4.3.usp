@@ -1791,13 +1791,20 @@ String_Function FormatSearch(String input){
 // //////////// PARSING FUNCTIONS
 Function Parse_Time(Integer InTime){     
 	Integer indexEnd, Length; // indexStart
-	Integer Time_min, Time_sec, Time_rmd;	
+	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
 	Long_Integer BarTemp;  
 	
 	Time_sec = InTime;
 	Time_min = Time_sec / 60;
 	Time_rmd = Time_sec - (Time_min * 60);
-	makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
+	If (Time_min < 60){
+		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
+	}
+	Else {
+		Time_hr = Time_min / 60;
+		Time_min = Time_min - (Time_hr * 60);
+		makestring(CurrentsongTime,"%u:%02u:%02u",Time_hr,Time_min,Time_rmd);
+	}
 	If ((CTDuration_sec > 0) && (Time_sec > 0)){
 		BarTemp =  (65535 * Time_sec) / CTDuration_sec;
 		OutTimeBar = BarTemp;
