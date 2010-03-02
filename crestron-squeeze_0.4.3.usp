@@ -1734,8 +1734,8 @@ Function Search_Favorites_fn(){
 	FavoritesRefresh_fn();
 }
 String_Function ParsePercent(STRING Parse$){
-	Integer i, length, char;
-	String output$[1024], char$[1], chunk$[6], dump[3];
+	Integer i, char;
+	String output$[1024], dump[3];
 	i = 1;
 	output$ = "";
 	While(i <= len (parse$)) {
@@ -1744,9 +1744,14 @@ String_Function ParsePercent(STRING Parse$){
 			if (i > 1){
 				output$ = output$ + removebylength(i - 1,parse$);
 			}
-			output$ = output$ + chr(HexToI(mid(Parse$,2,2)));
-			dump = removebylength(3,parse$);
-			i = 1;
+			If (len(Parse$) > 2){
+				output$ = output$ + chr(HexToI(mid(Parse$,2,2)));
+				dump = removebylength(3,parse$);
+				i = 1;
+			}
+			Else {
+				Break;
+			}
 		}
 		else {
 			i = i + 1;
