@@ -208,7 +208,8 @@ INTEGER OutHomeCount, OutHomeBar;
 INTEGER OutGenreCount, OutGenresBar;
 INTEGER OutArtistCount, OutArtistsBar;
 INTEGER OutAlbumCount, OutAlbumsBar;
-INTEGER OutTitleCount, OutTitlesBar;
+INTEGER OutTitleCount;
+LONG_INTEGER OutTitlesBar;
 INTEGER OutPlaylistCount, OutPlaylistsBar;
 INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
@@ -356,11 +357,9 @@ Function HomeRefresh_fn(){
  	ListName$ = ListName[1];
 	SetArray(List$," ");
 	OutHomeBar = 65535 - ((65535 / TotalHome) * FirstHome );
-	If (ListType[1] = 0){
-		OutListBar = OutHomeBar;
-		OutListCount = TotalHome;
-    }
-	If ((TotalHome - FirstHome) < NumberOfList) {
+	OutListBar = OutHomeBar;
+	OutListCount = TotalHome;
+    If ((TotalHome - FirstHome) < NumberOfList) {
 		ListLengthHome = TotalHome - FirstHome;
 	}
 	Else {
@@ -1949,7 +1948,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 	}
 }
 Function Parse_FAR(String InFavorites$){
-	Integer i, indexStart, indexEnd, indexNext, Length;
+	Integer i, j, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthFavorites;
 	String FavoritesParseItem[16384];
 
@@ -1976,20 +1975,17 @@ Function Parse_FAR(String InFavorites$){
 		SetArray(FavoritesName,"");
 		SetArray(FavoritesID,"");
 		FavoritesTitle = "Empty";
-		If (ListType[1] = 10){
-			OutListBar = 65535;
-			OutListCount = 0;
-			ListName[1] = "Empty";
-			ListName$ = ListName[1];
-			SetArray(List$," "); 
-		}
+		OutListBar = 65535;
+		OutListCount = 0;
+		ListName[1] = "Empty";
+		ListName$ = ListName[1];
+		SetArray(List$," "); 
 	}
 	Else {
 		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
-		If (ListType[1] = 10){
-			OutListBar = OutFavoritesBar;
-			OutListCount = OutFavoritesCount;
-		}
+		OutListBar = OutFavoritesBar;
+		OutListCount = OutFavoritesCount;
+/*
 		If (TotalFavorites - FavoritesFirstNumber >= NumberOfList){
 			ListLengthFavorites = NumberOfList;
 		}
@@ -2003,16 +1999,16 @@ Function Parse_FAR(String InFavorites$){
 				SetArray(List$," ");
 			}
 		}
+*/
+		ListLengthFavorites = NumberOfList;
 		indexEnd = 20;
 		indexStart = find(" title%3A",InFavorites$,indexEnd) + 9;
 		indexEnd = find(" ",InFavorites$,indexStart);
 		Length = indexEnd - indexStart;
 		FavoritesTitle = ParsePercent(mid(InFavorites$,indexStart,Length));
 		trace("Favorites title: %s",FavoritesTitle);
-		If (ListType[1] = 10){
-			ListName[1] = FavoritesTitle;
-			ListName$ = ListName[1];
-		}
+		ListName[1] = FavoritesTitle;
+		ListName$ = ListName[1];
 		indexNext = indexEnd;
 		For (i = 1 to ListLengthFavorites){
 			indexStart = find(" id%3A",InFavorites$,indexNext) + 6;
@@ -2023,8 +2019,15 @@ Function Parse_FAR(String InFavorites$){
 				trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
 			}
 			Else {
-				FavoritesID[i] = "";
-				trace("indexStart of id%3A not found; breaking.");
+				For (j = i to ListLengthFavorites){
+					FavoritesID[j] = "";
+					FavoritesName[j] = "";
+					FavoritesType[j] = "";
+					FavoritesIsAudio[j] = 0;
+					FavoritesHasItems[j] = 0;
+					List$[j] = " ";
+				}
+				trace("no more favorites; breaking.");
 				break;
 			}
 			indexNext = find(" id%3A",InFavorites$,indexEnd);
@@ -2044,9 +2047,6 @@ Function Parse_FAR(String InFavorites$){
 			}
 			Else {
 				FavoritesName[i] = "";
-			}
-			If (ListType[1] = 10){
-				List$[i] = FavoritesName[i];
 			}
 			indexStart = find(" type%3A",FavoritesParseItem,indexEnd) + 8;
 			If (indexStart > 8){
@@ -2077,11 +2077,12 @@ Function Parse_FAR(String InFavorites$){
 			}
 			Else {FavoritesHasItems[i] = 0;
 			}
+			List$[i] = FavoritesName[i];
 		}
 	}
 }
 Function Parse_Dynamic(String InDynamic$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthDynamic;
 
 	If (ListCoverURL_Enable = 1){
@@ -2102,10 +2103,9 @@ Function Parse_Dynamic(String InDynamic$){
 	Else {
 		OutDynamicBar = 65535;
 	}
-	If (ListType[1] = 6){
-		OutListBar = OutDynamicBar;
-		OutListCount = OutDynamicCount;
-    }
+	OutListBar = OutDynamicBar;
+	OutListCount = OutDynamicCount;
+/*
 	If (TotalDynamic - DynamicFirstNumber >= NumberOfList){
 		ListLengthDynamic = NumberOfList;
 	}
@@ -2116,26 +2116,38 @@ Function Parse_Dynamic(String InDynamic$){
 		If (ListType[1] = 6)
 			SetArray(List$," ");
 	}
+*/
+	ListLengthDynamic = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthDynamic){
-		indexStart = find("playlistid%3A",InDynamic$,indexEnd) + 13;
-		indexEnd = find(" ",InDynamic$,indexStart);
-		Length = indexEnd - indexStart;
-		DynamicFile[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
-		indexStart = indexEnd + 16;
-		indexEnd = find(" ",InDynamic$, indexStart);
-		If (indexEnd = 0){
-			indexEnd = Len(InDynamic$) - 1;
+		indexStart = find(" playlistid%3A",InDynamic$,indexEnd) + 14;
+		If (indexStart > 14){
+			indexEnd = find(" ",InDynamic$,indexStart);
+			Length = indexEnd - indexStart;
+			DynamicFile[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
 		}
-		Length = indexEnd - indexStart;
-		DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
-		If (ListType[1] = 6){
-			List$[i] = DynamicName[i];
+		Else {
+			For (j = i to ListLengthDynamic){
+				DynamicFile[j] = "";
+				DynamicName[j] = "";
+				List$[j] = " ";
+			}
+			Break;
 		}
+		indexStart = find(" playlistname%3A",InDynamic$,indexEnd) + 16;
+		If (indexStart > 16){
+			indexEnd = find(" ",InDynamic$, indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InDynamic$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
+		}
+		List$[i] = DynamicName[i];
 	}
 }
 Function Parse_Genres(String InGenres$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthGenres;
 
 	If (ListCoverURL_Enable = 1){
@@ -2144,9 +2156,14 @@ Function Parse_Genres(String InGenres$){
 	indexEnd = find(" ",InGenres$,9);
 	Length = indexEnd - 8;
 	GenreFirstNumber = AtoI(mid(InGenres$,8,Length));
-	indexStart = find("count%3A",InGenres$,1) + 8;
+	indexStart = find(" count%3A",InGenres$,1) + 9;
 	indexEnd = find(" ",InGenres$, indexStart);
-	Length = indexEnd - indexStart;
+	if (indexEnd > 0){
+		Length = indexEnd - indexStart;
+	}
+	Else {
+		Length = len(InGenres$) - indexStart - 1;
+	}
 	TotalGenres = AtoI(mid(InGenres$,indexStart,Length));
 	OutGenreCount = TotalGenres;
 	If (TotalGenres > 0){
@@ -2155,10 +2172,9 @@ Function Parse_Genres(String InGenres$){
 	else {
 		OutGenresBar = 65535;
 	}
-	If (ListType[1] = 1){
-		OutListBar = OutGenresBar;
-		OutListCount = OutGenreCount;
-    }
+	OutListBar = OutGenresBar;
+	OutListCount = OutGenreCount;
+/*
 	If (TotalGenres - GenreFirstNumber >= NumberOfList){
 		ListLengthGenres = NumberOfList;
 	}
@@ -2170,6 +2186,8 @@ Function Parse_Genres(String InGenres$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthGenres = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthGenres){
 		indexStart = find(" id%3A",InGenres$,indexEnd) + 6;
@@ -2177,18 +2195,29 @@ Function Parse_Genres(String InGenres$){
 			indexEnd = find(" ",InGenres$,indexStart);
 			Length = indexEnd - indexStart;
 			GenreID[i] = AtoI(mid(InGenres$,indexStart,Length));
-			indexStart = indexEnd + 9;
+		}
+		Else {
+			For (j = i to ListLengthGenres){
+				GenreID[j] = 0;
+				Genre[j] = "";
+				List$[j] = " ";
+			}
+			Break;
+		}
+		indexStart = indexEnd + 9;
+		If (indexStart > 9){
 			indexEnd = find(" ",InGenres$, indexStart);
 			Length = indexEnd - indexStart;
 			Genre[i] = ParsePercent(mid(InGenres$,indexStart,Length));
-			If (ListType[1] = 1) {
-	            List$[i] = Genre[i];
-			}
 		}
+		Else {
+			Genre[i] = " ";
+		}
+		List$[i] = Genre[i];
 	}
 }
 Function Parse_Artists(String InArtists$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthArtists;
 
 	If (ListCoverURL_Enable = 1){
@@ -2198,14 +2227,13 @@ Function Parse_Artists(String InArtists$){
 	Length = indexEnd - 8;
 	ArtistFirstNumber = AtoI(mid(InArtists$,8,Length));
 	trace("ArtistFirstNumber = %u",ArtistFirstNumber);
-	indexStart = find(" count%3A",InArtists$,1);
-	indexStart = indexStart + 9;
+	indexStart = find(" count%3A",InArtists$,1) + 9;
 	indexEnd = find(" ",InArtists$, indexStart);
 	if (indexEnd > 0){
 		Length = indexEnd - indexStart;
 	}
 	Else {
-		Length = len(InArtists$) - indexStart;
+		Length = len(InArtists$) - indexStart - 1;
 	}
 	TotalArtists = AtoI(mid(InArtists$,indexStart,Length));
 	trace("TotalArtists = %u",TotalArtists);
@@ -2216,10 +2244,9 @@ Function Parse_Artists(String InArtists$){
 	else {
 		OutArtistsBar = 65535;
 	}
-	If (ListType[1] = 2){
-		OutListBar = OutArtistsBar;
-		OutListCount = OutArtistCount;
-    }
+	OutListBar = OutArtistsBar;
+	OutListCount = OutArtistCount;
+/*
 	If (TotalArtists - ArtistFirstNumber >= NumberOfList){
 		ListLengthArtists = NumberOfList;
 	}
@@ -2230,20 +2257,34 @@ Function Parse_Artists(String InArtists$){
 		If (ListType[1] = 2)
 			SetArray(List$," ");
 	}
+*/
+	ListLengthArtists = NumberOfList;
 	indexEnd = 1;  
 	For (i = 1 to ListLengthArtists){
-    	indexStart = find(" id%3A",InArtists$,indexEnd);
-		indexStart = indexStart + 6;
-		indexEnd = find(" ",InArtists$,indexStart);
-		Length = indexEnd - indexStart;
-		ArtistID[i] = AtoI(mid(InArtists$,indexStart,Length));
-		indexStart = find(" artist%3A",InArtists$,indexEnd) + 10;
-		indexEnd = find(" ",InArtists$, indexStart);
-		Length = indexEnd - indexStart;		
-		Artist[i] = ParsePercent(mid(InArtists$,indexStart,Length));
-		If (ListType[1] = 2){
-			List$[i] = Artist[i];
+    	indexStart = find(" id%3A",InArtists$,indexEnd) + 6;
+		If (indexStart > 6){
+			indexEnd = find(" ",InArtists$,indexStart);
+			Length = indexEnd - indexStart;
+			ArtistID[i] = AtoI(mid(InArtists$,indexStart,Length));
 		}
+		Else {
+			For (j = i to ListLengthArtists){
+				ArtistID[j] = 0;
+				Artist[j]  = "";
+				List$[j] = " ";
+			}
+			Break;
+		}
+		indexStart = find(" artist%3A",InArtists$,indexEnd) + 10;
+		If (indexStart > 10){
+			indexEnd = find(" ",InArtists$, indexStart);
+			Length = indexEnd - indexStart;		
+			Artist[i] = ParsePercent(mid(InArtists$,indexStart,Length));
+		}
+		Else {
+			Artist[i] = " ";
+		}
+		List$[i] = Artist[i];
 	}
 }
 Function Parse_Albums(String InAlbums$){
@@ -2265,10 +2306,8 @@ Function Parse_Albums(String InAlbums$){
 	else {
 		OutAlbumsBar = 65535;
 	}
-	If (ListType[1] = 3){
-		OutListBar = OutAlbumsBar;
-		OutListCount = OutAlbumCount;
-    }
+	OutListBar = OutAlbumsBar;
+	OutListCount = OutAlbumCount;
 /*
 	If (TotalAlbums - AlbumFirstNumber >= NumberOfAlbums){
 		ListLengthAlbums = NumberOfAlbums;
@@ -2376,19 +2415,22 @@ Function Parse_Titles(String InTitles$){
 	TitleFirstNumber = AtoI(mid(InTitles$,8,Length));
 	indexStart = find("count%3A",InTitles$,1) + 8;
 	indexEnd = find(" ",InTitles$, indexStart);
-	Length = indexEnd - indexStart;
+	If (indexEnd > 0){
+		Length = indexEnd - indexStart;
+	}
+	Else {
+		Length = len(InTitles$) - indexStart - 1;
+	}
 	TotalTitles = AtoI(mid(InTitles$,indexStart,Length));
 	OutTitleCount = TotalTitles;
 	If (TotalTitles > 0){
-		OutTitlesBar = 65535 - ((65535 / TotalTitles) * TitleFirstNumber );
+		OutTitlesBar = 65535 - ((65535 * TitleFirstNumber ) / TotalTitles);
 	}
 	else {
 		OutTitlesBar = 65535;
 	}
-	If (ListType[1] = 4){
-		OutListBar = OutTitlesBar;
-		OutListCount = OutTitleCount;
-    }
+	OutListBar = OutTitlesBar;
+	OutListCount = OutTitleCount;
 /*
 	If (TotalTitles - TitleFirstNumber >= NumberOfList){
 		ListLengthTitles = NumberOfList;
@@ -2422,6 +2464,7 @@ Function Parse_Titles(String InTitles$){
 					ListCoverURL[j] = BlankCoverURL;
 				}
 			}
+			Break;
 		}
 		indexNext = find(" id%3A",InTitles$,indexEnd);
 		If (indexNext > 0){
@@ -2470,7 +2513,7 @@ Function Parse_Titles(String InTitles$){
 	}
 }
 Function Parse_Playlists(String InPlaylists$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthPlaylists;
 
 	If (ListCoverURL_Enable = 1){
@@ -2492,10 +2535,9 @@ Function Parse_Playlists(String InPlaylists$){
 	Else {
 		OutPlaylistsBar = 65535;
 	}
-	If (ListType[1] = 5) {
-		OutListBar = OutPlaylistsBar;
-		OutListCount = OutPlaylistCount;
-    }
+	OutListBar = OutPlaylistsBar;
+	OutListCount = OutPlaylistCount;
+/*
 	If (TotalPlaylists - PlaylistFirstNumber >= NumberOfList){
 		ListLengthPlaylists = NumberOfList;
 	}
@@ -2507,27 +2549,40 @@ Function Parse_Playlists(String InPlaylists$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthPlaylists = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthPlaylists) {
-    	If (find(" id%3A",InPlaylists$,indexEnd)){ 
-			indexStart = find(" id%3A",InPlaylists$,indexEnd) + 6;
+		indexStart = find(" id%3A",InPlaylists$,indexEnd) + 6;
+    	If (indexStart > 6){
 			indexEnd = find(" ",InPlaylists$,indexStart);
 			Length = indexEnd - indexStart;
 			PlaylistID[i] = AtoI(mid(InPlaylists$,indexStart,Length));
-			indexStart = indexEnd + 12;
+		}
+		Else {
+			For (j = i to ListLengthPlaylists){
+				PlaylistRaw[j] = "";
+				Playlist[j] = "";
+				List$[j] = " ";
+			}
+			Break;
+		}
+		indexStart = find(" playlist%3A", InPlaylists$,indexEnd) + 12;
+		If (indexStart > 12){
 			indexEnd = find(" ",InPlaylists$, indexStart);
 			Length = indexEnd - indexStart;
 			PlaylistRaw[i] = mid(InPlaylists$,indexStart,Length);
-			trace("PlaylistRaw[%u] = %s",i,PlaylistRaw[i]);
-			Playlist[i] = ParsePercent(mid(InPlaylists$,indexStart,Length));
-			If (ListType[1] = 5){
-				List$[i] = Playlist[i];
-			}
 		}
+		Else {
+			PlaylistRaw[i] = "";
+		}
+		trace("PlaylistRaw[%u] = %s",i,PlaylistRaw[i]);
+		Playlist[i] = ParsePercent(PlaylistRaw[i]);
+		List$[i] = Playlist[i];
 	}
 }
 Function Parse_Apps(String InApps$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthApps;
 
 	If (ListCoverURL_Enable = 1){
@@ -2554,10 +2609,9 @@ Function Parse_Apps(String InApps$){
 	Else {
 		OutAppsBar = 65535;
 	}
-	If (ListType[1] = 11){
-		OutListBar = OutAppsBar;
-		OutListCount = OutAppsCount;
-	}
+	OutListBar = OutAppsBar;
+	OutListCount = OutAppsCount;
+/*
 	If (TotalApps - AppsFirstNumber >= NumberOfList){
 		ListLengthApps = NumberOfList;
 	}
@@ -2571,42 +2625,66 @@ Function Parse_Apps(String InApps$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthApps = NumberOfList;
 	trace("listlengthApps = %u",ListLengthApps);
 	indexEnd = 9;
 
 	For (i = 1 to ListLengthApps){
 		indexStart = find(" icon%3A",InApps$,indexEnd) + 8;
-		indexEnd = find(" ",InApps$,indexStart);
-		Length = indexEnd - indexStart;
-		AppsIcon[i] = ParsePercent(mid(InApps$,indexStart,Length));
-		trace("Apps icon: %s",AppsIcon[i]);
-
+		If (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsIcon[i] = ParsePercent(mid(InApps$,indexStart,Length));
+			trace("Apps icon: %s",AppsIcon[i]);
+		}
+		Else {
+			For (j = i to ListLengthApps){
+				AppsIcon[j] = "";
+				AppsCmd[j] = "";
+				AppsName[j] = "";
+				AppsType[j] = "";
+				List$[j] = " ";
+			}
+			Break;
+		}
 		indexStart = find(" cmd%3A",InApps$,indexEnd) + 7;
-		indexEnd = find(" ",InApps$,indexStart);
-		Length = indexEnd - indexStart;
-		AppsCmd[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		if (indexStart > 7){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsCmd[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		}
+		Else {
+			AppsCmd[i] = "";
+		}
 		trace("Apps Cmd: %s",AppsCmd[i]);
-
 		indexStart = find(" name%3A",InApps$,indexEnd) + 8;
-		indexEnd = find(" ",InApps$,indexStart);
-		Length = indexEnd - indexStart;
-		AppsName[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		if (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsName[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		}
+		Else {
+			AppsName[i] = "";
+		}
 		trace("Apps name[%u]: %s",i,AppsName[i]);
-		If (ListType[1] = 11){
-			List$[i] = AppsName[i];
-		}
-
 		indexStart = find(" type%3A",InApps$,indexEnd) + 8;
-		indexEnd = find(" ",InApps$,indexStart);
-		If (indexEnd = 0){
-			indexEnd = Len(InApps$) - 1;
+		If (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InApps$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			AppsType[i] = mid(InApps$,indexStart,Length);
 		}
-		Length = indexEnd - indexStart;
-		AppsType[i] = mid(InApps$,indexStart,Length);
+		Else {
+			AppsType[i] = "";
+		}
+		List$[i] = AppsName[i];
 	}
 }
 Function Parse_Radios(String InRadios$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthRadios;
 
 	If (ListCoverURL_Enable = 1){
@@ -2632,10 +2710,9 @@ Function Parse_Radios(String InRadios$){
 	Else {
 		OutRadiosBar = 65535;
 	}
-	If (ListType[1] = 12){
-		OutListBar = OutRadiosBar;
-		OutListCount = OutRadiosCount;
-	}
+	OutListBar = OutRadiosBar;
+	OutListCount = OutRadiosCount;
+/*
 	If (TotalRadios - RadiosFirstNumber >= NumberOfList){
 		ListLengthRadios = NumberOfList;
 	}
@@ -2649,38 +2726,65 @@ Function Parse_Radios(String InRadios$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthRadios = NumberOfList;
 	trace("listlengthRadios = %u",ListLengthRadios);
 	indexEnd = 9;
 	For (i = 1 to ListLengthRadios){
 		indexStart = find(" icon%3A",InRadios$,indexEnd) + 8;
-		indexEnd = find(" ",InRadios$,indexStart);
-		Length = indexEnd - indexStart;
-		RadiosIcon[i] = ParsePercent(mid(InRadios$,indexStart,Length));
-		trace("Radios icon: %s",RadiosIcon[i]);
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosIcon[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+			trace("Radios icon: %s",RadiosIcon[i]);
+		}
+		Else {
+			For (j = i to ListLengthRadios){
+				RadiosIcon[j] = "";
+				RadiosCmd[j] = "";
+				RadiosName[j] = "";
+				RadiosType[j] = "";
+				List$[j] = " ";
+			}
+			Break;
+		}
 		indexStart = find(" cmd%3A",InRadios$,indexEnd) + 7;
-		indexEnd = find(" ",InRadios$,indexStart);
-		Length = indexEnd - indexStart;
-		RadiosCmd[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		If (indexStart > 7){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosCmd[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		}
+		Else {
+			RadiosCmd[i] = "";
+		}
 		trace("Radios Cmd: %s",RadiosCmd[i]);
 		indexStart = find(" name%3A",InRadios$,indexEnd) + 8;
-		indexEnd = find(" ",InRadios$,indexStart);
-		Length = indexEnd - indexStart;
-		RadiosName[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosName[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		}
+		Else {
+			RadiosName[i] = "";
+		}
 		trace("Radios name[%u]: %s",i,RadiosName[i]);
-		If (ListType[1] = 12){
-			List$[i] = RadiosName[i];
-		}
 		indexStart = find(" type%3A",InRadios$,indexEnd) + 8;
-		indexEnd = find(" ",InRadios$,indexStart);
-		If (indexEnd = 0){
-			indexEnd = Len(InRadios$) - 1;
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InRadios$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			RadiosType[i] = mid(InRadios$,indexStart,Length);
 		}
-		Length = indexEnd - indexStart;
-		RadiosType[i] = mid(InRadios$,indexStart,Length);
+		Else {
+			RadiosType[i] = "";
+		}
+		List$[i] = RadiosName[i];
 	}	
 }
 Function Parse_Search(String InSearch$){
-	Integer i, indexStart, indexEnd, Length;
+	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthSearch;
 	
 	If (ListCoverURL_Enable = 1){
@@ -2702,10 +2806,9 @@ Function Parse_Search(String InSearch$){
 	else {
 		OutSearchBar = 65535;
 	}
-	If (ListType[1] = 8){
-		OutListBar = OutSearchBar;
-		OutListCount = OutSearchCount;
-    }
+	OutListBar = OutSearchBar;
+	OutListCount = OutSearchCount;
+/*
 	If (TotalSearch - SearchFirstNumber >= NumberOfList){
 		ListLengthSearch = NumberOfList;
 	}
@@ -2717,6 +2820,8 @@ Function Parse_Search(String InSearch$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthSearch = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthSearch){
 		If (find(" contributor_id",InSearch$,indexEnd)) { // parsing for artists in search results
@@ -2782,12 +2887,14 @@ Function Parse_Search(String InSearch$){
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
 		}
 		Else {
-			SearchID[i] = 0;
-			Search[i] = " ";
+			For (j = i to ListLengthSearch){
+				SearchID[j] = 0;
+				Search[j] = " ";
+				List$[j] = " ";
+			}
+			Break;
 		}
-		If (ListType[1] = 8){
-            List$[i] = Search[i];
-		}
+		List$[i] = Search[i];
 	}
 }
 Function Parse_Players(String InPlayers$){
@@ -2797,14 +2904,11 @@ Function Parse_Players(String InPlayers$){
 	Length = indexEnd - 9;
 	PlayersFirstNumber = AtoI(mid(InPlayers$,9,Length));
 	trace("PlayersFirstNumber = %u",PlayersFirstNumber);
-	
 	indexStart = find("count%3A",InPlayers$,indexEnd) + 8;
 	indexEnd = find(" ",InPlayers$, indexStart);
 	Length = indexEnd - indexStart;
 	TotalPlayers = AtoI(mid(InPlayers$,indexStart,Length));
 	trace("TotalPlayers = %u",TotalPlayers);
-	
-	
 	OutPlayersCount = TotalPlayers;
 	If (TotalPlayers > 0){
 		OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber);
@@ -2812,12 +2916,7 @@ Function Parse_Players(String InPlayers$){
 	else {
 		OutPlayersBar = 65535;
 	}
-	// ListType[1] = 13 reserved for Players
-	// not yet a possible List type
-	If (ListType[1] = 13) {
-		OutListBar = OutPlayersBar;
-		OutListCount = OutPlayersCount;
-    }
+/*
 	If (TotalPlayers - PlayersFirstNumber >= NumberOfPlayers){
 		ListLengthPlayers = NumberOfPlayers;
 	}
@@ -2832,36 +2931,48 @@ Function Parse_Players(String InPlayers$){
 			SetArray(List$," ");
 		}
 	}
+*/
+	ListLengthPlayers = NumberOfPlayers;
 	indexEnd = 1;
 	For (i = 1 to ListLengthPlayers) {
-    	If (find(" playerindex%3A",InPlayers$,indexEnd)){ 
-			indexStart = find(" playerindex%3A",InPlayers$,indexEnd) + 15;
+		indexStart = find(" playerindex%3A",InPlayers$,indexEnd) + 15;
+		If (indexStart > 15){
 			indexEnd = find(" ",Inplayers$,indexStart);
 			PlayersIndex[i] = AtoI(mid(InPlayers$,indexStart,Length));
 			trace("PlayersIndex[%u] = %u",i,PlayersIndex[i]);
-			
-			indexStart = find(" playerid%3A",InPlayers$,indexEnd) + 12;
+		}
+		Else {
+			For (j = i to ListLengthPlayers){
+				PlayersIndex[j] = 0;
+				PlayersID[j] = "";
+				PlayersName[j] = "";
+				Players$[j] = " ";
+			}
+			Break;
+		}
+		indexStart = find(" playerid%3A",InPlayers$,indexEnd) + 12;
+		If (indexStart > 12){
 			indexEnd = find(" ",InPlayers$,indexStart);
 			Length = indexEnd - indexStart;
 			PlayersID_raw[i] = mid(InPlayers$,indexStart,Length);
 			PlayersID[i] = parsepercent(PlayersID_raw[i]);
-			trace("PlayersID[%u] = %s",i,PlayersID[i]);
-			
-			indexStart = find(" name%3A",InPlayers$,indexEnd) + 8;
+		}
+		Else {
+			PlayersID[i] = "";
+		}
+		trace("PlayersID[%u] = %s",i,PlayersID[i]);
+		indexStart = find(" name%3A",InPlayers$,indexEnd) + 8;
+		If (indexStart > 8){
 			indexEnd = find(" ",InPlayers$, indexStart);
 			Length = indexEnd - indexStart;
 			PlayersName[i] = parsepercent(mid(InPlayers$,indexStart,Length));
-			trace("PlayersName[%u] = %s",i,PlayersName[i]);
-
-			Players$[i] = PlayersName[i];
-			PlayersID$[i] = PlayersID[i];
-			
-			// ListType[1] = 13 reserved for Players
-			// not yet a possible List type
-			If (ListType[1] = 13){
-				List$[i] = PlayersName[i];
-			}
 		}
+		Else {
+			PlayersName[i] = " ";
+		}
+		trace("PlayersName[%u] = %s",i,PlayersName[i]);
+		Players$[i] = PlayersName[i];
+		PlayersID$[i] = PlayersID[i];
 	}
 	For (j = 1 to GetNumArrayRows(PlayersID)){
 		If (PlayersID[j] = PlayerID$) {
