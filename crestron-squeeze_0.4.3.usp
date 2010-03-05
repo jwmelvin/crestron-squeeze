@@ -28,7 +28,7 @@ License:
 #ENABLE_STACK_CHECKING
 #DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
 #PRINT_TO_TRACE
-// #ENABLE_TRACE
+#ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
 DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_;
@@ -135,6 +135,7 @@ STRING_OUTPUT  CurrentsongDuration;
 STRING_OUTPUT  CurrentsongConsolidatedText;
 ANALOG_OUTPUT  CurrentsongTrackstat;
 STRING_OUTPUT  CurrentsongTrackstat$;
+ANALOG_OUTPUT  CurrentsongType;
 // ARRAYS
 // Nowplaying i/o
 DIGITAL_INPUT  NowplayingPlay[10];
@@ -661,6 +662,23 @@ Function Radios_PgReset_fn() {
 	ListName$ = ListName[1];
 	RadiosRefresh_fn();
 }
+Function Podcasts_PgReset_fn() {
+	FAR_cmd = "podcast";
+	FAR_parse = FAR_cmd + " items ";
+	FirstFavorites = 0;
+	restrictorFavorites = "";
+	ActiveFAR_ID = "";
+    ListShiftFwd_fn();
+	ListType[1] = 10;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ActiveGenre = "";
+	ListName[1] = "Podcasts";
+	ListRestrictor[1] = "";
+	ListFirst[1] = 0;
+	FavoritesRefresh_fn();
+}
 Function Nowplaying_PgReset_fn(){
 	If (CurrentsongIndex - NowplayingShowPrev S< 0)
 		FirstNowplaying = 0;
@@ -987,7 +1005,8 @@ Function HomeListSelect_fn(integer i){
 	Else If (i=7){Radios_PgReset_fn();}  
 	Else If (i=8){Apps_PgReset_fn();}
 	Else If (i=9){Pandora_PgReset_fn();}
-	Else If (i=10){Titles_PgReset_fn();}
+	Else If (i=10){Podcasts_PgReset_fn();}
+	Else If (i=11){Titles_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
 	If (GenreID[i] > 0){
@@ -2058,7 +2077,16 @@ Function Parse_FAR(String InFavorites$){
 				trace("Favorites name[%u]: %s",i,FavoritesName[i]);
 			}
 			Else {
-				FavoritesName[i] = "";
+				indexStart = find(" title%3A",FavoritesParseItem,1) + 9;
+				If (indexStart > 9){
+					indexEnd = find(" ",FavoritesParseItem,indexStart);
+					Length = indexEnd - indexStart;
+					FavoritesName[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+					trace("Favorites name[%u]: %s",i,FavoritesName[i]);
+				}
+				Else {
+					FavoritesName[i] = "";
+				}
 			}
 			indexStart = find(" type%3A",FavoritesParseItem,indexEnd) + 8;
 			If (indexStart > 8){
@@ -3375,7 +3403,12 @@ Function Parse_Status(String InStatus$){
 			Length = len(InStatus$) - indexStart - 1;
 			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
-		If (find("pandora",CurrentTrackURL$) > 0) {
+		// Track the source of the current song
+		If (find("file:",CurrentTrackURL$)){
+			CTRemoteService = 0;
+			CurrentSongRateable = 1;
+		}
+		Else If (find("pandora",CurrentTrackURL$) > 0) {
 			CTRemoteService = 1;
 			CurrentSongRateable = 1;
 			trace("CurrentSong is Pandora");
@@ -3400,13 +3433,36 @@ Function Parse_Status(String InStatus$){
 			CurrentSongRateable = 0;
 			trace("CurrentSong is LiveMusicArchive");
 		}
-		Else If (find("file:",CurrentTrackURL$)){
-			CTRemoteService = 0;
-			CurrentSongRateable = 1;
+		Else If (find("sirius:",CurrentTrackURL$)){
+			CTRemoteService = 6;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Sirius");
+		}
+		Else If (find("live365:",CurrentTrackURL$)){
+			CTRemoteService = 7;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Live365");
+		}
+		Else If (find("mediafly:",CurrentTrackURL$)){
+			CTRemoteService = 8;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Mediafly");
+		}
+		Else If (find("http:",CurrentTrackURL$)){
+			CTRemoteService = 9;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is unknown internet radio");
 		}
 		Else {
-			CTRemoteService = 0;
-			CurrentSongRateable = 0;
+			If (CurrentTrackRemote = 1){
+				CTRemoteService = 9;
+				CurrentsongRateable = 0;
+				trace("CurrentSong is unknown internet radio");
+			}
+			Else {
+				CTRemoteService = 0;
+				CurrentSongRateable = 0;
+			}
 		}
 	}
 	Else {
@@ -3414,6 +3470,7 @@ Function Parse_Status(String InStatus$){
 		CTRemoteService = 0;
 		CurrentSongRateable = 0;
 	}
+	CurrentsongType = CTRemoteService;
 	indexStart = find(" artwork_url%3A",InStatus$,indexEnd) + 15;
 	if (indexStart > 15) {
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -3457,14 +3514,31 @@ Function Parse_Status(String InStatus$){
 		CurrentsongTitle = CurrentTrackTitle$;
 		CurrentsongAlbum = CurrentTrackAlbum$;
 		CurrentsongArtist = CurrentTrackArtist$;
+		// create CurrentsongGenre depending on which internet source is playing
 		If (CurrentTrackRemote = 1){
-			If (len(CurrentTrackRTitle$) > 0){
+			// special conditions for certain services
+			If (CTRemoteService = 4){
+				CurrentsongGenre = "Rhapsody";
+			}
+			Else If ((CTRemoteService = 2) && (CurrentTrackCTitle$ = "Play Station")){
+				CurrentsongGenre = "Slacker";
+			}
+			Else If (CTRemoteService = 7){
+				CurrentsongGenre = "Live365 station";
+			}
+			Else If ((CTRemoteService = 8) && (CurrentTrackCTitle$ = "Play this episode")){
+				CurrentsongGenre = "Mediafly";
+			}
+			// use the remote_title as the default genre
+			Else If (len(CurrentTrackRTitle$) > 0){
 				CurrentsongGenre = CurrentTrackRTitle$;
 			}
+			// use current_title if there is no remote_title
 			Else {
 				CurrentsongGenre = CurrentTrackCTitle$;
 			}
 		}
+		// create the default CurrentsongGenre for local tracks
 		Else {
 			CurrentsongGenre = CurrentTrackGenre$; 
 		}
@@ -3634,7 +3708,7 @@ RELEASE TCPIP_Connect{
     If (OnDisconnect_Pause = 1){
 		makestring(out$,"%s pause 1\n",PlayerID$);
 		socketsend(TCPClient, out$);
-		delay(10);
+		delay(200);
 	}
 	status = SocketDisconnectClient (TCPClient);
 	if (status < 0){
@@ -4855,8 +4929,9 @@ Function Main() {
 	ListHome[7] = "Radios";
 	ListHome[8] = "Apps";
 	ListHome[9] = "Pandora";
-	ListHome[10] = "Tracks";
- 	TotalHome = 10;    
+	ListHome[10] = "Podcasts";
+	ListHome[11] = "Tracks";
+ 	TotalHome = 11;    
   	Home_PgReset_fn();
 	CurrentPlayerID = PlayerID$;
 	NumberOfAlbums = NumberOfList;  
