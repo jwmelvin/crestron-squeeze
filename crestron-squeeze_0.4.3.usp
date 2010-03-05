@@ -244,7 +244,7 @@ STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
 
 STRING restrictorFavorites[256], ActiveFAR_ID[64];
 STRING ListName[5][256], ListRestrictor[5][256], ListActiveGenre[5][256];
-STRING ListHome[10][16];
+STRING ListHome[11][16];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 
 STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
