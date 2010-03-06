@@ -28,7 +28,7 @@ License:
 #ENABLE_STACK_CHECKING
 #DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
 #PRINT_TO_TRACE
-#ENABLE_TRACE
+// #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
 DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_;
@@ -106,6 +106,8 @@ ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar;
 ANALOG_OUTPUT  OutPlayersCount, OutPlayersBar;
 ANALOG_OUTPUT  OutTimeBar;
 STRING_OUTPUT  ListName$;
+//
+DIGITAL_OUTPUT FavoriteAdd_success;
 // Player feedback
 STRING_OUTPUT  CurrentPlayerName;
 STRING_OUTPUT  CurrentPlayerID;
@@ -257,8 +259,7 @@ STRING ActiveFavoritesName[255], ActiveFavoritesID[255], FavoritesTitle[255];
 //
 STRING Genre[10][255], Artist[10][255], Album[10][255], Title[10][255], Playlist[10][255],PlaylistRaw[10][255], DynamicName[10][255], DynamicFile[10][255], Search[10][255];
 STRING NowplayingTitle[10][255], NowplayingArtist[10][255], NowplayingAlbum[10][255];
-STRING OUT$[1024], IN$[16384];
-
+//
 STRING FavoritesName[10][255], FavoritesID[10][64], FavoritesType[10][255];  
 STRING FavoritesImage[10][255];
 STRING AppsCmd[10][64],AppsName[10][64],AppsIcon[10][255],AppsType[10][64];
@@ -380,6 +381,8 @@ Function HomeRefresh_fn(){
 	}
 }
 Function GenresRefresh_fn(){
+	String Out$[128];
+	
 	ListName$ = ListName[1];
 	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
 	trace("sending: %s",OUT$);
@@ -387,6 +390,7 @@ Function GenresRefresh_fn(){
 //	ListType = 1;
 }
 Function ArtistsRefresh_fn(){
+	String Out$[128];
 	ListName$ = ListName[1];
 	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
 	trace("sending: %s",OUT$);
@@ -394,6 +398,7 @@ Function ArtistsRefresh_fn(){
 //	ListType = 2;
 }
 Function AlbumsRefresh_fn(){
+	String Out$[128];
 //	ListType = 3;
 	ListName$ = ListName[1];
 	If (Coverflow = 1) {
@@ -413,6 +418,7 @@ Function AlbumsRefresh_fn(){
 	}
 }
 Function TitlesRefresh_fn(){
+	String Out$[128];
 	ListName$ = ListName[1];
 	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfList, restrictorTitles);
 	trace("sending: %s",OUT$);
@@ -420,6 +426,7 @@ Function TitlesRefresh_fn(){
 //	ListType = 4;
 }
 Function PlaylistsRefresh_fn(){
+	String Out$[128];
 	ListName$ = ListName[1];
 	makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
 	trace("sending: %s",OUT$);
@@ -427,6 +434,7 @@ Function PlaylistsRefresh_fn(){
 //	ListType = 5;
 }
 Function DynamicRefresh_fn(){
+	String Out$[128];
 	ListName$ = ListName[1];
 	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
 	trace("sending: %s",OUT$);
@@ -434,6 +442,7 @@ Function DynamicRefresh_fn(){
 //	ListType = 6
 }
 Function SearchRefresh_fn(){
+	String Out$[128];
 	ListName$ = ListName[1];
 	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfList, search_in);
 	trace("sending: %s",OUT$);
@@ -441,26 +450,31 @@ Function SearchRefresh_fn(){
 //	ListType = 8
 } 
 Function FavoritesRefresh_fn(){
+	String Out$[256];
 	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function AppsRefresh_fn(){
+	String Out$[128];
 	makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function RadiosRefresh_fn(){
+	String Out$[128];
 	makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function NowplayingRefresh_fn(){
+	String Out$[128];
 	makestring(Out$,"%s status %u %u tags:al charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function PlayersRefresh_fn(){
+	String Out$[128];
 	makestring(OUT$,"players %u %u \n",FirstPlayers,NumberOfPlayers);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
@@ -506,6 +520,7 @@ Function ListRefresh_fn(){
 	// not yet a possible List type
 }
 Function trackstat_get(long_integer TrackID){
+	String Out$[64];
 	makestring(OUT$,"trackstat getrating %lu\n", TrackID);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
@@ -1062,6 +1077,7 @@ Function ArtistListSelect_fn(integer i){
 	}
 }
 Function AlbumListSelect_fn(integer i){
+	String Out$[128];
 	If (AlbumID[i] > 0){
 		If (Coverflow = 0){
 			trace("Coverflow = 0; AlbumListSelect");
@@ -1093,6 +1109,7 @@ Function AlbumListSelect_fn(integer i){
 	}
 }
 Function TitleListSelect_fn(integer i){
+	String Out$[128];
 	If (TrackID[i] > 0){
 		ActiveAlbumID = TitleAlbumID[i];
 		ActiveTrackID = TrackID[i];
@@ -1107,6 +1124,7 @@ Function TitleListSelect_fn(integer i){
 	}
 }
 Function PlaylistListSelect_fn(integer i){
+	String Out$[128];
 	If (PlaylistID[i] > 0){
 		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 		trace("sending: %s",OUT$);
@@ -1122,6 +1140,7 @@ Function PlaylistListSelect_fn(integer i){
 	}
 }
 Function DynamicListSelect_fn(integer i){
+	String Out$[128];
 	If (DynamicName[i] <> ""){
 		ActiveDynamicFile = DynamicFile[i];
 		ActiveDynamic = DynamicName[i];
@@ -1133,6 +1152,7 @@ Function DynamicListSelect_fn(integer i){
 	}
 }
 Function SearchListSelect_fn(integer i){
+	String Out$[128];
 	If (SearchID[i] > 0){
 		trace("SearchListSelect_fn");
 		If (SearchIDType[i] = 1){ // searchID is an artist_id
@@ -1199,6 +1219,7 @@ Function SearchListSelect_fn(integer i){
 	}
 }
 Function FavoritesListSelect_fn(integer i){
+	String Out$[256];
 	If (FavoritesID[i] <> ""){
 		// push the image of the item forward in case it gets played
 		If (len(FavoritesImage[i]) > 0){
@@ -1285,6 +1306,7 @@ Function RadiosListSelect_fn(integer i){
 	}
 }
 Function GenreListPlay_fn(integer i){
+	String Out$[128];
 	If (GenreID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
@@ -1294,6 +1316,7 @@ Function GenreListPlay_fn(integer i){
 	}
 }
 Function ArtistListPlay_fn(integer i){
+	String Out$[128];
 	If (ArtistID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:load artist_id:%u \n",PlayerID$, ArtistID[i]);
 		trace("sending: %s",OUT$);
@@ -1303,6 +1326,7 @@ Function ArtistListPlay_fn(integer i){
 	}
 }
 Function AlbumListPlay_fn(integer i){
+	String Out$[128];
 	If (AlbumID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
 		trace("sending: %s",OUT$);
@@ -1312,6 +1336,7 @@ Function AlbumListPlay_fn(integer i){
 	}
 }
 Function TitleListPlay_fn(integer i){
+	String Out$[128];
 	If (TrackID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
 		trace("sending: %s",OUT$);
@@ -1325,6 +1350,7 @@ Function TitleListPlay_fn(integer i){
 	}
 }
 Function PlaylistListPlay_fn(integer i){
+	String Out$[128];
 	If (PlaylistID[i] > 0){
 		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 		trace("sending: %s",OUT$);
@@ -1338,6 +1364,7 @@ Function PlaylistListPlay_fn(integer i){
 	}
 }
 Function DynamicListPlay_fn(integer i){
+	String Out$[256];
 	If (DynamicFile[i] <> ""){
 		ActiveDynamicFile = DynamicFile[i];
 		ActiveDynamic = DynamicName[i];
@@ -1348,6 +1375,7 @@ Function DynamicListPlay_fn(integer i){
 	}
 }
 Function FavoritesListPlay_fn(integer i){
+	String Out$[256];
 	If (FavoritesID[i] <> ""){
 		// push the image of the item forward in case it gets played
 		If (len(FavoritesImage[i]) > 0){
@@ -1382,6 +1410,7 @@ Function FavoritesListPlay_fn(integer i){
 	}
 }
 Function SearchListPlay_fn(integer i){
+	String Out$[128];
 	If (SearchID[i] > 0){
 		ActivePlaylist = "";
 		trace("SearchListPLay_fn");
@@ -1426,6 +1455,7 @@ Function SearchListPlay_fn(integer i){
 	}
 }
 Function GenreListAdd_fn(integer i){
+	String Out$[128];
 	If (GenreID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
@@ -1435,6 +1465,7 @@ Function GenreListAdd_fn(integer i){
 	}
 }
 Function ArtistListAdd_fn(integer i){
+	String Out$[128];
 	If (ArtistID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, ArtistID[i]);
 		trace("sending: %s",OUT$);
@@ -1444,6 +1475,7 @@ Function ArtistListAdd_fn(integer i){
 	}
 }
 Function AlbumListAdd_fn(integer i){
+	String Out$[128];
 	If (AlbumID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, AlbumID[i]);
 		trace("sending: %s",OUT$);
@@ -1453,6 +1485,7 @@ Function AlbumListAdd_fn(integer i){
 	}
 }
 Function TitleListAdd_fn(integer i){
+	String Out$[128];
 	If (TrackID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:add track_id:%u \n",PlayerID$, TrackID[i]);
 		trace("sending: %s",OUT$);
@@ -1462,6 +1495,7 @@ Function TitleListAdd_fn(integer i){
 	}
 }
 Function PlaylistListAdd_fn(integer i){
+	String Out$[128];
 	If (PlaylistID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:add playlist_id:%u \n",PlayerID$, PlaylistID[i]);
 		trace("sending: %s",OUT$);
@@ -1471,6 +1505,7 @@ Function PlaylistListAdd_fn(integer i){
 	}
 }
 Function FavoritesListAdd_fn(integer i){
+	String Out$[256];
 	If (FavoritesID[i] <> ""){
 		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
@@ -1488,6 +1523,7 @@ Function FavoritesListAdd_fn(integer i){
 	}
 }
 Function SearchListAdd_fn(integer i){
+	String Out$[128];
 	If (SearchID[i] > 0){
 		trace("SearchListAdd_fn");
 		ActivePlaylist = "";
@@ -1516,6 +1552,7 @@ Function SearchListAdd_fn(integer i){
 	}
 }
 Function GenreListInsert_fn(integer i){
+	String Out$[128];
 	If (GenreID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
@@ -1525,6 +1562,7 @@ Function GenreListInsert_fn(integer i){
 	}
 }
 Function ArtistListInsert_fn(integer i){
+	String Out$[128];
 	If (ArtistID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, ArtistID[i]);
 		trace("sending: %s",OUT$);
@@ -1534,6 +1572,7 @@ Function ArtistListInsert_fn(integer i){
 	}
 }
 Function AlbumListInsert_fn(integer i){
+	String Out$[128];
 	If (AlbumID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, AlbumID[i]);
 		trace("sending: %s",OUT$);
@@ -1543,6 +1582,7 @@ Function AlbumListInsert_fn(integer i){
 	}
 }
 Function TitleListInsert_fn(integer i){
+	String Out$[128];
 	If (TrackID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
 		trace("sending: %s",OUT$);
@@ -1552,6 +1592,7 @@ Function TitleListInsert_fn(integer i){
 	}
 }
 Function PlaylistListInsert_fn(integer i){
+	String Out$[128];
 	If (PlaylistID[i] > 0){
 		makestring(OUT$,"%s playlistcontrol cmd:insert playlist_id:%u \n",PlayerID$, PlaylistID[i]);
 		trace("sending: %s",OUT$);
@@ -1561,6 +1602,7 @@ Function PlaylistListInsert_fn(integer i){
 	}
 }
 Function FavoritesListInsert_fn(integer i){
+	String Out$[256];
 	If (FavoritesID[i] <> ""){
 		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
@@ -1578,6 +1620,7 @@ Function FavoritesListInsert_fn(integer i){
 	}
 }
 Function SearchListInsert_fn(integer i){
+	String Out$[128];
 	If (SearchID[i] > 0){
 		ActivePlaylist = "";
 		trace("SearchListInsert_fn");
@@ -1606,6 +1649,7 @@ Function SearchListInsert_fn(integer i){
 	}
 }
 Function NowplayingPlay_fn(integer i){
+	String Out$[64];
 	If (NowplayingIndex[i] = 65534){
 		Nowplaying_PgReset_fn();
 	}
@@ -1618,6 +1662,7 @@ Function NowplayingPlay_fn(integer i){
 	}
 }
 Function NowplayingRemove_fn(integer i){
+	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
 		Cancelwait(Nowplaying_reset_enable_timer);
 		Nowplaying_reset_enable = 1;
@@ -1628,6 +1673,7 @@ Function NowplayingRemove_fn(integer i){
 	}
 }
 Function NowplayingMoveUp_fn(integer i){
+	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
 		Cancelwait(Nowplaying_reset_enable_timer);
 		Nowplaying_reset_enable = 1;
@@ -1637,6 +1683,7 @@ Function NowplayingMoveUp_fn(integer i){
 	}
 }
 Function NowplayingMoveDown_fn(integer i){
+	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
 		Cancelwait(Nowplaying_reset_enable_timer);
 		Nowplaying_reset_enable = 1;
@@ -2047,27 +2094,17 @@ Function Parse_FAR(String InFavorites$){
 		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
 		OutListBar = OutFavoritesBar;
 		OutListCount = OutFavoritesCount;
-/*
-		If (TotalFavorites - FavoritesFirstNumber >= NumberOfList){
-			ListLengthFavorites = NumberOfList;
-		}
-		Else {
-			ListLengthFavorites = TotalFavorites - FavoritesFirstNumber;
-			trace("listlengthFavorites = %u",ListLengthFavorites);
-			SetArray(FavoritesType,"");
-			SetArray(FavoritesName,"");
-			SetArray(FavoritesID,"");
-			If (ListType[1] = 10){
-				SetArray(List$," ");
-			}
-		}
-*/
 		ListLengthFavorites = NumberOfList;
 		indexEnd = 20;
 		indexStart = find(" title%3A",InFavorites$,indexEnd) + 9;
-		indexEnd = find(" ",InFavorites$,indexStart);
-		Length = indexEnd - indexStart;
-		FavoritesTitle = ParsePercent(mid(InFavorites$,indexStart,Length));
+		If (indexStart > 9){
+			indexEnd = find(" ",InFavorites$,indexStart);
+			Length = indexEnd - indexStart;
+			FavoritesTitle = ParsePercent(mid(InFavorites$,indexStart,Length));
+		}
+		Else {
+			FavoritesTitle = "Blank";
+		}
 		trace("Favorites title: %s",FavoritesTitle);
 		ListName[1] = FavoritesTitle;
 		ListName$ = ListName[1];
@@ -2186,18 +2223,6 @@ Function Parse_Dynamic(String InDynamic$){
 	}
 	OutListBar = OutDynamicBar;
 	OutListCount = OutDynamicCount;
-/*
-	If (TotalDynamic - DynamicFirstNumber >= NumberOfList){
-		ListLengthDynamic = NumberOfList;
-	}
-	else {
-		ListLengthDynamic = TotalDynamic - DynamicFirstNumber;
-		SetArray(DynamicName,"");
-		SetArray(DynamicFile,"");
-		If (ListType[1] = 6)
-			SetArray(List$," ");
-	}
-*/
 	ListLengthDynamic = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthDynamic){
@@ -2255,19 +2280,6 @@ Function Parse_Genres(String InGenres$){
 	}
 	OutListBar = OutGenresBar;
 	OutListCount = OutGenreCount;
-/*
-	If (TotalGenres - GenreFirstNumber >= NumberOfList){
-		ListLengthGenres = NumberOfList;
-	}
-	else {
-		ListLengthGenres = TotalGenres - GenreFirstNumber;
-		SetArray(Genre,"");
-		SetArray(GenreID,0);
-		If (ListType[1] = 1){
-			SetArray(List$," ");
-		}
-	}
-*/
 	ListLengthGenres = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthGenres){
@@ -2327,18 +2339,6 @@ Function Parse_Artists(String InArtists$){
 	}
 	OutListBar = OutArtistsBar;
 	OutListCount = OutArtistCount;
-/*
-	If (TotalArtists - ArtistFirstNumber >= NumberOfList){
-		ListLengthArtists = NumberOfList;
-	}
-	else {
-		ListLengthArtists = TotalArtists - ArtistFirstNumber;
-		SetArray(Artist,"");
-		SetArray(ArtistID,0);
-		If (ListType[1] = 2)
-			SetArray(List$," ");
-	}
-*/
 	ListLengthArtists = NumberOfList;
 	indexEnd = 1;  
 	For (i = 1 to ListLengthArtists){
@@ -2389,24 +2389,6 @@ Function Parse_Albums(String InAlbums$){
 	}
 	OutListBar = OutAlbumsBar;
 	OutListCount = OutAlbumCount;
-/*
-	If (TotalAlbums - AlbumFirstNumber >= NumberOfAlbums){
-		ListLengthAlbums = NumberOfAlbums;
-	}
-	else {
-		ListLengthAlbums = TotalAlbums - AlbumFirstNumber;
-		SetArray(Album,"");
-		SetArray(AlbumID,0);
-		If (ListType[1] = 3){
-			SetArray(List$," ");
-		}
-		If (Coverflow = 1){ 
-			SetArray(ListCoverURL,BlankCoverURL);
-			SetArray(ListCoverflowArtist," ");
-
-		}
-	}
-*/
 	ListLengthAlbums = NumberOfAlbums;
 	indexNext = 1;
 	For (i = 1 to ListLengthAlbums) {
@@ -2512,18 +2494,6 @@ Function Parse_Titles(String InTitles$){
 	}
 	OutListBar = OutTitlesBar;
 	OutListCount = OutTitleCount;
-/*
-	If (TotalTitles - TitleFirstNumber >= NumberOfList){
-		ListLengthTitles = NumberOfList;
-	}
-	Else {
-		ListLengthTitles = TotalTitles - TitleFirstNumber;
-		SetArray(Title,"");
-		SetArray(TrackID,0);
-		If (ListType[1] = 4)
-			SetArray(List$," ");
-	}
-*/
 	ListLengthTitles = NumberOfList;
 	indexEnd = 1;
 	indexNext = 1;
@@ -2692,21 +2662,6 @@ Function Parse_Apps(String InApps$){
 	}
 	OutListBar = OutAppsBar;
 	OutListCount = OutAppsCount;
-/*
-	If (TotalApps - AppsFirstNumber >= NumberOfList){
-		ListLengthApps = NumberOfList;
-	}
-	else {
-		ListLengthApps = TotalApps - AppsFirstNumber;
-		SetArray(AppsIcon,"");
-		SetArray(AppsCmd,"");
-		SetArray(AppsName,"");
-		SetArray(AppsType,"");
-		If (ListType[1] = 11){
-			SetArray(List$," ");
-		}
-	}
-*/
 	ListLengthApps = NumberOfList;
 	trace("listlengthApps = %u",ListLengthApps);
 	indexEnd = 9;
@@ -3084,6 +3039,7 @@ Function CurrentsongTimer_fn(){
 			If (waitUpdateTime_running = 0){
 				waitUpdateTime_running = 1;
 				Wait(1400){
+					String Out$[64];
 					makestring(Out$,"%s time ? \n",PlayerID$);
 					trace("sending: %s",OUT$);
 					socketsend(TCPClient,OUT$);
@@ -3101,6 +3057,7 @@ Function Parse_Status(String InStatus$){
 	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
 	String CoverURL_check[3];
 	String CurrentSongConsolidated[200];
+	String temp[1024];
 			
    	indexStart = find(" player_name%3A",InStatus$,1) + 15;
 	if (indexStart > 15){
@@ -3338,7 +3295,9 @@ Function Parse_Status(String InStatus$){
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
 		CurrentTrackTitle$_raw = mid(InStatus$,indexStart, Length);
-		CurrentTrackTitle$ = ParsePercent(CurrentTrackTitle$_raw);
+		trace("currentTrackTitle$_raw=%s",CurrentTrackTitle$_raw);
+		CurrentTrackTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		trace("currentTrackTitle$=%s",CurrentTrackTitle$);
 	}
 	Else {
 		CurrentTrackTitle$ = "<title n/a>";
@@ -3443,8 +3402,11 @@ Function Parse_Status(String InStatus$){
 		Else {
 			Length = len(InStatus$) - indexStart - 1;
 		}
-		CurrentTrackURL$_raw = ParsePercent(mid(InStatus$,indexStart, Length));
-		CurrentTrackURL$ = ParsePercent(CurrentTrackURL$_raw);
+		temp = mid(InStatus$,indexStart, Length);
+		CurrentTrackURL$_raw = temp;
+		trace("currentTrackURL$_raw=%s",CurrentTrackURL$_raw);
+		CurrentTrackURL$ = ParsePercent(temp);
+		trace("currentTrackURL$=%s",CurrentTrackURL$);
 		// Track the source of the current song
 		If (find("file:",CurrentTrackURL$)){
 			CTRemoteService = 0;
@@ -3767,6 +3729,7 @@ PUSH TCPIP_Connect{
 	}
 }
 RELEASE TCPIP_Connect{
+	String Out$[64];
     SIGNED_INTEGER status;
     If (OnDisconnect_Pause = 1){
 		makestring(out$,"%s pause 1\n",PlayerID$);
@@ -3780,6 +3743,7 @@ RELEASE TCPIP_Connect{
     }
 }
 SOCKETCONNECT TCPClient{
+	String Out$[128];
     SIGNED_LONG_INTEGER PortNumber;
     SIGNED_INTEGER LocalStatus;
     STRING RemoteIPAddress[20];
@@ -4367,6 +4331,7 @@ PUSH NowplayingMoveDown {
 	NowplayingMoveDown_fn(i);
 }
 PUSH Select_DefaultPlayer{
+	String Out$[128];
 	If (PlayerID$ <> PlayerID$_Default){
 		makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
 		socketsend(TCPClient, out$);
@@ -4384,6 +4349,7 @@ PUSH Players_Refresh {
 	Players_Pgreset_fn();
 }
 PUSH PlayersSelect {
+	String Out$[128];
 	INTEGER i,j;
 	i = GetLastModifiedArrayIndex ();
 	If (i <= ListLengthPlayers){
@@ -4407,6 +4373,7 @@ PUSH PlayersSelect {
 	}
 }   
 PUSH PlayersSyncTog {
+	String Out$[64];
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
 	If (i <= ListLengthPlayers){
@@ -4426,11 +4393,13 @@ PUSH PlayersSyncTog {
 	}     
 }
 PUSH Play {
+	String Out$[64];
 	makestring(OUT$,"%s play\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Pause_On {
+	String Out$[64];
 	makestring(OUT$,"%s pause 1\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
@@ -4444,11 +4413,13 @@ PUSH Pause_On {
 	}
 }
 PUSH Pause_Off {
+	String Out$[64];
 	makestring(OUT$,"%s pause 0\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Pause_Tog {
+	String Out$[64];
 	If ((ActivePlaylist != "") && (CurrentPlayerMode = "play") && Playlist_Save_Enable = 1)
 	{
 		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
@@ -4461,6 +4432,7 @@ PUSH Pause_Tog {
 	socketsend(TCPClient,OUT$);
 }
 PUSH Stop {
+	String Out$[64];
 	ActivePlaylist = "";
 	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 	trace("sending: %s",OUT$);
@@ -4470,71 +4442,84 @@ PUSH Stop {
 	socketsend(TCPClient,OUT$);
 }
 PUSH Next {
+	String Out$[64];
 	makestring(OUT$,"%s playlist index +1\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Prev {          
+	String Out$[64];
 	makestring(OUT$,"%s button rew.single\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Pwr_On {
+	String Out$[64];
 	makestring(OUT$,"%s power 1\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Pwr_Off {
+	String Out$[64];
 	makestring(OUT$,"%s power 0\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Repeat_Off {
+	String Out$[64];
 	makestring(OUT$,"%s playlist repeat 0\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Repeat_Track {
+	String Out$[64];
 	makestring(OUT$,"%s playlist repeat 1\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Repeat_All {
+	String Out$[64];
 	makestring(OUT$,"%s playlist repeat 2\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Shuffle_Off {
+	String Out$[64];
 	makestring(OUT$,"%s playlist shuffle 0\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Shuffle_Track {
+	String Out$[64];
 	makestring(OUT$,"%s playlist shuffle 1\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Shuffle_Album {
+	String Out$[64];
 	makestring(OUT$,"%s playlist shuffle 2\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Playlist_Clear {
+	String Out$[64];
 	makestring(OUT$,"%s playlist clear \n:",PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH Currentsong_AddFavorite{
+	String Out$[2048];
 	If (FavoriteAdd_toEnd = 1){
-		makestring(OUT$,"favorites add item_id:65535 title:%s url:%s", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+		makestring(OUT$,"favorites add item_id:65535 title:%s url:%s\n", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
 	}
 	Else {
-		makestring(OUT$,"favorites add title:%s url:%s", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+		makestring(OUT$,"favorites add title:%s url:%s\n", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
 	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 CHANGE InTimeBar{
+	String Out$[64];
 	Long_Integer seek;
 	If (progInTimeBar = 0){
 		progInTimeBar = 1;
@@ -4552,6 +4537,7 @@ CHANGE InTimeBar{
 	}
 }
 CHANGE PlaylistPlay$ {
+	String Out$[512];
 	ActivePlaylist = "";
 	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
 	trace("sending: %s",OUT$);
@@ -4569,6 +4555,7 @@ CHANGE PlaylistPlay$ {
 	}
 }
 CHANGE PlaylistResume$ {
+	String Out$[512];
 	If ((ActivePlaylist != "") && (Playlist_Save_Enable = 1)) {
 		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
 		trace("sending: %s",OUT$);
@@ -4595,6 +4582,7 @@ CHANGE PlaylistResume$ {
 }
 /*
 PUSH PlaylistSave
+	String Out$[512];
 {
 	makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
 	trace("sending: %s",OUT$);
@@ -4602,7 +4590,8 @@ PUSH PlaylistSave
 }
 */
 CHANGE FavoritePlay$ {
-    If (DirectIn_DefaultPlayerOnly = 1){
+    String Out$[512];
+	If (DirectIn_DefaultPlayerOnly = 1){
 		ActivePlaylist = "";
 	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n",PlayerID$_Default, FavoritePlay$);
 		trace("sending: %s",OUT$);
@@ -4616,6 +4605,7 @@ CHANGE FavoritePlay$ {
 	}
 }
 CHANGE DynamicResume$ {
+	String Out$[512];
     If (DirectIn_DefaultPlayerOnly = 1){
 		ActivePlaylist = "";
 		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$_Default, DynamicResume$);
@@ -4726,6 +4716,7 @@ PUSH BrowseCurrentSong {
 	}
 }
 PUSH Rate_Up {
+	String Out$[64];
 	Integer rating_int;
 	If (CurrentTrackRemote = 0){
 		If (CurrentsongTrackstat = 0){
@@ -4759,6 +4750,7 @@ PUSH Rate_Up {
 	}
 }
 PUSH Rate_Dn {
+	String Out$[64];
 	Integer rating_int;
 	If (CurrentTrackRemote = 0){
 		If (CurrentsongTrackstat = 0){
@@ -4791,6 +4783,7 @@ PUSH Rate_Dn {
 	}
 }
 CHANGE CurrentsongTrackstatSet{
+	String Out$[64];
 	Integer rating_int;
 	If (progInTrackstat = 0){
 		progInTrackstat = 1;
@@ -4905,7 +4898,10 @@ SOCKETRECEIVE TCPClient {
 		Parse_Trackstat(In$);
 	}
 	Else If (find("favorites add", Find$)){
-		// fake to prevent matching favorites list when adding to favorites
+		trace("parsing favorites add confirmation");
+		If (find(" count%3A1",In$)){
+			pulse(20,FavoriteAdd_success);
+		}
 	}
 	Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
 		trace("parsing favorites, apps, or radios");
