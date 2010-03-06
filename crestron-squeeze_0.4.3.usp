@@ -189,7 +189,7 @@ INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
 INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
 INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
 INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
-INTEGER FirstApps, TotalApps, AppsFirstNumber; 
+INTEGER First, TotalApps, AppsFirstNumber; 
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
 INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 //
@@ -451,7 +451,7 @@ Function SearchRefresh_fn(){
 } 
 Function FavoritesRefresh_fn(){
 	String Out$[256];
-	makestring(OUT$,"%s items %u %u %s charset:ascii \n", FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
+	makestring(OUT$,"%s %s items %u %u %s charset:ascii \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
