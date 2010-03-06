@@ -46,6 +46,7 @@ DIGITAL_INPUT CurrentSongTime_Enable;
 DIGITAL_INPUT CurrentSongSeparateOut_Enable;
 DIGITAL_INPUT CurrentSongConsolidatedOut_Enable;
 DIGITAL_INPUT ListCoverURL_Enable;
+DIGITAL_INPUT FavoriteAdd_toEnd;
 //
 DIGITAL_INPUT Select_DefaultPlayer;
 //
@@ -56,6 +57,7 @@ DIGITAL_INPUT Pwr_On, Pwr_Off;
 DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
 DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
 DIGITAL_INPUT Playlist_Clear;
+DIGITAL_INPUT Currentsong_AddFavorite;
 // DIGITAL_INPUT PlaylistSave;
 //
 // Jump inputs
@@ -71,8 +73,8 @@ DIGITAL_INPUT Jump_Favorites;
 // Direct Browse inputs
 DIGITAL_INPUT BrowseCurrentGenre,BrowseCurrentArtist,BrowseCurrentAlbum,BrowseCurrentSong;
 // Direct string inputs
-STRING_INPUT  PlaylistPlay$[256], PlaylistResume$[256], FavoritePlay$[16];
-STRING_INPUT  DynamicResume$[256];
+STRING_INPUT  PlaylistPlay$[255], PlaylistResume$[255], FavoritePlay$[16];
+STRING_INPUT  DynamicResume$[255];
 // Search inputs
 DIGITAL_INPUT	Search_Submit;
 STRING_INPUT	Search_in$[64];
@@ -130,8 +132,9 @@ STRING_OUTPUT  CurrentsongArtist;
 STRING_OUTPUT  CurrentsongGenre;
 STRING_OUTPUT  CurrentsongCoverURL;
 STRING_OUTPUT  CurrentsongTime;
-STRING_OUTPUT  CurrentsongRate;
+// STRING_OUTPUT  CurrentsongRate;
 STRING_OUTPUT  CurrentsongDuration; 
+STRING_OUTPUT  CurrentsongBitrate;
 STRING_OUTPUT  CurrentsongConsolidatedText;
 ANALOG_OUTPUT  CurrentsongTrackstat;
 STRING_OUTPUT  CurrentsongTrackstat$;
@@ -233,29 +236,33 @@ STRING ActivePlayerID[32], StatusFind$[64], NowplayingFind$[64], TimeFind$[64];
 STRING FAR_parse[32], FAR_cmd[32];
 STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], CurrentTrackDuration$[32];
 STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
-STRING CurrentPlaylistName[256];
-STRING CurrentTrackTitle$[256], CurrentTrackGenre$[256], CurrentTrackArtist$[256], CurrentTrackAlbum$[256];
-STRING CurrentTrackCTitle$[256], CurrentTrackRTitle$[256];
+STRING CurrentPlaylistName[255];
+STRING CurrentTrackTitle$[255], CurrentTrackTitle$_raw[255];
+STRING CurrentTrackGenre$[255], CurrentTrackArtist$[255], CurrentTrackAlbum$[255];
+STRING CurrentTrackCTitle$[255], CurrentTrackRTitle$[255];
 STRING CurrentTrackRemoteCover$[512];
-STRING CurrentTrackURL$[2048], BlankCoverURL[64], MissingCoverURL[64];
+STRING CurrentsongCoverURL_push[255];
+STRING CurrentTrackURL$[1024], CurrentTrackURL$_raw[1024];
+STRING BlankCoverURL[64], MissingCoverURL[64];
 
-STRING restrictorGenres[256], restrictorArtists[256], restrictorAlbums[256];
-STRING restrictorTitles[256], restrictorPlaylists[256], restrictorSearch[256];
+STRING restrictorGenres[255], restrictorArtists[255], restrictorAlbums[255];
+STRING restrictorTitles[255], restrictorPlaylists[255], restrictorSearch[255];
 
-STRING restrictorFavorites[256], ActiveFAR_ID[64];
-STRING ListName[5][256], ListRestrictor[5][256], ListActiveGenre[5][256];
+STRING restrictorFavorites[255], ActiveFAR_ID[64];
+STRING ListName[5][255], ListRestrictor[5][255], ListActiveGenre[5][255];
 STRING ListHome[11][16];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 
-STRING ActiveFavoritesName[256], ActiveFavoritesID[256], FavoritesTitle[256];
+STRING ActiveFavoritesName[255], ActiveFavoritesID[255], FavoritesTitle[255];
 //
-STRING Genre[10][256], Artist[10][256], Album[10][256], Title[10][256], Playlist[10][256],PlaylistRaw[10][256], DynamicName[10][256], DynamicFile[10][256], Search[10][256];
-STRING NowplayingTitle[10][256], NowplayingArtist[10][256], NowplayingAlbum[10][256];
-STRING OUT$[1024], IN$[16384], Dynamic$Internal[256][256], DynamicID[256][256];
+STRING Genre[10][255], Artist[10][255], Album[10][255], Title[10][255], Playlist[10][255],PlaylistRaw[10][255], DynamicName[10][255], DynamicFile[10][255], Search[10][255];
+STRING NowplayingTitle[10][255], NowplayingArtist[10][255], NowplayingAlbum[10][255];
+STRING OUT$[1024], IN$[16384];
 
-STRING FavoritesName[10][256], FavoritesID[10][64], FavoritesType[10][256];  
-STRING AppsCmd[10][64],AppsName[10][64],AppsIcon[10][256],AppsType[10][64];
-STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][256],RadiosType[10][64];
+STRING FavoritesName[10][255], FavoritesID[10][64], FavoritesType[10][255];  
+STRING FavoritesImage[10][255];
+STRING AppsCmd[10][64],AppsName[10][64],AppsIcon[10][255],AppsType[10][64];
+STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][255],RadiosType[10][64];
 //
 STRING  PlayerID$[32], PlayersName[10][128], PlayersID[10][32], PlayersID_raw[10][32];
 INTEGER PlayersIndex[10];
@@ -1193,6 +1200,14 @@ Function SearchListSelect_fn(integer i){
 }
 Function FavoritesListSelect_fn(integer i){
 	If (FavoritesID[i] <> ""){
+		// push the image of the item forward in case it gets played
+		If (len(FavoritesImage[i]) > 0){
+			CurrentsongCoverURL_push = FavoritesImage[i];
+		}
+		Else {
+			CurrentsongCoverURL_push = "";
+		}
+		// now decide what to do with the selected item
 		If (FavoritesType[i] = "search"){
 			ListName$ = ListName[1] + ": " + FavoritesName[i];
 			Search_RequiresSubmit = 1;
@@ -1334,6 +1349,15 @@ Function DynamicListPlay_fn(integer i){
 }
 Function FavoritesListPlay_fn(integer i){
 	If (FavoritesID[i] <> ""){
+		// push the image of the item forward in case it gets played
+		If (len(FavoritesImage[i]) > 0){
+			CurrentsongCoverURL_push = FavoritesImage[i];
+		}
+		Else {
+			CurrentsongCoverURL_push = "";
+		}
+		// play the item depending on what it is
+		// if not a "favorite" or "rhapsody" then just play it
 		If ((FAR_cmd <> "favorites") && 
 		(FAR_cmd <> "rhapsodydirect") &&
 		(FavoritesIsAudio[i] = 1)){
@@ -1341,6 +1365,7 @@ Function FavoritesListPlay_fn(integer i){
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
 		}
+		// otherswise insert and advance to it
 		Else If (FavoritesIsAudio[i] = 1){
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
@@ -1350,6 +1375,7 @@ Function FavoritesListPlay_fn(integer i){
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
+		// if not audio, just take the select action
 		Else {
 			FavoritesListSelect_fn(i);
 		}
@@ -1781,7 +1807,7 @@ String_Function ParsePercent(STRING Parse$){
 }
 String_Function FormatPlayerID(String PlayerID){
 	Integer i, indexMatch;
-	String playeridLocal[32], dump$[256], KeepL$[256], output$[256], search$[1], replace$[3];
+	String playeridLocal[32], dump$[255], KeepL$[255], output$[255], search$[1], replace$[3];
 	PlayerIDLocal = PlayerID;
 	While (find(":",PlayerIDLocal))	{
      	indexMatch = find(":",PlayerIDLocal); // ##:$$ --> 3
@@ -1793,7 +1819,7 @@ String_Function FormatPlayerID(String PlayerID){
 }
 String_Function FormatSearch(String input){
 	Integer indexMatch;
-	String output[64], dump$[64], KeepL$[64];
+	String output[1024], dump$[4], KeepL$[1024];
 	If (find(" ",input)) {
 		While (find(" ",input)) {
 			indexMatch = find(" ",input);
@@ -1960,13 +1986,18 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingAlbum[i] = "";
 		}
 		If (NowplayingConsolidatedOut_Enable = 1){
-			If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
+			If (NowplayingArtist[i] = "<artist n/a>"){
+				Nowplaying_int = left(NowplayingTitle[i],NowplayingWidthTotal);
+			}
+			Else If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
 				Nowplaying_int = NowplayingTitle[i] + " - " + NowplayingArtist[i];
 			}
-			Nowplaying_int = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
-			Nowplaying_intLen = len(Nowplaying_int);
-			If (Nowplaying_intLen < NowplayingWidthTotal){
-				Nowplaying_int = NowplayingTitle[i] + " - " + left(NowplayingArtist[i], NowplayingWidthArtist + NowplayingWidthTotal - Nowplaying_intLen);
+			Else {
+				Nowplaying_int = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+				Nowplaying_intLen = len(Nowplaying_int);
+				If (Nowplaying_intLen < NowplayingWidthTotal){
+					Nowplaying_int = NowplayingTitle[i] + " - " + left(NowplayingArtist[i], NowplayingWidthArtist + NowplayingWidthTotal - Nowplaying_intLen);
+				}
 			}
 			Nowplaying[i] = Nowplaying_int;
 		}
@@ -2087,6 +2118,16 @@ Function Parse_FAR(String InFavorites$){
 				Else {
 					FavoritesName[i] = "";
 				}
+			}
+			indexStart = find(" image%3A",FavoritesParseItem,1) + 9;
+			If (indexStart > 9){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesImage[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites image[%u]: %s",i,FavoritesName[i]);
+			}
+			Else {
+				FavoritesImage[i] = "";
 			}
 			indexStart = find(" type%3A",FavoritesParseItem,indexEnd) + 8;
 			If (indexStart > 8){
@@ -3057,7 +3098,7 @@ Function Parse_Status(String InStatus$){
 	Integer indexStart, indexEnd, Length;
 	Integer indexStart2, indexEnd2, Length2;
 	Integer CurrentPlayerSlave_local, CurrentPlayerMaster_local;
-	Integer Time_min, Time_sec, Time_rmd;	
+	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
 	String CoverURL_check[3];
 	String CurrentSongConsolidated[200];
 			
@@ -3296,7 +3337,8 @@ Function Parse_Status(String InStatus$){
 	If (indexStart > 20){
 		indexEnd = find(" ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
-		CurrentTrackTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		CurrentTrackTitle$_raw = mid(InStatus$,indexStart, Length);
+		CurrentTrackTitle$ = ParsePercent(CurrentTrackTitle$_raw);
 	}
 	Else {
 		CurrentTrackTitle$ = "<title n/a>";
@@ -3397,12 +3439,12 @@ Function Parse_Status(String InStatus$){
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
-			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart - 1;
-			CurrentTrackURL$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
+		CurrentTrackURL$_raw = ParsePercent(mid(InStatus$,indexStart, Length));
+		CurrentTrackURL$ = ParsePercent(CurrentTrackURL$_raw);
 		// Track the source of the current song
 		If (find("file:",CurrentTrackURL$)){
 			CTRemoteService = 0;
@@ -3476,12 +3518,11 @@ Function Parse_Status(String InStatus$){
 		indexEnd = find(" ",InStatus$,indexStart);
 		if (indexEnd > 0) {
 			Length = indexEnd - indexStart;
-			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
 		Else {
 			Length = len(InStatus$) - indexStart - 1; 
-			CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
+		CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		If (find("slacker.com",CurrentTrackRemoteCover$)){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
@@ -3489,6 +3530,13 @@ Function Parse_Status(String InStatus$){
 			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",ServerIPAddr$,CurrentTrackRemoteCover$);
 		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
+	}
+	Else If (CTRemoteService = 0){
+		CurrentTrackRemoteCover$ = "";
+		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",ServerIPAddr$,CurrentTrackID);
+	}
+	Else If (len(CurrentsongCoverURL_push) > 0){
+		CurrentsongCoverURL = CurrentsongCoverURL_push;
 	}
 	Else {
 		CurrentTrackRemoteCover$ = "";
@@ -3504,12 +3552,27 @@ Function Parse_Status(String InStatus$){
 			Else {
 				Length = len(InStatus$) - indexStart - 1;
 			}
-				CurrentTrackRTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+			CurrentTrackRTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
 		}
 		Else {
 			CurrentTrackRTitle$ = "";
 		}	
 	}
+	indexStart = find(" bitrate%3A",InStatus$,indexEnd) + 11;
+	if (indexStart > 11){
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0){
+			Length = indexEnd - indexStart;
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1; 
+		}
+		CurrentsongBitrate = ParsePercent(mid(InStatus$,indexStart, Length));
+	}
+	Else {
+		CurrentsongBitrate = " ";
+	}
+	// start to process the parsed information
 	If (CurrentSongSeparateOut_Enable = 1){
 		CurrentsongTitle = CurrentTrackTitle$;
 		CurrentsongAlbum = CurrentTrackAlbum$;
@@ -3570,15 +3633,8 @@ Function Parse_Status(String InStatus$){
 			CurrentsongConsolidatedText = "<n/a>";
 		}
 	}
-	CurrentsongRate = CurrentTrackRate$;
-	indexEnd = find(".",CurrentTrackDuration$,1);
-	If (indexEnd > 0) {
-		CTDuration_sec = AtoI(mid(CurrentTrackDuration$,1,indexEnd));
-		Time_min = CTDuration_sec / 60;
-		Time_rmd = CTDuration_sec - (Time_min * 60);
-		makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
-	}
-	Else if (CurrentTrackDuration$ = "0") {
+//	CurrentsongRate = CurrentTrackRate$;
+	If (CurrentTrackDuration$ = "0") {
 		makestring(CurrentsongDuration,"0:00");
 		CTDuration_sec = 0;
 	}
@@ -3586,7 +3642,14 @@ Function Parse_Status(String InStatus$){
 		CTDuration_sec = AtoI(CurrentTrackDuration$);
 		Time_min = CTDuration_sec / 60;
 		Time_rmd = CTDuration_sec - (Time_min * 60);
-		makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
+		If (Time_min < 60){
+			makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
+		}
+		Else {
+			Time_hr = Time_min / 60;
+			Time_min = Time_min - (Time_hr * 60);
+			makestring(CurrentsongDuration,"%u:%02u:%02u",Time_hr,Time_min,Time_rmd);
+		}
 	}
 	Else {
 		CurrentsongDuration = CurrentTrackDuration$;
@@ -3720,7 +3783,7 @@ SOCKETCONNECT TCPClient{
     SIGNED_LONG_INTEGER PortNumber;
     SIGNED_INTEGER LocalStatus;
     STRING RemoteIPAddress[20];
-    STRING RequestedAddress[256];
+    STRING RequestedAddress[255];
     	
     LocalStatus = SocketGetAddressAsRequested(TCPClient, RequestedAddress);
     if (LocalStatus < 0)
@@ -3738,7 +3801,7 @@ SOCKETCONNECT TCPClient{
 	TCPIP_Connected = 1;
 //	SOCKET Startup procedure
 	// subscribe to status updates
-	makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$);  
+	makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$);  
 	socketsend(TCPClient, out$);
 	trace("sending: %s",OUT$);
 	delay(50);
@@ -4313,7 +4376,7 @@ PUSH Select_DefaultPlayer{
 		NowplayingFind$ = PlayersID_raw[0] + " status ";
 		TimeFind$ = PlayersID_raw[0] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$); 
+		makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
 		socketsend(TCPClient, out$);
 	}
 }
@@ -4339,7 +4402,7 @@ PUSH PlayersSelect {
 		NowplayingFind$ = PlayersID_raw[i] + " status ";
 		TimeFind$ = PlayersID_raw[i] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluKN charset:ascii subscribe:0\n",PlayerID$); 
+		makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
 		socketsend(TCPClient, out$);
 	}
 }   
@@ -4461,11 +4524,21 @@ PUSH Playlist_Clear {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+PUSH Currentsong_AddFavorite{
+	If (FavoriteAdd_toEnd = 1){
+		makestring(OUT$,"favorites add item_id:65535 title:%s url:%s", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+	}
+	Else {
+		makestring(OUT$,"favorites add title:%s url:%s", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+	}
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
 CHANGE InTimeBar{
 	Long_Integer seek;
 	If (progInTimeBar = 0){
 		progInTimeBar = 1;
-		If ((CurrentTrackRemote = 0) || (CTRemoteService = 4) || (CTRemoteService = 5)){
+		If ((CurrentTrackRemote = 0) || (CTRemoteService = 4) || (CTRemoteService = 5) || (CTRemoteService = 9)){
 			If (CTDuration_sec > 0){
 				timeclock_run = 0;
 				seek = (InTimeBar * CTDuration_sec) / 65535;
@@ -4830,6 +4903,9 @@ SOCKETRECEIVE TCPClient {
 	Else If (find("trackstat ",Find$)){
 		trace("parsing trackstat rating");
 		Parse_Trackstat(In$);
+	}
+	Else If (find("favorites add", Find$)){
+		// fake to prevent matching favorites list when adding to favorites
 	}
 	Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
 		trace("parsing favorites, apps, or radios");
