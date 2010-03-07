@@ -189,7 +189,7 @@ INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
 INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
 INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
 INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
-INTEGER First, TotalApps, AppsFirstNumber; 
+INTEGER FirstApps, TotalApps, AppsFirstNumber; 
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
 INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 //
@@ -3456,6 +3456,11 @@ Function Parse_Status(String InStatus$){
 			CTRemoteService = 9;
 			CurrentsongRateable = 0;
 			trace("CurrentSong is unknown internet radio");
+		}
+		Else If (find"loop:",CurrentTrackURL$)){
+			CTRemoteService = 10;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is Sounds & Effects");
 		}
 		Else {
 			If (CurrentTrackRemote = 1){
