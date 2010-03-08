@@ -2116,8 +2116,14 @@ Function Parse_Nowplaying(String InNowplaying$){
 		}
 		If (NowplayingCoverURL_Enable = 1){
 			If (len(NowplayingURL[i]) > 0){
-				If (find("plugins/",NowplayingURL[i])){
+				If (find("slacker.com",left(NowplayingURL[i],32))){
+					NowplayingCoverURL[i] = NowplayingURL[i] + "?.jpg";
+				}
+				Else If (find("plugins/",left(NowplayingURL[i],8))){
 					makestring(NowplayingCoverURL[i],"http://%s:9000/%s", ServerIPAddr$, NowplayingURL[i]);
+				}
+				Else If (find("/music",left(NowplayingURL[i],6))){
+					makestring(NowplayingCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u_o.png", ServerIPAddr$, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
 				}
 				Else {
 					NowplayingCoverURL[i] = NowplayingURL[i];
@@ -3117,7 +3123,7 @@ Function Parse_Status(String InStatus$){
 	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
 	String CoverURL_check[3];
 	String CurrentSongConsolidated[200];
-	String temp[1024];
+	String temp[2048];
 			
    	indexStart = find(" player_name%3A",InStatus$,1) + 15;
 	if (indexStart > 15){
@@ -3341,15 +3347,17 @@ Function Parse_Status(String InStatus$){
 	If (indexStart > 6){
 		indexEnd = find( " ",InStatus$,indexStart);
 		Length = indexEnd - indexStart;
-		CurrentTrackID = AtoI(mid(InStatus$,indexStart, Length));
+		CurrentTrackID = AtoL(mid(InStatus$,indexStart, Length));
 		trace("current trackID = %lu",CurrentTrackID);
 	}
 	Else {
 		CurrentTrackID = 0;
 	}
+/*
 	If (CurrentTrackRemote = 1){
 		CurrentTrackID = 0;
 	}
+*/
 	indexStart = find(" title%3A",InStatus$,indexEnd) + 9;
 	If (indexStart > 20){
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -3550,17 +3558,19 @@ Function Parse_Status(String InStatus$){
 			Length = len(InStatus$) - indexStart - 1; 
 		}
 		CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
-		If (find("slacker.com",CurrentTrackRemoteCover$)){
+		If (find("slacker.com",left(CurrentTrackRemoteCover$,32))){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
-		Else If (find("plugins/",CurrentTrackRemoteCover$)){
+		Else If (find("plugins/",left(CurrentTrackRemoteCover$,8))){
 			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",ServerIPAddr$,CurrentTrackRemoteCover$);
 		}
-		Else if (find("iplayer/",CurrentTrackRemoteCover$)){
+		Else if (find("iplayer/",left(CurrentTrackRemoteCover$,8))){
 			CTRemoteService = 11;
 		}
+		Else If (find("/music",left(CurrentTrackRemoteCover$,6))){
+			makestring(CurrentTrackRemoteCover$,"http://%s:9000/music/-%lu/cover_250x250_o.png", ServerIPAddr$, CurrentTrackID);
+		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
-		
 	}
 	Else If (CTRemoteService = 0){
 		CurrentTrackRemoteCover$ = "";
