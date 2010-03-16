@@ -21,7 +21,7 @@ License:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
-#SYMBOL_NAME "SqueezeBox 0.4.3"
+#SYMBOL_NAME "SqueezeBox 0.5"
 #OUTPUT_SHIFT 6
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
