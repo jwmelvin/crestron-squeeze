@@ -48,6 +48,7 @@ DIGITAL_INPUT CurrentSongConsolidatedOut_Enable;
 DIGITAL_INPUT ListCoverURL_Enable;
 DIGITAL_INPUT NowplayingCoverURL_Enable;
 DIGITAL_INPUT FavoriteAdd_toEnd;
+DIGITAL_INPUT ASCII_only;
 //
 DIGITAL_INPUT Select_DefaultPlayer;
 //
@@ -394,7 +395,12 @@ Function HomeRefresh_fn(){
 }
 Function GenresRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
+	If (ASCII_only = 1){
+		makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
+	}
+	Else {
+		makestring(OUT$,"genres %u %u %s \n", FirstGenre, NumberOfList, restrictorGenres);
+	}
 	socketsend(TCPClient,OUT$);
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
@@ -405,7 +411,12 @@ Function GenresRefresh_fn(){
 }
 Function ArtistsRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
+	If (ASCII_only = 1){
+		makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
+	}
+	Else {
+		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
+	}
 	socketsend(TCPClient,OUT$);
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
@@ -418,17 +429,32 @@ Function AlbumsRefresh_fn(){
 	String Out$[128];
 //	ListType = 3;
 	If (Coverflow = 1) {
-		makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		If (ASCII_only = 1){
+			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
+		Else {
+			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 	Else If ((Coverflow = 0) && (ListCoverURL_Enable = 1)){
-		makestring(OUT$,"albums %u %u %s tags:lj charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		If (ASCII_only = 1){
+			makestring(OUT$,"albums %u %u %s tags:lj charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
+		Else {
+			makestring(OUT$,"albums %u %u %s tags:lj \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 	Else {
-		makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		If (ASCII_only = 1){
+			makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
+		Else {
+			makestring(OUT$,"albums %u %u %s \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
@@ -436,7 +462,12 @@ Function AlbumsRefresh_fn(){
 }
 Function TitlesRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfList, restrictorTitles);
+	If (ASCII_only = 1){
+		makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfList, restrictorTitles);
+	}
+	Else {
+		makestring(OUT$,"titles %u %u %s \n", FirstTitle, NumberOfList, restrictorTitles);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -444,7 +475,12 @@ Function TitlesRefresh_fn(){
 }
 Function PlaylistsRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
+	If (ASCII_only = 1){
+		makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
+	}
+	Else {
+		makestring(OUT$,"playlists %u %u %s \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -455,7 +491,12 @@ Function PlaylistsRefresh_fn(){
 }
 Function DynamicRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
+	If (ASCII_only = 1){
+		makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
+	}
+	Else {
+		makestring(OUT$,"dynamicplaylist playlists 1 %u %u \n",FirstDynamic, NumberOfList);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -466,7 +507,12 @@ Function DynamicRefresh_fn(){
 }
 Function SearchRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfList, search_in);
+	If (ASCII_only = 1){
+		makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfList, search_in);
+	}
+	Else {
+		makestring(OUT$,"search %u %u term:%s \n",FirstSearch,NumberOfList, search_in);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -474,25 +520,45 @@ Function SearchRefresh_fn(){
 } 
 Function FavoritesRefresh_fn(){
 	String Out$[256];
-	makestring(OUT$,"%s %s items %u %u %s charset:ascii \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
+	If (ASCII_only = 1){
+		makestring(OUT$,"%s %s items %u %u %s charset:ascii \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
+	}
+	Else {
+		makestring(OUT$,"%s %s items %u %u %s \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function AppsRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfList);
+	If (ASCII_only = 1){
+		makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfList);
+	}
+	Else {
+		makestring(OUT$,"apps %u %u \n",FirstApps,NumberOfList);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function RadiosRefresh_fn(){
 	String Out$[128];
-	makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfList);
+	If (ASCII_only = 1){
+		makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfList);
+	}
+	Else {
+		makestring(OUT$,"radios %u %u \n",FirstRadios,NumberOfList);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function NowplayingRefresh_fn(){
 	String Out$[128];
-	makestring(Out$,"%s status %u %u tags:alK charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
+	If (ASCII_only = 1){
+		makestring(Out$,"%s status %u %u tags:alK charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
+	}
+	Else {
+		makestring(Out$,"%s status %u %u tags:alK \n",PlayerID$,FirstNowplaying, NumberOfNowplaying);
+	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -1849,27 +1915,78 @@ Function Search_Favorites_fn(){
 	FavoritesRefresh_fn();
 }
 String_Function ParsePercent(STRING Parse$){
-	Integer i, char;
-	String output$[1024], dump[3];
+	Integer i, char, code;
+	String output$[1024], dump[6];
 	i = 1;
 	output$ = "";
-	While(i <= len (parse$)) {
-		char = Byte (parse$, i); // char = integer of the byte at position i
-		if (char = '%'){ // if char is the escape character, %
-			if (i > 1){
-				output$ = output$ + removebylength(i - 1,parse$);
+	If (ASCII_only = 1){
+		While(i <= len (parse$)) {
+			char = Byte (parse$, i); // char = integer of the byte at position i
+			if (char = '%'){ // if char is the escape character, %
+				if (i > 1){
+					output$ = output$ + removebylength(i - 1,parse$);
+				}
+				If (len(Parse$) > 2){
+					output$ = output$ + chr(HexToI(mid(Parse$,2,2)));
+					dump = removebylength(3,parse$);
+					i = 1;
+				}
+				Else {
+					Break;
+				}
 			}
-			If (len(Parse$) > 2){
-				output$ = output$ + chr(HexToI(mid(Parse$,2,2)));
-				dump = removebylength(3,parse$);
-				i = 1;
-			}
-			Else {
-				Break;
+			else {
+				i = i + 1;
 			}
 		}
-		else {
-			i = i + 1;
+	}
+	Else {
+		While(i <= len (parse$)) {
+			char = Byte (parse$, i); // char = integer of the byte at position i
+			if (char = '%'){ // if char is the escape character, %
+				if (i > 1){
+					output$ = output$ + removebylength(i - 1,parse$);
+				}
+				code = HexToI(mid(parse$,2,2)); // extract hex code for testing
+				If (code < 128){ // test for regular ascii character
+					If (len(Parse$) > 2){
+						output$ = output$ + chr(code);
+						dump = removebylength(3,parse$);
+						i = 1;
+					}
+					Else { // if not 3 characters remaining
+						Break;
+					}
+				}
+				Else If (code = 194){ // test for C2
+					If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+						output$ = output$ + chr(HexToI(mid(parse$,5,2))); // 2nd byte = crestron chr
+						dump = removebylength(6,parse$);
+						i = 1;
+					}
+					Else { // if not 6 characters remaining
+						Break;
+					}
+				}
+				Else if (code = 195){ // test for C3
+					If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+						output$ = output$ + chr(HexToI(mid(parse$,5,2)) + 64);  // 2nd byte + 64 = crestron chr
+						dump = removebylength(6,parse$);
+						i = 1;
+					}
+					Else { // if not 6 characters remaining
+						Break;
+					}
+				}
+				Else { // if code is not known then replace with ?
+					output$ = output$ + "?";
+					dump = removebylength(3,parse$);
+					i = 1;
+				}
+			}
+			else {
+				i = i + 1;
+			}
 		}
 	}
 	output$ = output$ + parse$;
@@ -3845,7 +3962,12 @@ SOCKETCONNECT TCPClient{
 	TCPIP_Connected = 1;
 //	SOCKET Startup procedure
 	// subscribe to status updates
-	makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$);  
+	If (ASCII_only = 1){
+		makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$);  
+	}
+	Else {
+		makestring(out$,"%s status - 1 tags:pgsaeluKNr subscribe:0\n",PlayerID$);  
+	}
 	socketsend(TCPClient, out$);
 	trace("sending: %s",OUT$);
 	delay(50);
@@ -4414,7 +4536,12 @@ PUSH NowplayingMoveDown {
 PUSH Select_DefaultPlayer{
 	String Out$[128];
 	If (PlayerID$ <> PlayerID$_Default){
-		makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		If (ASCII_only = 1){
+			makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		}
+		Else {
+			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
+		}
 		socketsend(TCPClient, out$);
 		PlayerID$ = PlayerID$_Default;
 		CurrentPlayerID = PlayerID$;
@@ -4422,7 +4549,12 @@ PUSH Select_DefaultPlayer{
 		NowplayingFind$ = PlayersID_raw[0] + " status ";
 		TimeFind$ = PlayersID_raw[0] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
+		If (ASCII_only = 1){
+			makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
+		}
+		Else {
+			makestring(out$,"%s status - 1 tags:pgsaeluKNr subscribe:0\n",PlayerID$); 
+		}
 		socketsend(TCPClient, out$);
 	}
 }
@@ -4435,7 +4567,12 @@ PUSH PlayersSelect {
 	i = GetLastModifiedArrayIndex ();
 	If (i <= ListLengthPlayers){
 		i = i + FirstPlayers;
-		makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		If (ASCII_only = 1){
+			makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
+		}
+		Else {
+			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
+		}
 		socketsend(TCPClient, out$);
 		PlayerID$ = PlayersID[i];
 		CurrentPlayerID = PlayerID$;
@@ -4449,7 +4586,12 @@ PUSH PlayersSelect {
 		NowplayingFind$ = PlayersID_raw[i] + " status ";
 		TimeFind$ = PlayersID_raw[i] + " time ";
 		delay(20);
-		makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
+		If (ASCII_only = 1){
+			makestring(out$,"%s status - 1 tags:pgsaeluKNr charset:ascii subscribe:0\n",PlayerID$); 
+		}
+		Else {
+			makestring(out$,"%s status - 1 tags:pgsaeluKNr subscribe:0\n",PlayerID$); 
+		}
 		socketsend(TCPClient, out$);
 	}
 }   
