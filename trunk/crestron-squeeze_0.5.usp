@@ -232,6 +232,8 @@ INTEGER OutRadiosCount,OutRadiosBar;
 //
 INTEGER Nowplaying_reset_enable; 
 //
+INTEGER ArtistsListTop;
+INTEGER ListActiveGenreID[5];
 INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
 INTEGER GenreID[10], ArtistID[10], AlbumID[10], TitleAlbumID[10];
 INTEGER TitleTracknum[10], TrackID[10];
@@ -411,11 +413,23 @@ Function GenresRefresh_fn(){
 }
 Function ArtistsRefresh_fn(){
 	String Out$[128];
-	If (ASCII_only = 1){
-		makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
+	If ((len(ActiveGenre) > 0) && (FirstArtist = 0)){ // with a genre and at top of artists list
+		ArtistsListTop = 1;
+		If (ASCII_only = 1){
+			makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList - 1, restrictorArtists);
+		}
+		Else {
+			makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList - 1, restrictorArtists);
+		}
 	}
-	Else {
-		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
+	Else { // not with a genre and at top of artists list
+		ArtistsListTop = 0;
+		If (ASCII_only = 1){
+			makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
+		}
+		Else {
+			makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
+		}
 	}
 	socketsend(TCPClient,OUT$);
 	trace("sending: %s",OUT$);
@@ -1140,7 +1154,7 @@ Function GenreListSelect_fn(integer i){
 	}
 }
 Function ArtistListSelect_fn(integer i){
-	If (ArtistID[i] > 0){
+	If ((ArtistID[i] > 0) || (Artist[i] = "All Albums")){
 		ListShiftFwd_fn();	
 		ListType[1] = 3;
 		ListSearchRS[1] = 0;
@@ -1148,16 +1162,39 @@ Function ArtistListSelect_fn(integer i){
 		ListFirst[1] = 0;
 		ActiveArtistID = ArtistID[i];
 		ActiveArtist = Artist[i];
-		If (ActiveArtist = "Various Artists"){
-			ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
-			makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists, ArtistID[i]);
-			ListActiveGenre[1] = ActiveGenre;
-		}	
+		If (len(ActiveGenre) > 0){
+			If ((ActiveArtist = "All Albums") && (ActiveArtistID = 0)){
+				ListName[1] = "All Albums in " + ActiveGenre;
+				restrictorAlbums =  restrictorArtists;
+				ListActiveGenre[1] = ActiveGenre;
+				ListActiveGenreID[1] = ActiveGenreID;
+			}
+			Else If (ActiveArtist = "Various Artists"){
+				ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
+				makestring(restrictorAlbums,"%s artist_id:%u",restrictorArtists, ArtistID[i]);
+				ListActiveGenre[1] = ActiveGenre;
+				ListActiveGenreID[1] = ActiveGenreID;
+			}
+			Else {
+				ListName[1] = "Albums for " + ActiveArtist;	
+				makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
+				ActiveGenre = "";
+				ListActiveGenre[1] = "";
+				ListActiveGenreID[1] = 0;
+			}	
+		}
+		Else If (ActiveArtist = "Various Artists"){
+			ListName[1] = "Albums for Various Artists";
+			makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
+		}
 		Else {
 			ListName[1] = "Albums for " + ActiveArtist;	
 			makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
 			ActiveGenre = "";
 			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
 		}
 		ListRestrictor[1] = restrictorAlbums;
 		FirstAlbum = 0;
@@ -1176,6 +1213,7 @@ Function AlbumListSelect_fn(integer i){
 			Search_RequiresSubmit = 0;
 			ListActiveGenre[1] = "";
 			ActiveGenre = "";
+			ListActiveGenreID[1] = 0;
 			ListFirst[1] = 0;
 			ActiveAlbumID = AlbumID[i];
 			ActiveAlbum = Album[i];
@@ -1296,6 +1334,7 @@ Function SearchListSelect_fn(integer i){
 			ActiveGenreID = SearchID[i];
 			ActiveGenre = Search[i];
 			ListActiveGenre[1] = ActiveGenre;
+			ListActiveGenreID[1] = ActiveGenreID;
 			makestring(ListName[1], "Artists in %s",ActiveGenre);
 			makestring(restrictorArtists,"genre_id:%u",SearchID[i]);
 			ListRestrictor[1] = restrictorArtists;
@@ -1333,6 +1372,7 @@ Function FavoritesListSelect_fn(integer i){
 			restrictorFavorites = "item_id:" + FavoritesID[i];
 			ListRestrictor[1] = restrictorFavorites;
 			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
 			ListFirst[1] = 0;
 			ListSearchRS[1] = 0;
 			Search_RequiresSubmit = 0;
@@ -1359,6 +1399,7 @@ Function AppsListSelect_fn(integer i){
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		FAR_cmd = AppsCmd[i];
 		FAR_parse = FAR_cmd + " items ";
 		trace("FAR_parse = %s",FAR_parse);
@@ -1400,7 +1441,6 @@ Function GenreListPlay_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveGenreID = GenreID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1410,7 +1450,14 @@ Function ArtistListPlay_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:load artist_id:%u \n",PlayerID$, ArtistID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveArtistID = ArtistID[i];
+//		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
+	Else if (Artist[i] = "All Albums"){
+		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%u \n",PlayerID$, ActiveGenreID);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveArtistID = ArtistID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1420,7 +1467,7 @@ Function AlbumListPlay_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%u \n",PlayerID$, AlbumID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveAlbumID = AlbumID[i];
+//		ActiveAlbumID = AlbumID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1434,7 +1481,7 @@ Function TitleListPlay_fn(integer i){
 		makestring(OUT$,"%s playlist index +1\n", PlayerID$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveTrackID = TrackID[i];
+//		ActiveTrackID = TrackID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1549,7 +1596,7 @@ Function GenreListAdd_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveGenreID = GenreID[i];
+//		ActiveGenreID = GenreID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1559,7 +1606,7 @@ Function ArtistListAdd_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%u \n",PlayerID$, ArtistID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveArtistID = ArtistID[i];
+//		ActiveArtistID = ArtistID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1569,7 +1616,7 @@ Function AlbumListAdd_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:add album_id:%u \n",PlayerID$, AlbumID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveAlbumID = AlbumID[i];
+//		ActiveAlbumID = AlbumID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1646,7 +1693,7 @@ Function GenreListInsert_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, GenreID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
-		ActiveGenreID = GenreID[i];
+//		ActiveGenreID = GenreID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -1788,9 +1835,11 @@ Function Search_fn(){
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		trace("adding search to history");
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1]=0;
 	makestring(ListName[1],"\"%s\" anywhere",search_in_raw);
 	restrictorSearch = search_in;
@@ -1806,8 +1855,10 @@ Function Search_genres_fn(){
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Genres",search_in_raw);
     makestring(restrictorGenres,"search:%s",search_in);
@@ -1823,8 +1874,10 @@ Function Search_artists_fn(){
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Artists",search_in_raw);
     makestring(restrictorArtists,"search:%s",search_in);
@@ -1838,10 +1891,12 @@ Function Search_albums_fn(){
 	    ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Albums",search_in_raw);
     makestring(restrictorAlbums,"search:%s",search_in);
@@ -1855,10 +1910,12 @@ Function Search_titles_fn(){
 	    ListShiftFwd_fn();
 		ListType[1] = 4;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Titles",search_in_raw);
     makestring(restrictorTitles,"search:%s tags:te",search_in);
@@ -1872,10 +1929,12 @@ Function Search_playlists_fn(){
     	ListShiftFwd_fn();
 		ListType[1] = 5;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		Search_RequiresSubmit = 0;
 	}
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	makestring(ListName[1], "\"%s\" in Playlists",search_in_raw);
     makestring(restrictorPlaylists,"search:%s",search_in);
@@ -1888,9 +1947,11 @@ Function Search_Radios_fn(){
 	ListShiftFwd_fn();
 	ListType[1] = 10;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ListSearchRS[1] = 1;
 	Search_RequiresSubmit = 1;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListFirst[1] = 0;
 	FAR_cmd = "search";
 	FAR_parse = "search items ";
@@ -1904,6 +1965,7 @@ Function Search_Favorites_fn(){
 		ListShiftFwd_fn();
 		ListType[1] = 10;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 1;
 		Search_RequiresSubmit = 1;
 		ActiveGenre = "";
@@ -2536,7 +2598,12 @@ Function Parse_Artists(String InArtists$){
 	OutListCount = OutArtistCount;
 	ListLengthArtists = NumberOfList;
 	indexEnd = 1;  
-	For (i = 1 to ListLengthArtists){
+	If (ArtistsListTop = 1){
+		Artist[1] = "All Albums";
+		ArtistID[1] = 0;
+		List$[1] = Artist[1];
+	}
+	For (i = (1 + ArtistsListTop) to ListLengthArtists){
     	indexStart = find(" id%3A",InArtists$,indexEnd) + 6;
 		If (indexStart > 6){
 			indexEnd = find(" ",InArtists$,indexStart);
@@ -4038,6 +4105,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4050,6 +4118,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4061,15 +4130,17 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListSearchRS[1] = 0;
-		If (ActiveGenre <> ""){
+		If (len(ActiveGenre) > 0){
 			ListName[1] = "Albums in " + ActiveGenre;
 			ListActiveGenre[1] = ActiveGenre;
+			ListActiveGenreID[1] = ActiveGenreID;
 			restrictorAlbums = restrictorArtists;
 		}
 		Else {
 			ListName[1] = "All Albums";
 			restrictorAlbums = "";
 			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
 		}
 		ListRestrictor[1] = restrictorAlbums;
 		FirstAlbum = 0;
@@ -4085,6 +4156,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4097,6 +4169,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4109,6 +4182,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4122,6 +4196,7 @@ PUSH Coverflow {
 		ListType[1] = 3;
 		ListName[1] = search_in + " in Albums";
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListRestrictor[1] = "";
 		FirstAlbum = 0;
@@ -4133,6 +4208,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4144,6 +4220,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4156,6 +4233,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4168,6 +4246,7 @@ PUSH Coverflow {
 		ListShiftFwd_fn();
 		ListType[1] = 3;
 		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = 0;
 		ListSearchRS[1] = 0;
 		ListName[1] = "All Albums";
 		ListRestrictor[1] = "";
@@ -4858,6 +4937,7 @@ PUSH BrowseCurrentGenre {
 			ListShiftFwd_fn();
 			ListType[1] = 2;
 			ListActiveGenre[1] = CurrentTrackGenre$;
+			ListActiveGenreID[1] = CurrentGenreID;
 		}
 		ListFirst[1] = 0;
 		ActiveGenreID = CurrentGenreID;
@@ -4886,9 +4966,11 @@ PUSH BrowseCurrentArtist {
 			ListShiftFwd_fn();
 			ListType[1] = 3;
 			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
 		}
 		ListFirst[1] = 0;
 		ActiveGenre = "";
+		ActiveGenreID = 0;
 		ActiveArtistID = CurrentArtistID;
 		ActiveArtist = CurrentTrackArtist$;
 		makestring(ListName[1], "Albums for %s",CurrentTrackArtist$);
@@ -4915,11 +4997,13 @@ PUSH BrowseCurrentAlbum {
 			ListShiftFwd_fn();
 			ListType[1] = 4;
 			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = 0;
 		}
 		ListFirst[1] = 0;
 		ActiveAlbumID = CurrentAlbumID;
 		ActiveAlbum = CurrentTrackAlbum$;
 		ActiveGenre = "";
+		ActiveGenreID = 0;
 		makestring(ListName[1], "Titles in %s",CurrentTrackAlbum$);
 		makestring(restrictorTitles,"album_id:%u sort:tracknum tags:te",CurrentAlbumID);
 		ListRestrictor[1] = restrictorTitles;
