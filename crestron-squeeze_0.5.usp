@@ -2162,7 +2162,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingTitle[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
-			NowplayingTitle[i] = "";
+			NowplayingTitle[i] = " ";
 		}
 		indexStart = find(" artist%3A",NowplayingParseItem,indexEnd) + 10;
 		If (indexStart > 10){
@@ -2177,7 +2177,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingArtist[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
-			NowplayingArtist[i] = "";
+			NowplayingArtist[i] = " ";
 		}
 		indexStart = find(" album%3A",NowplayingParseItem,indexEnd) + 9;
 		If (indexStart > 9){
@@ -2192,7 +2192,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingAlbum[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
-			NowplayingAlbum[i] = "";
+			NowplayingAlbum[i] = " ";
 		}
 		indexStart = find(" artwork_url%3A",NowplayingParseItem,indexEnd) + 15;
 		If (indexStart > 15){
@@ -2210,7 +2210,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingURL[i] = "";
 		}
 		If (NowplayingConsolidatedOut_Enable = 1){
-			If (NowplayingArtist[i] = "<artist n/a>"){
+			If (NowplayingArtist[i] = " "){
 				Nowplaying_int = left(NowplayingTitle[i],NowplayingWidthTotal);
 			}
 			Else If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
