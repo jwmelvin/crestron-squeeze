@@ -22,7 +22,7 @@ License:
 */
 // ///////////////////Compiler Directives
 #SYMBOL_NAME "SqueezeBox 0.5"
-#OUTPUT_SHIFT 6
+#OUTPUT_SHIFT 17
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -31,7 +31,7 @@ License:
 // #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT OnDisconnect_Pause;
@@ -183,6 +183,12 @@ INTEGER_PARAMETER ServerPort;
 INTEGER_PARAMETER ListCoverSize;
 INTEGER_PARAMETER CoverflowSize;
 INTEGER_PARAMETER NowplayingCoverSize;
+
+INTEGER_PARAMETER HomeItem[11,11];
+#BEGIN_PARAMETER_PROPERTIES HomeItem
+	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {0d,"Empty"};
+#END_PARAMETER_PROPERTIES
+
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
 // //////////////// Global Variables
@@ -240,6 +246,7 @@ INTEGER TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10];
 STRING NowplayingID[10][32];
+INTEGER ListHomeItem[11];
 
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 
@@ -1120,18 +1127,17 @@ Function Players_PgDn_fn(){
 	PlayersRefresh_fn();
 }
 Function HomeListSelect_fn(integer i){
-//	ListShiftFwd_fn(); 
-	If (i=1){Favorites_PgReset_fn();}
-	Else If (i=2){Genres_PgReset_fn();}
-	Else If (i=3){Artists_PgReset_fn();}
-	Else If (i=4){Albums_PgReset_fn();}
-	Else If (i=5){Playlists_PgReset_fn();}
-	Else If (i=6){Dynamic_PgReset_fn();}
-	Else If (i=7){Radios_PgReset_fn();}  
-	Else If (i=8){Apps_PgReset_fn();}
-	Else If (i=9){Pandora_PgReset_fn();}
-	Else If (i=10){Podcasts_PgReset_fn();}
-	Else If (i=11){Titles_PgReset_fn();}
+	If (ListHomeItem[i]=1){Favorites_PgReset_fn();}
+	Else If (ListHomeItem[i]=2){Genres_PgReset_fn();}
+	Else If (ListHomeItem[i]=3){Artists_PgReset_fn();}
+	Else If (ListHomeItem[i]=4){Albums_PgReset_fn();}
+	Else If (ListHomeItem[i]=5){Playlists_PgReset_fn();}
+	Else If (ListHomeItem[i]=6){Dynamic_PgReset_fn();}
+	Else If (ListHomeItem[i]=7){Radios_PgReset_fn();}  
+	Else If (ListHomeItem[i]=8){Apps_PgReset_fn();}
+	Else If (ListHomeItem[i]=9){Pandora_PgReset_fn();}
+	Else If (ListHomeItem[i]=10){Podcasts_PgReset_fn();}
+	Else If (ListHomeItem[i]=11){Titles_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
 	If (GenreID[i] > 0){
@@ -5261,6 +5267,7 @@ SOCKETRECEIVE TCPClient {
 
 // /////////// Initialization script
 Function Main() {
+	integer i;
 	WaitForInitializationComplete();
 	PlayerID$ = PlayerID$_Default;
 	PlayersID_raw[0] = FormatPlayerID(PlayerID$_Default);
@@ -5295,29 +5302,6 @@ Function Main() {
 	SetArray(ListName,"Home");
 	SetArray(ListRestrictor,"");
 	Nowplaying_reset_enable = 1;
- 	TotalHome = 11;    
-	ListHome[1] = "Favorites";
-	makestring(ListHomeCoverURL[1],"http://%s:9000/html/images/favorites_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[2] = "Genres";
-	makestring(ListHomeCoverURL[2],"http://%s:9000/html/images/genres_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[3] = "Artists";
-	makestring(ListHomeCoverURL[3],"http://%s:9000/html/images/artists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[4] = "Albums";
-	makestring(ListHomeCoverURL[4],"http://%s:9000/html/images/albums_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[5] = "Playlists";
-	makestring(ListHomeCoverURL[5],"http://%s:9000/html/images/playlists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[6] = "Dynamic PL";    
-	makestring(ListHomeCoverURL[6],"http://%s:9000/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[7] = "Radios";
-	makestring(ListHomeCoverURL[7],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[8] = "Apps";
-	makestring(ListHomeCoverURL[8],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[9] = "Pandora";
-	makestring(ListHomeCoverURL[9],"http://%s:9000/plugins/Pandora/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[10] = "Podcasts";
-	makestring(ListHomeCoverURL[10],"http://%s:9000/plugins/Podcast/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
-	ListHome[11] = "Tracks";
-	makestring(ListHomeCoverURL[11],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
 		// Coverflow missing & blank covers
 	makestring(CoverflowURL_blank,"http://%s:9000/html/images/blank_%ux%u_f.png", ServerIPAddr$, CoverflowSize, CoverflowSize);
 	makestring(CoverflowURL_missing,"http://%s:9000/music/0/cover_%ux%u_o.png", ServerIPAddr$, CoverflowSize, CoverflowSize);
@@ -5326,6 +5310,72 @@ Function Main() {
 	makestring(ListCoverURL_missing,"http://%s:9000/music/0/cover_%ux%u_o.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 	// Nowplaying blank cover
 	makestring(NowplayingCoverURL_blank,"http://%s:9000/html/images/blank_%ux%u_f.png", ServerIPAddr$, NowplayingCoverSize, NowplayingCoverSize);
+	// create the home list according to the HomeItem parameters
+ 	TotalHome = 11;    
+	For (i = 1 to TotalHome){
+		Switch (HomeItem[i]){
+			Case (1):{
+				ListHomeItem[i] = 1;
+				ListHome[i] = "Favorites";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/favorites_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (2):{
+				ListHomeItem[i] = 2;
+				ListHome[i] = "Genres";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/genres_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (3):{
+				ListHomeItem[i] = 3;
+				ListHome[i] = "Artists";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/artists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (4):{
+				ListHomeItem[i] = 4;
+				ListHome[i] = "Albums";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/albums_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (5):{
+				ListHomeItem[i] = 5;
+				ListHome[i] = "Playlists";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/playlists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (6):{
+				ListHomeItem[i] = 6;
+				ListHome[i] = "Dynamic PL";    
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (7):{
+				ListHomeItem[i] = 7;
+				ListHome[i] = "Radios";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (8):{
+				ListHomeItem[i] = 8;
+				ListHome[i] = "Apps";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (9):{
+				ListHomeItem[i] = 9;
+				ListHome[i] = "Pandora";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Pandora/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (10):{
+				ListHomeItem[i] = 10;
+				ListHome[i] = "Podcasts";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Podcast/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (11):{
+				ListHomeItem[i] = 11;
+				ListHome[i] = "Tracks";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			default:{
+				ListHomeItem[i] = 0;
+				ListHome[i] = " ";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+		}
+	}
 	Home_PgReset_fn();
 	CurrentPlayerID = PlayerID$;
 	NumberOfAlbums = NumberOfList;  
