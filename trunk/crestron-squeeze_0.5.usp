@@ -460,12 +460,22 @@ Function AlbumsRefresh_fn(){
 	String Out$[128];
 //	ListType = 3;
 	If (Coverflow = 1) {
-		If (ASCII_only = 1){
-			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		If (restrictorAlbums = "sort:new"){
+			If (ASCII_only = 1){
+				makestring(OUT$,"albums %u %u %s tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			}
+			Else {
+				makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			}
 		}
 		Else {
-			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			If (ASCII_only = 1){
+				makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 			}
+			Else {
+				makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			}
+		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
@@ -4319,7 +4329,9 @@ RELEASE Coverflow {
 	SetArray(ListCoverflowArtist," ");
 	SetArray(ListCoverURL,ListCoverURL_blank);
 	NumberOfAlbums = NumberOfList;   
-	AlbumsRefresh_fn();
+	If (ListType[1] = 3){
+		AlbumsRefresh_fn();
+	}
 }
 CHANGE InPageList{
 	If (ProgInPageList = 0){
