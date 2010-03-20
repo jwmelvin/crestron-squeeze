@@ -22,7 +22,7 @@ License:
 */
 // ///////////////////Compiler Directives
 #SYMBOL_NAME "SqueezeBox 0.5"
-#OUTPUT_SHIFT 17
+#OUTPUT_SHIFT 19
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -31,7 +31,7 @@ License:
 // #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT OnDisconnect_Pause;
@@ -179,14 +179,18 @@ INTEGER_PARAMETER ServerPort;
 	propValidUnits=unitDecimal;
 	propDefaultValue=9090d;
 #END_PARAMETER_PROPERTIES
-
 INTEGER_PARAMETER ListCoverSize;
 INTEGER_PARAMETER CoverflowSize;
 INTEGER_PARAMETER NowplayingCoverSize;
-
-INTEGER_PARAMETER HomeItem[11,11];
+INTEGER_PARAMETER HomeListLength;
+#BEGIN_PARAMETER_PROPERTIES HomeListLength
+	propValidUnits=unitDecimal;
+	propDefaultValue=12d;
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER HomeItem[12,12];
 #BEGIN_PARAMETER_PROPERTIES HomeItem
-	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {0d,"Empty"};
+	propDefaultValue=0d;
+	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {0d,"Empty"};
 #END_PARAMETER_PROPERTIES
 
 // ///////////////////////// Sockets
@@ -246,7 +250,7 @@ INTEGER TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10];
 STRING NowplayingID[10][32];
-INTEGER ListHomeItem[11];
+INTEGER ListHomeItem[12];
 
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 
@@ -270,7 +274,7 @@ STRING restrictorTitles[255], restrictorPlaylists[255], restrictorSearch[255];
 
 STRING restrictorFavorites[255], ActiveFAR_ID[64];
 STRING ListName[5][255], ListRestrictor[5][255], ListActiveGenre[5][255];
-STRING ListHome[11][16], ListHomeCoverURL[11][128];
+STRING ListHome[12][16], ListHomeCoverURL[12][128];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 
 STRING ActiveFavoritesName[255], ActiveFavoritesID[255], FavoritesTitle[255];
@@ -382,8 +386,8 @@ Function Nowplaying_wait_fn(){
 Function HomeRefresh_fn(){
 	integer i;
  	ListName$ = ListName[1];
-	SetArray(List$," ");
-	SetArray(ListCoverURL,ListCoverURL_blank);
+//	SetArray(List$," ");
+//	SetArray(ListCoverURL,ListCoverURL_blank);
 	OutHomeBar = 65535 - ((65535 / TotalHome) * FirstHome );
 	OutListBar = OutHomeBar;
 	OutListCount = TotalHome;
@@ -399,6 +403,12 @@ Function HomeRefresh_fn(){
 		List$[i] = ListHome[i + FirstHome];
 		If (ListCoverURL_Enable = 1){
 			ListCoverURL[i] = ListHomeCoverURL[i + FirstHome];
+		}
+	}
+	If (ListLengthHome < NumberOfList){
+		For (i = (ListLengthHome + 1) to NumberOfList){
+			List$[i] = " ";
+			ListCoverURL[i] = ListCoverURL_blank;
 		}
 	}
 }
@@ -643,7 +653,9 @@ Function Home_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Home";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -657,7 +669,9 @@ Function Genres_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All Genres";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -671,7 +685,9 @@ Function Artists_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All Artists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -685,9 +701,27 @@ Function Albums_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All Albums";
 	ListRestrictor[1] = "";
+	ListFirst[1] = 0;
+	AlbumsRefresh_fn();
+}
+Function NewMusic_PgReset_fn(){
+	FirstAlbum = 0;
+	restrictorAlbums = "sort:new";
+    ListShiftFwd_fn();
+	ListType[1] = 3;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
+	ActiveGenre = "";
+	ActiveGenreID = 0;
+	ListName[1] = "New Albums";
+	ListRestrictor[1] = restrictorAlbums;
 	ListFirst[1] = 0;
 	AlbumsRefresh_fn();
 }
@@ -699,7 +733,9 @@ Function Titles_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All Titles";
 	ListRestrictor[1] = "tags:te";
 	ListFirst[1] = 0;
@@ -713,7 +749,9 @@ Function Playlists_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All Playlists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -726,7 +764,9 @@ Function Dynamic_PgReset_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "All DynamicPlaylists";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -743,7 +783,9 @@ Function Pandora_PgReset_fn() {
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Pandora";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -760,7 +802,9 @@ Function Favorites_PgReset_fn() {
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Favorites";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -773,7 +817,9 @@ Function Apps_PgReset_fn() {
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Apps";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -787,7 +833,9 @@ Function Radios_PgReset_fn() {
 //	ListSearchRS[1] = 1;
 //	Search_RequiresSubmit = 1;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Radios";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -805,7 +853,9 @@ Function Podcasts_PgReset_fn() {
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
+	ActiveGenreID = 0;
 	ListName[1] = "Podcasts";
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
@@ -1138,6 +1188,7 @@ Function HomeListSelect_fn(integer i){
 	Else If (ListHomeItem[i]=9){Pandora_PgReset_fn();}
 	Else If (ListHomeItem[i]=10){Podcasts_PgReset_fn();}
 	Else If (ListHomeItem[i]=11){Titles_PgReset_fn();}
+	Else If (ListHomeItem[i]=12){NewMusic_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
 	If (GenreID[i] > 0){
@@ -1185,6 +1236,7 @@ Function ArtistListSelect_fn(integer i){
 				ListName[1] = "Albums for " + ActiveArtist;	
 				makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
 				ActiveGenre = "";
+				ActiveGenreID = 0;
 				ListActiveGenre[1] = "";
 				ListActiveGenreID[1] = 0;
 			}	
@@ -1199,6 +1251,7 @@ Function ArtistListSelect_fn(integer i){
 			ListName[1] = "Albums for " + ActiveArtist;	
 			makestring(restrictorAlbums,"artist_id:%u",ArtistID[i]);
 			ActiveGenre = "";
+			ActiveGenreID = 0;
 			ListActiveGenre[1] = "";
 			ListActiveGenreID[1] = 0;
 		}
@@ -1219,6 +1272,7 @@ Function AlbumListSelect_fn(integer i){
 			Search_RequiresSubmit = 0;
 			ListActiveGenre[1] = "";
 			ActiveGenre = "";
+			ActiveGenreID = 0;
 			ListActiveGenreID[1] = 0;
 			ListFirst[1] = 0;
 			ActiveAlbumID = AlbumID[i];
@@ -5311,7 +5365,7 @@ Function Main() {
 	// Nowplaying blank cover
 	makestring(NowplayingCoverURL_blank,"http://%s:9000/html/images/blank_%ux%u_f.png", ServerIPAddr$, NowplayingCoverSize, NowplayingCoverSize);
 	// create the home list according to the HomeItem parameters
- 	TotalHome = 11;    
+ 	TotalHome = HomeListLength;    
 	For (i = 1 to TotalHome){
 		Switch (HomeItem[i]){
 			Case (1):{
@@ -5368,6 +5422,11 @@ Function Main() {
 				ListHomeItem[i] = 11;
 				ListHome[i] = "Tracks";
 				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+			}
+			Case (12):{
+				ListHomeItem[i] = 12;
+				ListHome[i] = "New Albums";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/newmusic_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
 			}
 			default:{
 				ListHomeItem[i] = 0;
