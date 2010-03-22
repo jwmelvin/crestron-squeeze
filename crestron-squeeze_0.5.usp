@@ -305,6 +305,7 @@ Function ListShiftFwd_fn(){
 		ListFirst[5-i] = ListFirst[4-i];
 		ListSearchRS[5-i] = ListSearchRS[4-i];
 		ListActiveGenre[5-i] = ListActiveGenre[4-i];
+		ListActiveGenreID[5-i] = ListActiveGenreID[4-i];
 		trace("listShiftFwd_fn");
 	}
 	ListType[1] = 0;
@@ -315,6 +316,7 @@ Function ListShiftFwd_fn(){
 	ListSearchRS[1] = 0;
 	Search_RequiresSubmit = 0;
 	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
 }
 Function ListShiftBk_fn(){
 	Integer i;
@@ -695,15 +697,9 @@ Function Home_PgReset_fn(){
 	FirstHome = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 0;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Home";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	HomeRefresh_fn();
 }
 Function Genres_PgReset_fn(){
@@ -711,15 +707,9 @@ Function Genres_PgReset_fn(){
 	restrictorGenres = "";
     ListShiftFwd_fn();
 	ListType[1] = 1;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All Genres";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	GenresRefresh_fn();
 }
 Function Artists_PgReset_fn(){
@@ -727,15 +717,9 @@ Function Artists_PgReset_fn(){
 	restrictorArtists = "";
     ListShiftFwd_fn();
 	ListType[1] = 2;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All Artists";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	ArtistsRefresh_fn();
 }
 Function Albums_PgReset_fn(){
@@ -743,15 +727,9 @@ Function Albums_PgReset_fn(){
 	restrictorAlbums = "";
     ListShiftFwd_fn();
 	ListType[1] = 3;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All Albums";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	AlbumsRefresh_fn();
 }
 Function NewMusic_PgReset_fn(){
@@ -759,15 +737,10 @@ Function NewMusic_PgReset_fn(){
 	restrictorAlbums = "sort:new";
     ListShiftFwd_fn();
 	ListType[1] = 3;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "New Albums";
 	ListRestrictor[1] = restrictorAlbums;
-	ListFirst[1] = 0;
 	AlbumsRefresh_fn();
 }
 Function Titles_PgReset_fn(){
@@ -775,15 +748,10 @@ Function Titles_PgReset_fn(){
 	restrictorTitles = "tags:te";
     ListShiftFwd_fn();
 	ListType[1] = 4;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All Titles";
 	ListRestrictor[1] = "tags:te";
-	ListFirst[1] = 0;
 	TitlesRefresh_fn();
 }
 Function Playlists_PgReset_fn(){
@@ -791,30 +759,18 @@ Function Playlists_PgReset_fn(){
 	restrictorPlaylists = "";
     ListShiftFwd_fn();
 	ListType[1] = 5;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All Playlists";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	PlaylistsRefresh_fn();
 }
 Function Dynamic_PgReset_fn(){
 	FirstDynamic = 0;
     ListShiftFwd_fn();
 	ListType[1] = 6;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "All DynamicPlaylists";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	DynamicRefresh_fn();
 }
 Function Pandora_PgReset_fn() {
@@ -825,15 +781,9 @@ Function Pandora_PgReset_fn() {
 	ActiveFAR_ID = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Pandora";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	FavoritesRefresh_fn();
 }
 Function Favorites_PgReset_fn() {
@@ -844,30 +794,18 @@ Function Favorites_PgReset_fn() {
 	ActiveFAR_ID = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Favorites";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	FavoritesRefresh_fn();
 }
 Function Apps_PgReset_fn() {
 	FirstApps = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 11;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Apps";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	ListName$ = ListName[1];
 	AppsRefresh_fn();
 }
@@ -875,15 +813,9 @@ Function Radios_PgReset_fn() {
 	FirstRadios = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 12;
-//	ListSearchRS[1] = 1;
-//	Search_RequiresSubmit = 1;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Radios";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	ListName$ = ListName[1];
 	RadiosRefresh_fn();
 }
@@ -891,15 +823,11 @@ Function CB_PgReset_fn(){
 	FirstCB = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 14;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "CustomBrowse";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
+	restrictorCB = "";
+	restrictor2CB = "";
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		SetArray(ListCoverURL,ListCoverURL_blank);
@@ -914,15 +842,9 @@ Function Podcasts_PgReset_fn() {
 	ActiveFAR_ID = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
-	ListSearchRS[1] = 0;
-	Search_RequiresSubmit = 0;
-	ListActiveGenre[1] = "";
-	ListActiveGenreID[1] = 0;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
 	ListName[1] = "Podcasts";
-	ListRestrictor[1] = "";
-	ListFirst[1] = 0;
 	FavoritesRefresh_fn();
 }
 Function Nowplaying_PgReset_fn(){
