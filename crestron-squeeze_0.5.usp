@@ -623,9 +623,6 @@ Function CBRefresh_fn(){
 	}
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);	
-	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
-	}
 }
 Function NowplayingRefresh_fn(){
 	String Out$[128];
@@ -904,6 +901,9 @@ Function CB_PgReset_fn(){
 	ListRestrictor[1] = "";
 	ListFirst[1] = 0;
 	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,ListCoverURL_blank);
+	}
 	CBRefresh_fn();
 }
 Function Podcasts_PgReset_fn() {
