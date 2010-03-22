@@ -22,7 +22,7 @@ License:
 */
 // ///////////////////Compiler Directives
 #SYMBOL_NAME "SqueezeBox 0.5"
-#OUTPUT_SHIFT 19
+#OUTPUT_SHIFT 20
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -31,7 +31,7 @@ License:
 // #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT OnDisconnect_Pause;
@@ -185,12 +185,12 @@ INTEGER_PARAMETER NowplayingCoverSize;
 INTEGER_PARAMETER HomeListLength;
 #BEGIN_PARAMETER_PROPERTIES HomeListLength
 	propValidUnits=unitDecimal;
-	propDefaultValue=12d;
+	propDefaultValue=13d;
 #END_PARAMETER_PROPERTIES
-INTEGER_PARAMETER HomeItem[12,12];
+INTEGER_PARAMETER HomeItem[13,13];
 #BEGIN_PARAMETER_PROPERTIES HomeItem
 	propDefaultValue=0d;
-	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {0d,"Empty"};
+	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {13d,"Custom Browse"}, {0d,"Empty"};
 #END_PARAMETER_PROPERTIES
 
 // ///////////////////////// Sockets
@@ -208,6 +208,7 @@ INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
 INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
 INTEGER FirstApps, TotalApps, AppsFirstNumber; 
 INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
+INTEGER FirstCB, TotalCB, CBFirstNumber;
 INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
 //
 INTEGER NumberOfAlbums;
@@ -250,7 +251,10 @@ INTEGER TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10];
 STRING NowplayingID[10][32];
-INTEGER ListHomeItem[12];
+INTEGER ListHomeItem[13];
+
+STRING CBLevel[10][256], CBID[10][64], CBName[10][64], CBType[10][64];
+INTEGER CBPlayable[10], CBMixable[10];
 
 INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
 
@@ -271,9 +275,10 @@ STRING NowplayingCoverURL_blank[64];
 
 STRING restrictorGenres[255], restrictorArtists[255], restrictorAlbums[255];
 STRING restrictorTitles[255], restrictorPlaylists[255], restrictorSearch[255];
-
 STRING restrictorFavorites[255], ActiveFAR_ID[64];
-STRING ListName[5][255], ListRestrictor[5][255], ListActiveGenre[5][255];
+STRING restrictorCB[255], restrictor2CB[255];
+
+STRING ListName[5][255], ListRestrictor[5][255], ListRestrictor2[5][255], ListActiveGenre[5][255];
 STRING ListHome[12][16], ListHomeCoverURL[12][128];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 
@@ -296,11 +301,20 @@ Function ListShiftFwd_fn(){
 		ListType[5-i] = ListType[4-i];
 		ListName[5-i] = ListName[4-i];
 		ListRestrictor[5-i] = ListRestrictor[4-i];
+		ListRestrictor2[5-i] = ListRestrictor2[4-i];
 		ListFirst[5-i] = ListFirst[4-i];
 		ListSearchRS[5-i] = ListSearchRS[4-i];
 		ListActiveGenre[5-i] = ListActiveGenre[4-i];
 		trace("listShiftFwd_fn");
 	}
+	ListType[1] = 0;
+	ListName[1] = " ";
+	ListRestrictor[1] = "";
+	ListRestrictor2[1] = "";
+	ListFirst[1] = 0;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
 }
 Function ListShiftBk_fn(){
 	Integer i;
@@ -308,6 +322,7 @@ Function ListShiftBk_fn(){
 		ListType[i] = ListType[i+1];
 		ListName[i] = ListName[i+1];
 		ListRestrictor[i] = ListRestrictor[i+1];
+		ListRestrictor2[i] = ListRestrictor2[i+1];
 		ListFirst[i] = ListFirst[i+1];
 		ListSearchRS[i] = ListSearchRS[i+1];
 		ListActiveGenre[i] = ListActiveGenre[i+1];
@@ -316,6 +331,7 @@ Function ListShiftBk_fn(){
 	ListType[5] = 0;
 	ListName[5] = "Home";
 	ListRestrictor[5] = "";
+	ListRestrictor2[5] = "";
 	ListFirst[5] = 0;
 	ListSearchRS[5] = 0;
 	ListActiveGenre[5] = "";
@@ -372,6 +388,11 @@ Function ListShiftBk_fn(){
 	}
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+	Else If (ListType[1] = 14){
+		FirstCB = ListFirst[1];
+		restrictorCB = ListRestrictor[1];
+		restrictor2CB = ListRestrictor2[1];
+	}
 }
 Function Nowplaying_wait(){
 	Wait(Nowplaying_reset_enable_time, Nowplaying_reset_enable_timer){
@@ -592,6 +613,20 @@ Function RadiosRefresh_fn(){
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+Function CBRefresh_fn(){
+	String Out$[1024];
+	If (ASCII_only = 1){
+		makestring(OUT$,"custombrowse browse %u %u %s %s charset:ascii \n", FirstCB, NumberOfList, restrictorCB, restrictor2CB);
+	}
+	Else {
+		makestring(OUT$,"custombrowse browse %u %u %s %s \n",FirstCB, NumberOfList, restrictorCB, restrictor2CB);
+	}
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);	
+	If (ListCoverURL_Enable = 1){
+		SetArray(ListCoverURL,ListCoverURL_blank);
+	}
+}
 Function NowplayingRefresh_fn(){
 	String Out$[128];
 	If (ASCII_only = 1){
@@ -648,6 +683,9 @@ Function ListRefresh_fn(){
 	}
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+	Else If (ListType[1] = 14){
+		CBRefresh_fn();
+	}
 }
 Function trackstat_get(long_integer TrackID){
 	String Out$[64];
@@ -852,6 +890,22 @@ Function Radios_PgReset_fn() {
 	ListName$ = ListName[1];
 	RadiosRefresh_fn();
 }
+Function CB_PgReset_fn(){
+	FirstCB = 0;
+	ListShiftFwd_fn();
+	ListType[1] = 14;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = 0;
+	ActiveGenre = "";
+	ActiveGenreID = 0;
+	ListName[1] = "CustomBrowse";
+	ListRestrictor[1] = "";
+	ListFirst[1] = 0;
+	ListName$ = ListName[1];
+	CBRefresh_fn();
+}
 Function Podcasts_PgReset_fn() {
 	FAR_cmd = "podcast";
 	FAR_parse = FAR_cmd + " items ";
@@ -1044,6 +1098,27 @@ Function Radios_PgUp_fn() {
 	ListFirst[1] = FirstRadios;
 	RadiosRefresh_fn();
 }
+Function CB_PgUp_fn() {
+	If ((FirstCB > 0) && (FirstCB < NumberOfList))	{
+		FirstCB = 0; 
+	}
+	Else If (FirstCB > 0){
+		FirstCB = FirstCB - NumberOfList;
+    }
+/* // CustomBrowse does not report the actual total, only a number up to the number you request
+	If (FirstCB = 0 && (NumberOfList <= TotalCB)) {
+		FirstCB = TotalCB - NumberOfList;
+	}
+    Else If (FirstCB < NumberOfList)	{
+		FirstCB = 0; 
+	}
+	Else {
+		FirstCB = FirstCB - NumberOfList;
+    }
+*/
+	ListFirst[1] = FirstCB;
+	CBRefresh_fn();
+}
 Function Players_PgUp_fn(){
 	If (FirstPlayers = 0 && (NumberOfPlayers <= TotalPlayers)){
 		FirstPlayers = TotalPlayers - NumberOfPlayers;
@@ -1176,6 +1251,19 @@ Function Radios_PgDn_fn(){
 	ListFirst[1] = FirstRadios;
 	RadiosRefresh_fn();
 }  
+Function CB_PgDn_fn(){
+	FirstCB = FirstCB + NumberOfList;
+/* // Custombrowse does not report actual total, only the total returned in a request
+	If (FirstCB + NumberOfList < TotalCB){
+    	FirstCB = FirstCB + NumberOfList;
+	}
+	else {
+		FirstCB = 0;
+	}
+*/
+	ListFirst[1] = FirstCB;
+	CBRefresh_fn();
+}  
 Function Players_PgDn_fn(){
 	If (FirstPlayers + NumberOfPlayers < TotalPlayers)	{
     	FirstPlayers = FirstPlayers + NumberOfPlayers;
@@ -1199,14 +1287,15 @@ Function HomeListSelect_fn(integer i){
 	Else If (ListHomeItem[i]=10){Podcasts_PgReset_fn();}
 	Else If (ListHomeItem[i]=11){Titles_PgReset_fn();}
 	Else If (ListHomeItem[i]=12){NewMusic_PgReset_fn();}
+	Else If (ListHomeItem[i]=13){CB_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
 	If (GenreID[i] > 0){
 		ListShiftFwd_fn();
 		ListType[1] = 2;
-		ListSearchRS[1] = 0;
-		Search_RequiresSubmit = 0;
-		ListFirst[1] = 0;
+//		Search_RequiresSubmit = 0;
+//		ListSearchRS[1] = 0;
+//		ListFirst[1] = 0;
 		ActiveGenreID = GenreID[i];
 		ActiveGenre = Genre[i];
 		ListActiveGenre[1] = ActiveGenre;
@@ -1224,9 +1313,9 @@ Function ArtistListSelect_fn(integer i){
 	If ((ArtistID[i] > 0) || (Artist[i] = "All Albums")){
 		ListShiftFwd_fn();	
 		ListType[1] = 3;
-		ListSearchRS[1] = 0;
-		Search_RequiresSubmit = 0;
-		ListFirst[1] = 0;
+//		ListSearchRS[1] = 0;
+//		Search_RequiresSubmit = 0;
+//		ListFirst[1] = 0;
 		ActiveArtistID = ArtistID[i];
 		ActiveArtist = Artist[i];
 		If (len(ActiveGenre) > 0){
@@ -1278,13 +1367,13 @@ Function AlbumListSelect_fn(integer i){
 			trace("Coverflow = 0; AlbumListSelect");
 			ListShiftFwd_fn();
 			ListType[1] = 4;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
-			ListActiveGenre[1] = "";
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListActiveGenre[1] = "";
+//			ListActiveGenreID[1] = 0;
 			ActiveGenre = "";
 			ActiveGenreID = 0;
-			ListActiveGenreID[1] = 0;
-			ListFirst[1] = 0;
 			ActiveAlbumID = AlbumID[i];
 			ActiveAlbum = Album[i];
 			makestring(ListName[1],"Titles in %s",ActiveAlbum);
@@ -1354,10 +1443,10 @@ Function SearchListSelect_fn(integer i){
 		trace("SearchListSelect_fn");
 		If (SearchIDType[i] = 1){ // searchID is an artist_id
 			ListShiftFwd_fn();
-			ListFirst[1] = 0;
 			ListType[1] = 3;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
 			ListActiveGenre[1] = "";
 			ActiveArtistID = SearchID[i];
 			ActiveArtist = Search[i];
@@ -1369,10 +1458,10 @@ Function SearchListSelect_fn(integer i){
 		}
 		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
 			ListShiftFwd_fn();
-			ListFirst[1] = 0;
 			ListType[1] = 4;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
 			ActiveAlbumID = SearchID[i];
 			ActiveAlbum = Search[i];
 			ListActiveGenre[1] = "";
@@ -1397,10 +1486,10 @@ Function SearchListSelect_fn(integer i){
 		}
 		Else If (SearchIDType[i] = 4){ // searchID is a genre_id
 			ListShiftFwd_fn();
-			ListFirst[1] = 0;
 			ListType[1] = 2;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
 			ActiveGenreID = SearchID[i];
 			ActiveGenre = Search[i];
 			ListActiveGenre[1] = ActiveGenre;
@@ -1443,9 +1532,9 @@ Function FavoritesListSelect_fn(integer i){
 			ListRestrictor[1] = restrictorFavorites;
 			ListActiveGenre[1] = "";
 			ListActiveGenreID[1] = 0;
-			ListFirst[1] = 0;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
 			FavoritesRefresh_fn();
 		}
 		Else If (FavoritesIsAudio[i] = 1){
@@ -1465,9 +1554,9 @@ Function AppsListSelect_fn(integer i){
 	If (AppsCmd[i] <> ""){
 		ListShiftFwd_fn();
 		ListType[1] = 10;
-		ListFirst[1] = 0;
-		ListSearchRS[1] = 0;
-		Search_RequiresSubmit = 0;
+//		ListFirst[1] = 0;
+//		ListSearchRS[1] = 0;
+//		Search_RequiresSubmit = 0;
 		ListActiveGenre[1] = "";
 		ListActiveGenreID[1] = 0;
 		FAR_cmd = AppsCmd[i];
@@ -1490,9 +1579,9 @@ Function RadiosListSelect_fn(integer i){
 		Else {
 			ListShiftFwd_fn();
 			ListType[1] = 10;
-			ListFirst[1] = 0;
-			ListSearchRS[1] = 0;
-			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
 			FAR_cmd = RadiosCmd[i];
 			FAR_parse = FAR_cmd + " items ";
 			trace("FAR_parse = %s",FAR_parse);
@@ -1503,6 +1592,62 @@ Function RadiosListSelect_fn(integer i){
 			FirstFavorites = 0;
 			FavoritesRefresh_fn();
 		}
+	}
+}
+Function CBListSelect_fn(integer i){
+	trace("CBLevel[%u]: %s",i,CBLevel[i]);
+	If (CBLevel[i] <> ""){
+		ListShiftFwd_fn();
+		ListType[1] = 14;
+		If (restrictorCB = ""){
+			restrictorCB = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			restrictorCB = restrictorCB + "," + CBLevel[i];
+		}
+		restrictor2CB = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		ListRestrictor[1] = restrictorCB;
+		ListRestrictor2[1] = restrictor2CB;
+		FirstCB = 0;
+		ListName[1] = "CB: " + CBName[i];
+		ListName$ = ListName[1];
+		CBRefresh_fn();
+	}
+}
+Function CBListPlay_fn(integer i){
+	String Out$[512];
+	String CBplayRestrictor[256], CBplayRestrictor2[256];
+	If (CBPlayable[i] = 1){
+		If (restrictorCB = ""){
+			CBplayrestrictor = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			CBplayrestrictor = restrictorCB + "," + CBLevel[i];
+		}
+		CBplayrestrictor2 = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		
+		makestring(Out$,"%s custombrowse play %s %s \n",PlayerID$, CBplayRestrictor, CBPlayRestrictor2);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = "";
+	}
+}
+Function CBListAdd_fn(integer i){
+	String Out$[512];
+	String CBplayRestrictor[256], CBplayRestrictor2[256];
+	If (CBPlayable[i] = 1){
+		If (restrictorCB = ""){
+			CBplayrestrictor = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			CBplayrestrictor = restrictorCB + "," + CBLevel[i];
+		}
+		CBplayrestrictor2 = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		
+		makestring(Out$,"%s custombrowse add %s %s \n",PlayerID$, CBplayRestrictor, CBPlayRestrictor2);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = "";
 	}
 }
 Function GenreListPlay_fn(integer i){
@@ -3054,7 +3199,6 @@ Function Parse_Radios(String InRadios$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthRadios;
 
-
 	indexStart = 8;
 	indexEnd = find(" ",InRadios$,indexStart);
 	Length = indexEnd - indexStart;
@@ -3142,10 +3286,10 @@ Function Parse_Radios(String InRadios$){
 Function Parse_Search(String InSearch$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthSearch;
-	
+
 	indexEnd = find(" ",InSearch$,8);
-	Length = indexEnd - 7;
-	SearchFirstNumber = AtoI(mid(InSearch$,7,Length));
+	Length = indexEnd - 8;
+	SearchFirstNumber = AtoI(mid(InSearch$,8,Length));
 	trace("searchfirstnumber: %u",SearchFirstNumber);
 	indexStart = find("count%3A",InSearch$,1) + 8;
 	indexEnd = find(" ",InSearch$, indexStart);
@@ -3253,6 +3397,146 @@ Function Parse_Search(String InSearch$){
 		List$[i] = Search[i];
 	}
 }
+/*
+String_Function ParseStr(String In, String tag, Integer start, String DefaultReturn){
+	Integer i, indexStart, indexEnd, Length;
+	indexStart = find(tag,In,start) + len(tag);
+	If (indexStart > len(tag)){
+		indexEnd = find(" ",In,indexStart);
+		if (indexEnd = 0){
+			indexEnd = len(In) - 1;
+		}
+		Length = indexEnd - indexStart;
+		return(ParsePercent(mid(In,indexStart,Length)));
+	}
+	Else {
+		return(DefaultReturn);
+	}
+}
+Integer_Function ParseInt(String In, String tag, Integer start, Integer DefaultReturn){
+	Integer i, indexStart, indexEnd, Length;
+	indexStart = find(tag,In,start) + len(tag);
+	If (indexStart > len(tag)){
+		indexEnd = find(" ",In,indexStart);
+		if (indexEnd = 0){
+			indexEnd = len(In) - 1;
+		}
+		Length = indexEnd - indexStart;
+		return(AtoI(mid(In,indexStart,Length)));
+	}
+	Else {
+		return(DefaultReturn);
+	}
+}
+*/
+
+Function Parse_CB(String InCB$){
+	Integer i, j, indexStart, indexEnd, Length;
+	
+	indexEnd = find(" ",InCB$,49);
+	Length = indexEnd - 49;
+	CBFirstNumber = AtoI(mid(InCB$,49,Length));
+	trace("CBFirstNumber: %u",CBFirstNumber);
+	indexStart = find("count%3A",InCB$,indexEnd) + 8;
+	If (indexStart > 8){
+		trace("indexStart:%u",indexStart);
+		indexEnd = find(" ",InCB$, indexStart);
+		trace("indexEnd:%u",indexEnd);
+		Length = indexEnd - indexStart;
+		TotalCB = AtoI(mid(InCB$,indexStart,Length));
+		trace("TotalCB: %u",TotalCB);
+		If (TotalCB = 0){
+			OutListBar = 65535;
+			SetArray(CBLevel,"");
+			SetArray(CBID,"");
+			SetArray(CBName,"");
+			SetArray(CBType,"");
+			SetArray(CBPlayable,0);
+			SetArray(CBMixable,0);
+			SetArray(List$," ");
+			OutListCount = 0;
+			ListName[1] = "CustomBrowse: Empty";
+			ListName$ = ListName[1];
+			SetArray(List$," "); 
+		}
+		Else {
+			OutListBar = 65535 - ((65535 / TotalCB) * CBFirstNumber );
+			OutListCount = TotalCB;
+			
+			For (i = 1 to NumberOfList){
+				indexStart = find(" level%3A",InCB$,indexEnd) + 9;
+				If (indexStart > 9){
+					indexEnd = find(" ",InCB$, indexStart);
+					Length = indexEnd - indexStart;
+					CBLevel[i] = parsepercent(mid(InCB$,indexStart,Length));
+					trace("CBLevel[%u]: %s",i,CBLevel[i]);
+				}
+				Else {
+					For (j = i to NumberOfList){
+						CBLevel[j] = "";
+						CBID[j] = "";
+						CBName[j] = "";
+						CBType[j] = "";
+						CBPlayable[j] = 0;
+						CBMixable[j] = 0;
+						List$[j] = " ";
+					}
+					Break;
+				}
+				indexStart = find(" itemid%3A",InCB$,indexEnd) + 10;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBID[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBID[%u]: %s",i,CBID[i]);
+				
+				indexStart = find(" itemname%3A",InCB$,indexEnd) + 12;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBName[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBName[%u]: %s",i,CBName[i]);
+				
+				indexStart = find(" itemtype%3A",InCB$,indexEnd) + 12;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBType[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBType[%u]: %s",i,CBType[i]);
+				
+				indexStart = find(" itemplayable%3A",InCB$,indexEnd) + 16;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBPlayable[i] = AtoI(mid(InCB$,indexStart,Length));
+				trace("CBPlayable[%u]: %u",i,CBPlayable[i]);
+				
+				indexStart = find(" itemmixable%3A",InCB$,indexEnd) + 15;
+				indexEnd = find(" ",InCB$, indexStart);
+				if (indexEnd = 0){
+					indexEnd = len(InCB$) - 1;
+				}
+				Length = indexEnd - indexStart;
+				CBMixable[i] = AtoI(mid(InCB$,indexStart,Length));
+				trace("CBMixable[%u]: %u",i,CBMixable[i]);
+				
+				List$[i] = CBName[i];
+			}
+		}
+	}
+	Else {
+		// "count" was not found, invalid return
+		OutListBar = 65535;
+		SetArray(CBLevel,"");
+		SetArray(CBID,"");
+		SetArray(CBName,"");
+		SetArray(CBType,"");
+		SetArray(CBPlayable,0);
+		SetArray(CBMixable,0);
+		SetArray(List$," ");
+		OutListCount = 0;
+		ListName[1] = "CustomBrowse: Empty";
+		ListName$ = ListName[1];
+		SetArray(List$," "); 
+	}
+}
+
 Function Parse_Players(String InPlayers$){
 	Integer i, j, indexStart, indexEnd, Length;
 		
@@ -4388,6 +4672,11 @@ CHANGE InPageList{
 		}
 		// ListType[1] = 13 reserved for Players
 		// not yet a possible List type
+/*		Else If (ListType[1] = 14){ 
+			FirstCB = (65535 - InPageList) * TotalCB / 65535;
+			ListFirst[1] = FirstCB;
+			CBRefresh_fn();
+		}*/ // CB does not return an actual Total, so the scrollbar won't work
 		Delay (50);
 		ProgInPageList = 0;
 	}
@@ -4415,37 +4704,40 @@ PUSH List_PgUp{
 	 	Home_PgUp_fn();
 	}
 	Else If (ListType[1] = 1){
-		Genres_PgUp_fn(); //Genres code
+		Genres_PgUp_fn(); // Genres code
 	}
 	Else If (ListType[1] = 2){
-		Artists_PgUp_fn(); //Artists code
+		Artists_PgUp_fn(); // Artists code
 	}
 	Else If (ListType[1] = 3){
-		Albums_PgUp_fn();//Albums code
+		Albums_PgUp_fn();// Albums code
 	}
 	Else If (ListType[1] = 4){
-		Titles_PgUp_fn();//Titles code
+		Titles_PgUp_fn();// Titles code
 	}
 	Else If (ListType[1] = 5){
-		Playlists_PgUp_fn();//Playlists code
+		Playlists_PgUp_fn();// Playlists code
 	}
 	Else If (ListType[1] = 6){
-		Dynamic_PgUp_fn();//Dynamicplaylist code
+		Dynamic_PgUp_fn();// Dynamicplaylist code
 	}
 	Else If (ListType[1] = 8){
-		Search_PgUp_fn(); //Search results code
+		Search_PgUp_fn(); // Search results code
 	}
     Else If (ListType[1] = 10){
-		Favorites_PgUp_fn(); //Favorites results code
+		Favorites_PgUp_fn(); // Favorites results code
     }
     Else If (ListType[1] = 11){
-		Apps_PgUp_fn(); //Apps results code
+		Apps_PgUp_fn(); // Apps results code
     }
     Else If (ListType[1] = 12){
-		Radios_PgUp_fn(); //Radios results code
+		Radios_PgUp_fn(); // Radios results code
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CB_PgUp_fn(); // CustomBrowse results code
+    }
 }
 PUSH Nowplaying_PgUp{
 	Nowplaying_PgUp_fn(); 
@@ -4489,6 +4781,9 @@ PUSH List_PgDn{
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CB_PgDn_fn(); 
+    }
 }
 PUSH Nowplaying_PgDn {
 	Nowplaying_PgDn_fn();
@@ -4499,6 +4794,7 @@ PUSH Players_PgDn {
 PUSH ListSelect{
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
+	trace("ListSelect[%u]; ListType:%u",i,ListType[1]);
 	If (ListType[1] = 0){
 		If (i <= ListLengthHome){
 			i = i + FirstHome;
@@ -4537,6 +4833,9 @@ PUSH ListSelect{
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListSelect_fn(i); 
+    }
 }
 PUSH ListPlay{
 	INTEGER i;
@@ -4579,6 +4878,9 @@ PUSH ListPlay{
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListPlay_fn(i); 
+    }
 }
 PUSH ListAdd{
 	INTEGER i;
@@ -4621,6 +4923,9 @@ PUSH ListAdd{
     }
 	// ListType[1] = 13 reserved for Players
 	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListAdd_fn(i); 
+    }
 }
 PUSH ListInsert{
 	INTEGER i;
@@ -5318,6 +5623,10 @@ SOCKETRECEIVE TCPClient {
 		trace("parsing radios");
 		Parse_Radios(In$);
 	}
+	Else If (find("custombrowse browse",Find$)){ // custombrowse parsing
+		trace("parsing custombrowse");
+		Parse_CB(In$);
+	}
 	Else If (find("search playlist",Find$)){
 		// just a fake to prevent regular search parsing when playing radio search
 	}
@@ -5383,7 +5692,7 @@ Function Main() {
 			Case (1):{
 				ListHomeItem[i] = 1;
 				ListHome[i] = "Favorites";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/favorites_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/favorites_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (2):{
 				ListHomeItem[i] = 2;
@@ -5393,57 +5702,62 @@ Function Main() {
 			Case (3):{
 				ListHomeItem[i] = 3;
 				ListHome[i] = "Artists";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/artists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/artists_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (4):{
 				ListHomeItem[i] = 4;
 				ListHome[i] = "Albums";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/albums_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/albums_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (5):{
 				ListHomeItem[i] = 5;
 				ListHome[i] = "Playlists";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/playlists_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/playlists_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (6):{
 				ListHomeItem[i] = 6;
 				ListHome[i] = "Dynamic PL";    
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (7):{
 				ListHomeItem[i] = 7;
 				ListHome[i] = "Radios";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (8):{
 				ListHomeItem[i] = 8;
 				ListHome[i] = "Apps";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (9):{
 				ListHomeItem[i] = 9;
 				ListHome[i] = "Pandora";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Pandora/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Pandora/html/images/icon_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (10):{
 				ListHomeItem[i] = 10;
 				ListHome[i] = "Podcasts";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Podcast/html/images/icon_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Podcast/html/images/icon_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (11):{
 				ListHomeItem[i] = 11;
 				ListHome[i] = "Tracks";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			Case (12):{
 				ListHomeItem[i] = 12;
 				ListHome[i] = "New Albums";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/newmusic_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/newmusic_%ux%u_f.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (13):{
+				ListHomeItem[i] = 13;
+				ListHome[i] = "Custom Browse";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/CustomBrowse/html/images/custombrowse_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			default:{
 				ListHomeItem[i] = 0;
 				ListHome[i] = " ";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 		}
 	}
