@@ -162,6 +162,7 @@ DIGITAL_INPUT  ListPlay[10];
 DIGITAL_INPUT  ListAdd[10];
 DIGITAL_INPUT  ListInsert[10];
 STRING_OUTPUT  List$[10];
+DIGITAL_OUTPUT ListPlayable[10];
 STRING_OUTPUT  ListCoverURL[10];
 STRING_OUTPUT  ListCoverflowArtist[10];
 // Players i/o
@@ -308,7 +309,6 @@ Function ListShiftFwd_fn(){
 		ListActiveGenreID[5-i] = ListActiveGenreID[4-i];
 		trace("listShiftFwd_fn");
 	}
-	ListType[1] = 0;
 	ListName[1] = " ";
 	ListRestrictor[1] = "";
 	ListRestrictor2[1] = "";
@@ -408,9 +408,9 @@ Function Nowplaying_wait_fn(){
 }
 Function HomeRefresh_fn(){
 	integer i;
+ 	trace("HomeRefresh");
  	ListName$ = ListName[1];
-//	SetArray(List$," ");
-//	SetArray(ListCoverURL,ListCoverURL_blank);
+	SetArray(ListPlayable,0);
 	OutHomeBar = 65535 - ((65535 / TotalHome) * FirstHome );
 	OutListBar = OutHomeBar;
 	OutListCount = TotalHome;
@@ -2517,6 +2517,7 @@ Function Parse_FAR(String InFavorites$){
 					FavoritesIsAudio[j] = 0;
 					FavoritesHasItems[j] = 0;
 					List$[j] = " ";
+					ListPlayable[j] = 0;
 					If (ListCoverURL_Enable = 1){
 						ListCoverURL[j] = ListCoverURL_blank;
 					}	
@@ -2591,6 +2592,7 @@ Function Parse_FAR(String InFavorites$){
 			Else {FavoritesHasItems[i] = 0;
 			}
 			List$[i] = FavoritesName[i];
+			ListPlayable[i] = FavoritesIsAudio[i];
 			If (ListCoverURL_Enable = 1){
 				If (len(FavoritesImage[i]) > 0){
 					ListCoverURL[i] = FavoritesImage[i];
@@ -2637,6 +2639,7 @@ Function Parse_Dynamic(String InDynamic$){
 				DynamicFile[j] = "";
 				DynamicName[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 			}
 			Break;
 		}
@@ -2650,6 +2653,7 @@ Function Parse_Dynamic(String InDynamic$){
 			DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
 		}
 		List$[i] = DynamicName[i];
+		ListPlayable[i] = 1;
 	}
 }
 Function Parse_Genres(String InGenres$){
@@ -2691,6 +2695,7 @@ Function Parse_Genres(String InGenres$){
 				GenreID[j] = 0;
 				Genre[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 			}
 			Break;
 		}
@@ -2704,6 +2709,7 @@ Function Parse_Genres(String InGenres$){
 			Genre[i] = " ";
 		}
 		List$[i] = Genre[i];
+		ListPlayable[i] = 1;
 	}
 }
 Function Parse_Artists(String InArtists$){
@@ -2752,6 +2758,7 @@ Function Parse_Artists(String InArtists$){
 				ArtistID[j] = 0;
 				Artist[j]  = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 			}
 			Break;
 		}
@@ -2765,6 +2772,7 @@ Function Parse_Artists(String InArtists$){
 			Artist[i] = " ";
 		}
 		List$[i] = Artist[i];
+		ListPlayable[i] = 1;
 	}
 }
 Function Parse_Albums(String InAlbums$){
@@ -2803,6 +2811,7 @@ Function Parse_Albums(String InAlbums$){
 				AlbumID[j] = 0;
 				Album[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 				If (Coverflow = 1){
 					ListCoverURL[j] = CoverflowURL_blank;
 					ListCoverflowArtist[j] = " ";
@@ -2859,6 +2868,7 @@ Function Parse_Albums(String InAlbums$){
 			trace("Coverflow = 0");
 			List$[i] = Album[i];
 		}
+		ListPlayable[i] = 1;
 		If (Coverflow = 1) {
 			If (AlbumTrackID[i] = 0){
 				ListCoverURL[i] = CoverflowURL_missing;
@@ -2919,6 +2929,7 @@ Function Parse_Titles(String InTitles$){
 				TrackID[j] = 0;
 				Title[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 				TitleTracknum[j] = 0;
 				TitleAlbumID[j] = 0;
 				If (ListCoverURL_Enable = 1){
@@ -2967,6 +2978,7 @@ Function Parse_Titles(String InTitles$){
 			TitleAlbumID[i] = 0;
 		}
 		List$[i] = Title[i];		
+		ListPlayable[i] = 1;
 		If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
 			makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover_%ux%u_o.png", ServerIPAddr$, TrackID[i],ListCoverSize,ListCoverSize);
@@ -3009,6 +3021,7 @@ Function Parse_Playlists(String InPlaylists$){
 				PlaylistRaw[j] = "";
 				Playlist[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 			}
 			Break;
 		}
@@ -3024,6 +3037,7 @@ Function Parse_Playlists(String InPlaylists$){
 		trace("PlaylistRaw[%u] = %s",i,PlaylistRaw[i]);
 		Playlist[i] = ParsePercent(PlaylistRaw[i]);
 		List$[i] = Playlist[i];
+		ListPlayable[i] = 1;
 	}
 }
 Function Parse_Apps(String InApps$){
@@ -3073,6 +3087,7 @@ Function Parse_Apps(String InApps$){
 				AppsName[j] = "";
 				AppsType[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 				If (ListCoverURL_Enable = 1){
 					ListCoverURL[j] = ListCoverURL_blank;
 				}
@@ -3112,6 +3127,7 @@ Function Parse_Apps(String InApps$){
 			AppsType[i] = "";
 		}
 		List$[i] = AppsName[i];
+		ListPlayable[i] = 0;
 		If (ListCoverURL_Enable = 1){
 			makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,AppsIcon[i]);
 		}
@@ -3161,6 +3177,7 @@ Function Parse_Radios(String InRadios$){
 				RadiosName[j] = "";
 				RadiosType[j] = "";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 				If (ListCoverURL_Enable = 1){
 					ListCoverURL[j] = ListCoverURL_blank;
 				}
@@ -3200,6 +3217,7 @@ Function Parse_Radios(String InRadios$){
 			RadiosType[i] = "";
 		}
 		List$[i] = RadiosName[i];
+		ListPlayable[i] = 0;
 		If (ListCoverURL_Enable = 1){
 			makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,RadiosIcon[i]);
 		}
@@ -3310,6 +3328,7 @@ Function Parse_Search(String InSearch$){
 				SearchID[j] = 0;
 				Search[j] = " ";
 				List$[j] = " ";
+				ListPlayable[j] = 0;
 				If (ListCoverURL_Enable = 1){
 					ListCoverURL[j] = ListCoverURL_blank;
 				}
@@ -3317,6 +3336,7 @@ Function Parse_Search(String InSearch$){
 			Break;
 		}
 		List$[i] = Search[i];
+		ListPlayable[i] = 1;
 	}
 }
 /*
@@ -3402,6 +3422,7 @@ Function Parse_CB(String InCB$){
 						CBPlayable[j] = 0;
 						CBMixable[j] = 0;
 						List$[j] = " ";
+						ListPlayable[j] = 0;
 					}
 					Break;
 				}
@@ -3439,6 +3460,7 @@ Function Parse_CB(String InCB$){
 				trace("CBMixable[%u]: %u",i,CBMixable[i]);
 				
 				List$[i] = CBName[i];
+				ListPlayable[i] = CBPlayable[i];
 			}
 		}
 	}
@@ -3456,6 +3478,7 @@ Function Parse_CB(String InCB$){
 		ListName[1] = "CustomBrowse: Empty";
 		ListName$ = ListName[1];
 		SetArray(List$," "); 
+		SetArray(ListPlayable,0);
 	}
 }
 
