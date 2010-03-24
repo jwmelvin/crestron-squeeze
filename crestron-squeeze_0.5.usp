@@ -1657,6 +1657,7 @@ Function FavoritesListPlay_fn(integer i){
 		Else {
 			CurrentsongCoverURL_push = "";
 		}
+/*
 		// play the item depending on what it is
 		// if not a "favorite" or "rhapsody" then just play it
 		If ((FAR_cmd <> "favorites") && 
@@ -1667,7 +1668,9 @@ Function FavoritesListPlay_fn(integer i){
 			socketsend(TCPClient, OUT$);
 		}
 		// otherswise insert and advance to it
-		Else If (FavoritesIsAudio[i] = 1){
+		Else 
+*/
+		If (FavoritesIsAudio[i] = 1){
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
@@ -1780,10 +1783,12 @@ Function PlaylistListAdd_fn(integer i){
 Function FavoritesListAdd_fn(integer i){
 	String Out$[256];
 	If (FavoritesID[i] <> ""){
-		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
+/*		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
 		}
-		Else If (FavoritesIsAudio[i] = 1) {
+		Else
+*/
+		If (FavoritesIsAudio[i] = 1) {
 			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
@@ -1877,10 +1882,11 @@ Function PlaylistListInsert_fn(integer i){
 Function FavoritesListInsert_fn(integer i){
 	String Out$[256];
 	If (FavoritesID[i] <> ""){
-		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
+/*		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
 			FavoritesListSelect_fn(i);
 		}
-		Else If (FavoritesIsAudio[i] = 1) {
+		Else 
+*/		If (FavoritesIsAudio[i] = 1) {
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
