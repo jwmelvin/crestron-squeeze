@@ -21,8 +21,11 @@ License:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
-#SYMBOL_NAME "SqueezeBox 0.5"
-#OUTPUT_SHIFT 20
+#SYMBOL_NAME "SqueezeBox 0.5" 
+#HELP_BEGIN
+	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
+#HELP_END
+#OUTPUT_SHIFT 27
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -31,7 +34,7 @@ License:
 // #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT OnDisconnect_Pause;
@@ -64,6 +67,7 @@ DIGITAL_INPUT Currentsong_AddFavorite;
 //
 // Jump inputs
 DIGITAL_INPUT Jump_Home;
+DIGITAL_INPUT Jump_Favorites;
 DIGITAL_INPUT Jump_Genres;
 DIGITAL_INPUT Jump_Artists;
 DIGITAL_INPUT Jump_Albums;
@@ -71,7 +75,14 @@ DIGITAL_INPUT Jump_Tracks;
 DIGITAL_INPUT Jump_Playlists;
 DIGITAL_INPUT Jump_Dynamic;
 DIGITAL_INPUT Jump_Pandora;
-DIGITAL_INPUT Jump_Favorites;
+DIGITAL_INPUT Jump_Rhapsody;
+DIGITAL_INPUT Jump_Slacker;
+DIGITAL_INPUT Jump_Napster;
+DIGITAL_INPUT Jump_LastFM;
+DIGITAL_INPUT Jump_Sirius;
+DIGITAL_INPUT Jump_Sounds;
+DIGITAL_INPUT Jump_Podcasts;
+
 // Direct Browse inputs
 DIGITAL_INPUT BrowseCurrentGenre,BrowseCurrentArtist,BrowseCurrentAlbum,BrowseCurrentSong;
 // Direct string inputs
@@ -186,12 +197,14 @@ INTEGER_PARAMETER NowplayingCoverSize;
 INTEGER_PARAMETER HomeListLength;
 #BEGIN_PARAMETER_PROPERTIES HomeListLength
 	propValidUnits=unitDecimal;
-	propDefaultValue=13d;
+	propBounds=1d,20d;
+	propDefaultValue=10d;
+	propShortDescription= "set to the number of items desired in the home list and make the number of HomeItem parameters below the same";
 #END_PARAMETER_PROPERTIES
-INTEGER_PARAMETER HomeItem[13,13];
+INTEGER_PARAMETER HomeItem[20];
 #BEGIN_PARAMETER_PROPERTIES HomeItem
 	propDefaultValue=0d;
-	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {13d,"Custom Browse"}, {0d,"Empty"};
+	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {13d,"Custom Browse"}, {14d,"Rhapsody"}, {15d,"Slacker"}, {16d,"Napster"}, {17d,"Last.fm"}, {18d,"Sirius"}, {19d,"Sound Effects"}, {0d,"Empty"};
 #END_PARAMETER_PROPERTIES
 
 // ///////////////////////// Sockets
@@ -227,6 +240,8 @@ INTEGER TCPIP_Connected_int;
 INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
 INTEGER progInTrackstat;
 //
+INTEGER parsePosition;
+//
 STRING	search_in[64], search_in_raw[64];
 //
 INTEGER OutHomeCount, OutHomeBar;
@@ -252,7 +267,7 @@ INTEGER TitleTracknum[10], TrackID[10];
 INTEGER PlaylistID[10], SearchID[10], SearchIDType[10];
 INTEGER NowplayingIndex[10];
 STRING NowplayingID[10][32];
-INTEGER ListHomeItem[13];
+INTEGER ListHomeItem[20];
 
 STRING CBLevel[10][256], CBID[10][64], CBName[10][64], CBType[10][64];
 INTEGER CBPlayable[10], CBMixable[10];
@@ -280,7 +295,7 @@ STRING restrictorFavorites[255], ActiveFAR_ID[64];
 STRING restrictorCB[255], restrictor2CB[255];
 
 STRING ListName[5][255], ListRestrictor[5][255], ListRestrictor2[5][255], ListActiveGenre[5][255];
-STRING ListHome[12][16], ListHomeCoverURL[12][128];
+STRING ListHome[20][16], ListHomeCoverURL[20][128];
 STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
 
 STRING ActiveFavoritesName[255], ActiveFavoritesID[255], FavoritesTitle[255];
@@ -773,8 +788,8 @@ Function Dynamic_PgReset_fn(){
 	ListName[1] = "All DynamicPlaylists";
 	DynamicRefresh_fn();
 }
-Function Pandora_PgReset_fn() {
-	FAR_cmd = "pandora";
+Function FAR_PgReset_fn(String Cmd, String Name){
+	FAR_cmd = Cmd;
 	FAR_parse = FAR_cmd + " items ";
 	FirstFavorites = 0;
 	restrictorFavorites = "";
@@ -783,21 +798,35 @@ Function Pandora_PgReset_fn() {
 	ListType[1] = 10;
 	ActiveGenre = "";
 	ActiveGenreID = 0;
-	ListName[1] = "Pandora";
+	ListName[1] = Name;
 	FavoritesRefresh_fn();
 }
+Function Pandora_PgReset_fn() {
+	FAR_PgReset_fn("pandora","Pandora");
+}
+Function Rhapsody_PgReset_fn() {
+	FAR_PgReset_fn("rhapsodydirect","Rhapsody");
+}
+Function Slacker_PgReset_fn() {
+	FAR_PgReset_fn("slacker","slacker");
+}
+Function Napster_PgReset_fn() {
+	FAR_PgReset_fn("napster","Napster");
+}
+Function LastFM_PgReset_fn() {
+	FAR_PgReset_fn("lfm","Last.fm");
+}
+Function Sirius_PgReset_fn() {
+	FAR_PgReset_fn("sirius","Sirius");
+}
+Function Sounds_PgReset_fn() {
+	FAR_PgReset_fn("sounds","Sound Effects");
+}
+Function Podcasts_PgReset_fn() {
+	FAR_PgReset_fn("podcast","Podcasts");
+}
 Function Favorites_PgReset_fn() {
-	FAR_cmd = "favorites";
-	FAR_parse = FAR_cmd + " items ";
-	FirstFavorites = 0;
-	restrictorFavorites = "";
-	ActiveFAR_ID = "";
-    ListShiftFwd_fn();
-	ListType[1] = 10;
-	ActiveGenre = "";
-	ActiveGenreID = 0;
-	ListName[1] = "Favorites";
-	FavoritesRefresh_fn();
+	FAR_PgReset_fn("favorites","Favorites");
 }
 Function Apps_PgReset_fn() {
 	FirstApps = 0;
@@ -833,19 +862,6 @@ Function CB_PgReset_fn(){
 		SetArray(ListCoverURL,ListCoverURL_blank);
 	}
 	CBRefresh_fn();
-}
-Function Podcasts_PgReset_fn() {
-	FAR_cmd = "podcast";
-	FAR_parse = FAR_cmd + " items ";
-	FirstFavorites = 0;
-	restrictorFavorites = "";
-	ActiveFAR_ID = "";
-    ListShiftFwd_fn();
-	ListType[1] = 10;
-	ActiveGenre = "";
-	ActiveGenreID = 0;
-	ListName[1] = "Podcasts";
-	FavoritesRefresh_fn();
 }
 Function Nowplaying_PgReset_fn(){
 	If (CurrentsongIndex - NowplayingShowPrev S< 0)
@@ -1210,6 +1226,12 @@ Function HomeListSelect_fn(integer i){
 	Else If (ListHomeItem[i]=11){Titles_PgReset_fn();}
 	Else If (ListHomeItem[i]=12){NewMusic_PgReset_fn();}
 	Else If (ListHomeItem[i]=13){CB_PgReset_fn();}
+	Else If (ListHomeItem[i]=14){Rhapsody_PgReset_fn();}
+	Else If (ListHomeItem[i]=15){Slacker_PgReset_fn();}
+	Else If (ListHomeItem[i]=16){Napster_PgReset_fn();}
+	Else If (ListHomeItem[i]=17){LastFM_PgReset_fn();}
+	Else If (ListHomeItem[i]=18){Sirius_PgReset_fn();}
+	Else If (ListHomeItem[i]=19){Sounds_PgReset_fn();}
 }
 Function GenreListSelect_fn(integer i){
 	If (GenreID[i] > 0){
@@ -3345,38 +3367,55 @@ Function Parse_Search(String InSearch$){
 		ListPlayable[i] = 1;
 	}
 }
-/*
-String_Function ParseStr(String In, String tag, Integer start, String DefaultReturn){
-	Integer i, indexStart, indexEnd, Length;
-	indexStart = find(tag,In,start) + len(tag);
+
+String_Function ParseStr(String In, String tag){
+	Integer i, indexStart, indexEnd, indexEndDelim, Length;
+	// Global_integer parsePosition
+	
+	indexStart = find(tag,In,parsePosition) + len(tag);
 	If (indexStart > len(tag)){
 		indexEnd = find(" ",In,indexStart);
 		if (indexEnd = 0){
-			indexEnd = len(In) - 1;
+			indexEndDelim = find("\x0D",In,indexStart);
+			if (indexEndDelim > 0){
+				indexEnd = indexEndDelim;
+			}
+			else {
+				indexEnd = len(In) + 1;
+			}
 		}
 		Length = indexEnd - indexStart;
+		parsePosition = indexEnd;
 		return(ParsePercent(mid(In,indexStart,Length)));
 	}
 	Else {
-		return(DefaultReturn);
+		return("");
 	}
 }
-Integer_Function ParseInt(String In, String tag, Integer start, Integer DefaultReturn){
-	Integer i, indexStart, indexEnd, Length;
-	indexStart = find(tag,In,start) + len(tag);
+Integer_Function ParseInt(String In, String tag){
+	Integer i, indexStart, indexEnd, indexEndDelim, Length;
+	// Global_integer parsePosition
+	
+	indexStart = find(tag,In,parsePosition) + len(tag);
 	If (indexStart > len(tag)){
 		indexEnd = find(" ",In,indexStart);
 		if (indexEnd = 0){
-			indexEnd = len(In) - 1;
+			indexEndDelim = find("\x0D",In,indexStart);
+			if (indexEndDelim > 0){
+				indexEnd = indexEndDelim;
+			}
+			else {
+				indexEnd = len(In) + 1;
+			}
 		}
 		Length = indexEnd - indexStart;
+		parsePosition = indexEnd;
 		return(AtoI(mid(In,indexStart,Length)));
 	}
 	Else {
-		return(DefaultReturn);
+		return(0);
 	}
 }
-*/
 
 Function Parse_CB(String InCB$){
 	Integer i, j, indexStart, indexEnd, Length;
@@ -4393,6 +4432,27 @@ PUSH Jump_Dynamic{
 PUSH Jump_Pandora{
 	Pandora_PgReset_fn();
 }   
+PUSH Jump_Rhapsody{
+	Rhapsody_PgReset_fn();
+}
+PUSH Jump_Slacker{
+	Slacker_PgReset_fn();
+}
+PUSH Jump_Napster{
+	Napster_PgReset_fn();
+}
+PUSH Jump_LastFM{
+	LastFM_PgReset_fn();
+}
+PUSH Jump_Sirius{
+	Sirius_PgReset_fn();
+}
+PUSH Jump_Sounds{
+	Sounds_PgReset_fn();
+}
+PUSH Jump_Podcasts{
+	Podcasts_PgReset_fn();
+}
 PUSH Jump_Favorites{
 	Favorites_PgReset_fn();
 }
@@ -5704,6 +5764,36 @@ Function Main() {
 				ListHomeItem[i] = 13;
 				ListHome[i] = "Custom Browse";
 				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/CustomBrowse/html/images/custombrowse_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (14):{
+				ListHomeItem[i] = 14;
+				ListHome[i] = "Rhapsody";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/RhapsodyDirect/html/images/icon_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (15):{
+				ListHomeItem[i] = 15;
+				ListHome[i] = "Slacker";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Slacker/html/images/icon_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (16):{
+				ListHomeItem[i] = 16;
+				ListHome[i] = "Napster";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Napster/html/images/icon.png", ServerIPAddr$);
+			}
+			Case (17):{
+				ListHomeItem[i] = 17;
+				ListHome[i] = "Last.fm";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/LastFM/html/images/icon_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (18):{
+				ListHomeItem[i] = 18;
+				ListHome[i] = "Sirius";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Sirius/html/images/icon_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+			}
+			Case (19):{
+				ListHomeItem[i] = 19;
+				ListHome[i] = "Sound Effects";
+				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Sounds/html/images/icon_%ux%u_f.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
 			}
 			default:{
 				ListHomeItem[i] = 0;
