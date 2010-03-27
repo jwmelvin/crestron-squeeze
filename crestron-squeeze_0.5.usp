@@ -25,7 +25,7 @@ License:
 #HELP_BEGIN
 	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
 #HELP_END
-#OUTPUT_SHIFT 27
+#OUTPUT_SHIFT 35
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
@@ -34,7 +34,11 @@ License:
 // #ENABLE_TRACE
 
 // ///////////// Inputs & Outputs
-DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, 
+				_SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_,
+				_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+				_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+				_SKIP_;
 DIGITAL_INPUT TCPIP_Connect;
 DIGITAL_INPUT TCPIP_ReconnectEnable;
 DIGITAL_INPUT OnDisconnect_Pause;
@@ -110,8 +114,6 @@ ANALOG_INPUT  InPageNowplaying;
 ANALOG_INPUT  InPagePlayers;
 ANALOG_INPUT  InTimeBar;
 ANALOG_INPUT  NowplayingShowPrev;
-ANALOG_INPUT  NowplayingWidthArtist, NowplayingWidthTotal;
-ANALOG_INPUT  CoverflowWidthArtist, CoverflowWidthAlbum;
 ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
 // Scroll Feedback
 ANALOG_OUTPUT  OutListCount, OutListBar;
@@ -190,6 +192,14 @@ INTEGER_PARAMETER ServerPort;
 #BEGIN_PARAMETER_PROPERTIES ServerPort
 	propValidUnits=unitDecimal;
 	propDefaultValue=9090d;
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER  ListWidth, CurrentsongWidth;
+INTEGER_PARAMETER  NowplayingWidthArtist, NowplayingWidthTotal;
+INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
+#BEGIN_PARAMETER_PROPERTIES ListWidth, CurrentsongWidth, NowplayingWidthArtist, NowplayingWidthTotal, CoverflowWidthArtist, CoverflowWidthAlbum
+	propValidUnits=unitDecimal;
+	propBounds=1d,255d;
+	propDefaultValue=64d;
 #END_PARAMETER_PROPERTIES
 INTEGER_PARAMETER ListCoverSize;
 INTEGER_PARAMETER CoverflowSize;
@@ -1636,8 +1646,13 @@ Function TitleListPlay_fn(integer i){
 		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, TrackID[i]);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
+		If (TotalNowplaying > 0){
+			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+		}
+		Else {
+			makestring(OUT$,"%s pause 0\n", PlayerID$);
+		}
 		delay(10);
-		makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 //		ActiveTrackID = TrackID[i];
@@ -1679,31 +1694,22 @@ Function FavoritesListPlay_fn(integer i){
 		Else {
 			CurrentsongCoverURL_push = "";
 		}
-/*
-		// play the item depending on what it is
-		// if not a "favorite" or "rhapsody" then just play it
-		If ((FAR_cmd <> "favorites") && 
-		(FAR_cmd <> "rhapsodydirect") &&
-		(FavoritesIsAudio[i] = 1)){
-			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
-			trace("sending: %s",OUT$);
-			socketsend(TCPClient, OUT$);
-		}
-		// otherswise insert and advance to it
-		Else 
-*/
 		If (FavoritesIsAudio[i] = 1){
 			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient, OUT$);
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
 			delay(10);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
-		// if not audio, just take the select action
 		Else {
-			FavoritesListSelect_fn(i);
+			FavoritesListSelect_fn(i); // if not audio, just take the select action
 		}
 	}
 }
@@ -1716,8 +1722,13 @@ Function SearchListPlay_fn(integer i){
 			makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%u \n",PlayerID$, SearchID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
 			delay(10);
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
@@ -1725,8 +1736,13 @@ Function SearchListPlay_fn(integer i){
 			makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%u \n",PlayerID$, SearchID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
 			delay(10);
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
@@ -1736,8 +1752,13 @@ Function SearchListPlay_fn(integer i){
 			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%u \n",PlayerID$, SearchID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
 			delay(10);
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
@@ -1745,8 +1766,13 @@ Function SearchListPlay_fn(integer i){
 			makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%u \n",PlayerID$, SearchID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
 			delay(10);
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
@@ -2619,7 +2645,7 @@ Function Parse_FAR(String InFavorites$){
 			}
 			Else {FavoritesHasItems[i] = 0;
 			}
-			List$[i] = FavoritesName[i];
+			List$[i] = left(FavoritesName[i],ListWidth);
 			ListPlayable[i] = FavoritesIsAudio[i];
 			If (ListCoverURL_Enable = 1){
 				If (len(FavoritesImage[i]) > 0){
@@ -2680,7 +2706,7 @@ Function Parse_Dynamic(String InDynamic$){
 			Length = indexEnd - indexStart;
 			DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
 		}
-		List$[i] = DynamicName[i];
+		List$[i] = left(DynamicName[i],ListWidth);
 		ListPlayable[i] = 1;
 	}
 }
@@ -2736,7 +2762,7 @@ Function Parse_Genres(String InGenres$){
 		Else {
 			Genre[i] = " ";
 		}
-		List$[i] = Genre[i];
+		List$[i] = left(Genre[i],ListWidth);
 		ListPlayable[i] = 1;
 	}
 }
@@ -2799,7 +2825,7 @@ Function Parse_Artists(String InArtists$){
 		Else {
 			Artist[i] = " ";
 		}
-		List$[i] = Artist[i];
+		List$[i] = left(Artist[i],ListWidth);
 		ListPlayable[i] = 1;
 	}
 }
@@ -2894,7 +2920,7 @@ Function Parse_Albums(String InAlbums$){
 		}
 		Else {
 			trace("Coverflow = 0");
-			List$[i] = Album[i];
+			List$[i] = left(Album[i],ListWidth);
 		}
 		ListPlayable[i] = 1;
 		If (Coverflow = 1) {
@@ -3005,7 +3031,7 @@ Function Parse_Titles(String InTitles$){
 			trace("no album_id");
 			TitleAlbumID[i] = 0;
 		}
-		List$[i] = Title[i];		
+		List$[i] = left(Title[i],ListWidth);
 		ListPlayable[i] = 1;
 		If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
@@ -3064,7 +3090,7 @@ Function Parse_Playlists(String InPlaylists$){
 		}
 		trace("PlaylistRaw[%u] = %s",i,PlaylistRaw[i]);
 		Playlist[i] = ParsePercent(PlaylistRaw[i]);
-		List$[i] = Playlist[i];
+		List$[i] = left(Playlist[i],ListWidth);
 		ListPlayable[i] = 1;
 	}
 }
@@ -3154,7 +3180,7 @@ Function Parse_Apps(String InApps$){
 		Else {
 			AppsType[i] = "";
 		}
-		List$[i] = AppsName[i];
+		List$[i] = left(AppsName[i],ListWidth);
 		ListPlayable[i] = 0;
 		If (ListCoverURL_Enable = 1){
 			makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,AppsIcon[i]);
@@ -3244,7 +3270,7 @@ Function Parse_Radios(String InRadios$){
 		Else {
 			RadiosType[i] = "";
 		}
-		List$[i] = RadiosName[i];
+		List$[i] = left(RadiosName[i],ListWidth);
 		ListPlayable[i] = 0;
 		If (ListCoverURL_Enable = 1){
 			makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,RadiosIcon[i]);
@@ -3363,7 +3389,7 @@ Function Parse_Search(String InSearch$){
 			}
 			Break;
 		}
-		List$[i] = Search[i];
+		List$[i] = left(Search[i],ListWidth);
 		ListPlayable[i] = 1;
 	}
 }
@@ -3504,7 +3530,7 @@ Function Parse_CB(String InCB$){
 				CBMixable[i] = AtoI(mid(InCB$,indexStart,Length));
 				trace("CBMixable[%u]: %u",i,CBMixable[i]);
 				
-				List$[i] = CBName[i];
+				List$[i] = left(CBName[i],ListWidth);
 				ListPlayable[i] = CBPlayable[i];
 			}
 		}
@@ -3546,22 +3572,6 @@ Function Parse_Players(String InPlayers$){
 	else {
 		OutPlayersBar = 65535;
 	}
-/*
-	If (TotalPlayers - PlayersFirstNumber >= NumberOfPlayers){
-		ListLengthPlayers = NumberOfPlayers;
-	}
-	else {
-		ListLengthPlayers = TotalPlayers - PlayersFirstNumber;
-		SetArray(PlayersName,"");
-		SetArray(PlayersID,0);
-		SetArray(PlayersIndex,0);
-		// ListType[1] = 13 reserved for Players
-		// not yet a possible List type
-		If (ListType[1] = 13){
-			SetArray(List$," ");
-		}
-	}
-*/
 	ListLengthPlayers = NumberOfPlayers;
 	indexEnd = 1;
 	For (i = 1 to ListLengthPlayers) {
@@ -4136,7 +4146,7 @@ Function Parse_Status(String InStatus$){
 		Else {
 			Length = len(InStatus$) - indexStart - 1; 
 		}
-		CurrentsongBitrate = ParsePercent(mid(InStatus$,indexStart, Length));
+		CurrentsongBitrate = left(ParsePercent(mid(InStatus$,indexStart, Length)),CurrentsongWidth);
 	}
 	Else {
 		CurrentsongBitrate = " ";
@@ -4144,9 +4154,9 @@ Function Parse_Status(String InStatus$){
 	// start to process the parsed information
 	CurrentsongType = CTRemoteService;
 	If (CurrentSongSeparateOut_Enable = 1){
-		CurrentsongTitle = CurrentTrackTitle$;
-		CurrentsongAlbum = CurrentTrackAlbum$;
-		CurrentsongArtist = CurrentTrackArtist$;
+		CurrentsongTitle = left(CurrentTrackTitle$,CurrentsongWidth);
+		CurrentsongAlbum = left(CurrentTrackAlbum$,CurrentsongWidth);
+		CurrentsongArtist = left(CurrentTrackArtist$,CurrentsongWidth);
 		// create CurrentsongGenre depending on which internet source is playing
 		If (CurrentTrackRemote = 1){
 			// special conditions for certain services
@@ -4164,16 +4174,16 @@ Function Parse_Status(String InStatus$){
 			}
 			// use the remote_title as the default genre
 			Else If (len(CurrentTrackRTitle$) > 0){
-				CurrentsongGenre = CurrentTrackRTitle$;
+				CurrentsongGenre = left(CurrentTrackRTitle$,CurrentsongWidth);
 			}
 			// use current_title if there is no remote_title
 			Else {
-				CurrentsongGenre = CurrentTrackCTitle$;
+				CurrentsongGenre = left(CurrentTrackCTitle$,CurrentsongWidth);
 			}
 		}
 		// create the default CurrentsongGenre for local tracks
 		Else {
-			CurrentsongGenre = CurrentTrackGenre$; 
+			CurrentsongGenre = left(CurrentTrackGenre$,CurrentsongWidth); 
 		}
 	}
 	If (CurrentSongConsolidatedOut_Enable = 1){
