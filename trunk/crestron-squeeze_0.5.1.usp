@@ -21,7 +21,7 @@ License:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
-#SYMBOL_NAME "SqueezeBox 0.5" 
+#SYMBOL_NAME "SqueezeBox 0.5.1" 
 #HELP_BEGIN
 	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
 #HELP_END
