@@ -63,6 +63,8 @@ DIGITAL_OUTPUT TCPIP_Connected;
 ANALOG_OUTPUT TCPIP_Status;
 DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
 DIGITAL_INPUT Pwr_On, Pwr_Off;
+Digital_input VolumeUp, VolumeDn;
+Analog_input VolumeBar;
 DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
 DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
 DIGITAL_INPUT Playlist_Clear;
@@ -128,6 +130,8 @@ STRING_OUTPUT  CurrentPlayerName;
 STRING_OUTPUT  CurrentPlayerID;
 DIGITAL_OUTPUT CurrentPlayerPower;
 DIGITAL_OUTPUT CurrentPlayerConnected;
+String_output  CurrentPlayerVolume;
+Analog_output  CurrentPlayerVolumeBar;
 DIGITAL_OUTPUT CurrentPlayerMaster;
 DIGITAL_OUTPUT CurrentPlayerSlave;
 STRING_OUTPUT  CurrentPlayerMasterName;
@@ -242,6 +246,7 @@ LONG_INTEGER CurrentTrackID;
 INTEGER CTDuration_sec, CTTime_sec;
 INTEGER CurrentPlaylistID, CurrentPlaylistModified;
 INTEGER Repeat, Shuffle, CurrentTrackRemote, CTRemoteService;
+Integer Volume;
 INTEGER timeclock_run;
 // INTEGER waitCountTime_running;
 INTEGER waitUpdateTime_running;
@@ -3744,6 +3749,7 @@ Function Parse_Status(String InStatus$){
 	Else {
 		CurrentTrackDuration$ = "<n/a>";
 	}
+	
 	// start synced player status
 	CurrentPlayerMaster_local = 0;
 	CurrentPlayerSlave_local = 0;
@@ -3837,6 +3843,14 @@ Function Parse_Status(String InStatus$){
 	Else {
 		CurrentPlayerSlave = 0;
 	} 
+	indexStart = find(" mixer%20volume%3A",InStatus$,indexEnd) + 18;
+	If (indexStart > 18){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		Volume = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	makestring(CurrentPlayerVolume,"%u",Volume);
+	CurrentPlayerVolumeBar = (Volume*65535/100);
 	indexStart = find(" playlist%20repeat%3A",InStatus$,indexEnd) + 21;
 	If (indexStart > 21){
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -4328,6 +4342,17 @@ Function Parse_Trackstat(String InTrackstat$){
 		}
 	}
 	makestring(CurrentsongTrackstat$,"%u",CurrentsongTrackstat);
+}
+Function Parse_Volume(String InVol$){
+	Integer indexStart, indexEnd, Length;
+	if ((find("-",InVol$) = 0) && (find("%2B",InVol$) = 0)){
+		indexStart = find("mixer volume ",InVol$) + 13;
+		if (indexStart > 13){
+			Volume = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+			makestring(CurrentPlayerVolume,"%u",Volume);
+			CurrentPlayerVolumeBar = (Volume*65535/100);
+		}
+	}
 }
 // //////////// TCPIP Connection
 PUSH TCPIP_Connect{
@@ -5165,6 +5190,25 @@ PUSH Pwr_Off {
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
+PUSH VolumeUp {
+	String Out$[64];
+	makestring(Out$,"%s mixer volume +1\n",PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH VolumeDn {
+	String Out$[64];
+	makestring(Out$,"%s mixer volume -1\n",PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+CHANGE VolumeBar{
+	String Out$[64];
+	makestring(Out$,"%s mixer volume %lu\n",PlayerID$,VolumeBar*100/65535);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+
 PUSH Repeat_Off {
 	String Out$[64];
 	makestring(OUT$,"%s playlist repeat 0\n", PlayerID$);
@@ -5597,6 +5641,10 @@ SOCKETRECEIVE TCPClient {
 //		RetimeWait(100,waitCountTime);
 		In$ = mid(In$,34,len(In$) - 35);
 		Parse_Time(AtoI(In$)); // parse_time requires integer input
+	}
+	Else If (find(" mixer volume",Find$)){
+		trace("parsing volume");
+		Parse_Volume(In$);
 	}
 	Else If (find("trackstat ",Find$)){
 		trace("parsing trackstat rating");
