@@ -207,6 +207,7 @@ INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
 #END_PARAMETER_PROPERTIES
 INTEGER_PARAMETER ListCoverSize;
 INTEGER_PARAMETER CoverflowSize;
+Integer_parameter CurrentsongCoverSize;
 INTEGER_PARAMETER NowplayingCoverSize;
 INTEGER_PARAMETER HomeListLength;
 #BEGIN_PARAMETER_PROPERTIES HomeListLength
@@ -4120,20 +4121,20 @@ Function Parse_Status(String InStatus$){
 			CTRemoteService = 11;
 		}
 		Else If (find("/music",left(CurrentTrackRemoteCover$,6))){
-			makestring(CurrentTrackRemoteCover$,"http://%s:9000/music/-%lu/cover_250x250_o.png", ServerIPAddr$, CurrentTrackID);
+			makestring(CurrentTrackRemoteCover$,"http://%s:9000/music/-%lu/cover_%ux%u_o.png", ServerIPAddr$, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
 	}
 	Else If (CTRemoteService = 0){
 		CurrentTrackRemoteCover$ = "";
-		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",ServerIPAddr$,CurrentTrackID);
+		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover_%ux%u_o.jpg",ServerIPAddr$,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 	}
 	Else If (len(CurrentsongCoverURL_push) > 0){
 		CurrentsongCoverURL = CurrentsongCoverURL_push;
 	}
 	Else {
 		CurrentTrackRemoteCover$ = "";
-		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover.jpg",ServerIPAddr$,CurrentTrackID);
+		makestring(CurrentsongCoverURL,"http://%s:9000/music/%lu/cover_%ux%u_o.jpg",ServerIPAddr$,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 	}
 	If (CurrentTrackRemote = 1){
 		indexStart = find(" remote_title%3A",InStatus$,indexEnd) + 16;
