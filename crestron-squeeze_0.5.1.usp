@@ -5206,9 +5206,11 @@ PUSH VolumeDn {
 }
 CHANGE VolumeBar{
 	String Out$[64];
-	makestring(Out$,"%s mixer volume %lu\n",PlayerID$,VolumeBar*100/65535);
-	trace("sending: %s",OUT$);
-	socketsend(TCPClient,OUT$);
+	If (VolumeBar <> CurrentPlayerVolumeBar){
+		makestring(Out$,"%s mixer volume %lu\n",PlayerID$,VolumeBar*100/65535);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
 }
 
 PUSH Repeat_Off {
