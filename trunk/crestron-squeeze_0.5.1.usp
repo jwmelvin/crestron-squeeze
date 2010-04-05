@@ -197,6 +197,7 @@ INTEGER_PARAMETER ServerPort;
 	propValidUnits=unitDecimal;
 	propDefaultValue=9090d;
 #END_PARAMETER_PROPERTIES
+Integer_parameter VolumeIncrement;
 INTEGER_PARAMETER  ListWidth, CurrentsongWidth;
 INTEGER_PARAMETER  NowplayingWidthArtist, NowplayingWidthTotal;
 INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
@@ -5193,13 +5194,13 @@ PUSH Pwr_Off {
 }
 PUSH VolumeUp {
 	String Out$[64];
-	makestring(Out$,"%s mixer volume +1\n",PlayerID$);
+	makestring(Out$,"%s mixer volume +%u\n",PlayerID$,VolumeIncrement);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 PUSH VolumeDn {
 	String Out$[64];
-	makestring(Out$,"%s mixer volume -1\n",PlayerID$);
+	makestring(Out$,"%s mixer volume -%u\n",PlayerID$,VolumeIncrement);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
