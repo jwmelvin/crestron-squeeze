@@ -4346,13 +4346,35 @@ Function Parse_Trackstat(String InTrackstat$){
 	makestring(CurrentsongTrackstat$,"%u",CurrentsongTrackstat);
 }
 Function Parse_Volume(String InVol$){
-	Integer indexStart, indexEnd, Length;
+	Integer indexStart, indexEnd, Length, temp;
 	if ((find("-",InVol$) = 0) && (find("%2B",InVol$) = 0)){
 		indexStart = find("mixer volume ",InVol$) + 13;
 		if (indexStart > 13){
 			Volume = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
 			makestring(CurrentPlayerVolume,"%u",Volume);
 			CurrentPlayerVolumeBar = (Volume*65535/100);
+		}
+	}
+	else {
+		indexStart = find("-",InVol$) + 1;
+		if (indexStart > 1){
+			temp = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+			if (Volume >= temp){
+				Volume = Volume - temp;
+				makestring(CurrentPlayerVolume,"%u",Volume);
+				CurrentPlayerVolumeBar = (Volume*65535/100);
+			}
+		}
+		else {
+			indexStart = find("%2B",InVol$) + 3;
+			if (indexStart > 3){
+				temp = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+				if (Volume + temp <= 100){
+					Volume = Volume + temp;
+					makestring(CurrentPlayerVolume,"%u",Volume);
+					CurrentPlayerVolumeBar = (Volume*65535/100);
+				}
+			}
 		}
 	}
 }
