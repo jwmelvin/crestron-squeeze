@@ -198,6 +198,11 @@ INTEGER_PARAMETER ServerPort;
 	propDefaultValue=9090d;
 #END_PARAMETER_PROPERTIES
 Integer_parameter VolumeIncrement;
+#BEGIN_PARAMETER_PROPERTIES VolumeIncrement
+	propValidUnits=unitDecimal;
+	propBounds=1d,100d;
+	propDefaultValue=10d;
+#END_PARAMETER_PROPERTIES
 INTEGER_PARAMETER  ListWidth, CurrentsongWidth;
 INTEGER_PARAMETER  NowplayingWidthArtist, NowplayingWidthTotal;
 INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
@@ -301,7 +306,7 @@ STRING CurrentTrackGenre$[255], CurrentTrackArtist$[255], CurrentTrackAlbum$[255
 STRING CurrentTrackCTitle$[255], CurrentTrackRTitle$[255];
 STRING CurrentTrackRemoteCover$[512];
 STRING CurrentsongCoverURL_push[255];
-STRING CurrentTrackURL$[1024], CurrentTrackURL$_raw[1024];
+STRING CurrentTrackURL$[1024], CurrentTrackURL$_raw[2048];
 STRING CoverflowURL_blank[64], CoverflowURL_missing[64];
 STRING ListCoverURL_blank[64], ListCoverURL_missing[64];
 STRING NowplayingCoverURL_blank[64];
@@ -2176,7 +2181,7 @@ Function Search_Favorites_fn(){
 }
 String_Function ParsePercent(STRING Parse$){
 	Integer i, char, code;
-	String output$[1024], dump[6];
+	String output$[2048], dump[6];
 	i = 1;
 	output$ = "";
 	If (ASCII_only = 1){
