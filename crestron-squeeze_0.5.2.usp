@@ -2882,8 +2882,8 @@ Function Parse_Artists(String InArtists$){
 }
 Function Parse_Albums(String InAlbums$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
-	Integer ListLengthAlbums, AlbumTrackID[10];
-	String AlbumArtist[10][128], AlbumsParseItem[2048];
+	Integer ListLengthAlbums;
+	String AlbumArtist[10][128], AlbumsParseItem[2048], AlbumTrackID[10][8];
 
 	indexEnd = find(" ",InAlbums$,9);
 	Length = indexEnd - 8;
@@ -2948,22 +2948,23 @@ Function Parse_Albums(String InAlbums$){
 		If (indexStart > 20){
 			indexEnd = find(" ",AlbumsParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			AlbumTrackID[i] = AtoI(mid(AlbumsParseItem,indexStart,Length));
+			AlbumTrackID[i] = mid(AlbumsParseItem,indexStart,Length);
 		}
 		Else {
-			AlbumTrackID[i] = 0;
+			AlbumTrackID[i] = "";
 		}
+		trace("AlbumTrackID[%u]=%s",i,AlbumTrackID[i]);
 		indexStart = find(" artist%3A",AlbumsParseItem,indexEnd) + 10;
 		If (indexStart > 10){
 			indexEnd = find(" ",AlbumsParseItem, indexStart);
 			Length = indexEnd - indexStart;
 			AlbumArtist[i] = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
-			trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
 		}
 		Else {
 			AlbumArtist[i] = "";
-			trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
+			
 		}
+		trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
 		If (Coverflow = 1){
 			trace("Coverflow = 1");
 			List$[i] = left(Album[i], CoverflowWidthAlbum);
@@ -2975,20 +2976,20 @@ Function Parse_Albums(String InAlbums$){
 		}
 		ListPlayable[i] = 1;
 		If (Coverflow = 1) {
-			If (AlbumTrackID[i] = 0){
+			If (len(AlbumTrackID[i]) = 0){
 				ListCoverURL[i] = CoverflowURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i], CoverflowSize, CoverflowSize);
+				makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i], CoverflowSize, CoverflowSize);
 			}		
 		}
 		Else If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
-			If (AlbumTrackID[i] = 0){
+			If (len(AlbumTrackID[i]) = 0){
 				ListCoverURL[i] = ListCoverURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/music/%u/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i],ListCoverSize, ListCoverSize);
+				makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i],ListCoverSize, ListCoverSize);
 			}
 		}
 	}
