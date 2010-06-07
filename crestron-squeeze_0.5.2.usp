@@ -66,6 +66,7 @@ DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
 DIGITAL_INPUT Pwr_On, Pwr_Off;
 Digital_input VolumeUp, VolumeDn;
 Analog_input VolumeBar;
+DIGITAL_INPUT ButtonUp, ButtonDn, ButtonLt, ButtonRt, Button0, Button1, Button2, Button3, Button4, Button5, Button6, Button7, Button8, Button9, ButtonSearch, ButtonNP, ButtonSize, ButtonBrightness, ButtonShuffle, ButtonRepeat, ButtonSleep;
 DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
 DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
 DIGITAL_INPUT Playlist_Clear;
@@ -5299,6 +5300,132 @@ PUSH Next {
 PUSH Prev {          
 	String Out$[64];
 	makestring(OUT$,"%s button rew.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonUp {
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_up\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonDn{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_down\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonLt{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_left\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonRt{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_right\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button0{
+	String Out$[64];
+	makestring(OUT$,"%s button 0\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button1{
+	String Out$[64];
+	makestring(OUT$,"%s button 1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button2{
+	String Out$[64];
+	makestring(OUT$,"%s button 2\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button3{
+	String Out$[64];
+	makestring(OUT$,"%s button 3\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button4{
+	String Out$[64];
+	makestring(OUT$,"%s button 4\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button5{
+	String Out$[64];
+	makestring(OUT$,"%s button 5\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button6{
+	String Out$[64];
+	makestring(OUT$,"%s button 6\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button7{
+	String Out$[64];
+	makestring(OUT$,"%s button 7\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button8{
+	String Out$[64];
+	makestring(OUT$,"%s button 8\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button9{
+	String Out$[64];
+	makestring(OUT$,"%s button 9\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonSearch{
+	String Out$[64];
+	makestring(OUT$,"%s button search\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonNP{
+	String Out$[64];
+	makestring(OUT$,"%s button now_playing\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonSize{
+	String Out$[64];
+	makestring(OUT$,"%s button size\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonBrightness{
+	String Out$[64];
+	makestring(OUT$,"%s button brightness.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonShuffle{
+	String Out$[64];
+	makestring(OUT$,"%s button shuffle.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonRepeat{
+	String Out$[64];
+	makestring(OUT$,"%s button repeat\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonSleep{
+	String Out$[64];
+	makestring(OUT$,"%s button sleep.single\n", PlayerID$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
