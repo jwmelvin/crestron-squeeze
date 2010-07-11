@@ -200,6 +200,11 @@ INTEGER_PARAMETER ServerPort;
 	propValidUnits=unitDecimal;
 	propDefaultValue=9090d;
 #END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER ServerHttpPort;
+#BEGIN_PARAMETER_PROPERTIES ServerHttpPort
+	propValidUnits=unitDecimal;
+	propDefaultValue=9000d;
+#END_PARAMETER_PROPERTIES
 Integer_parameter VolumeIncrement;
 #BEGIN_PARAMETER_PROPERTIES VolumeIncrement
 	propValidUnits=unitDecimal;
@@ -302,7 +307,7 @@ STRING 	GenreID[10][8],
 			TitleAlbumID[10][8],
 			TrackID[10][8],
 			SearchID[10][8],
-			NowplayingID[10][8],
+			NowplayingID[10][12],
 			PlaylistID[10][8];
 
 INTEGER TitleTracknum[10];
@@ -2560,17 +2565,17 @@ Function Parse_Nowplaying(String InNowplaying$){
 					NowplayingCoverURL[i] = NowplayingURL[i] + "?.jpg";
 				}
 				Else If (find("plugins/",left(NowplayingURL[i],8))){
-					makestring(NowplayingCoverURL[i],"http://%s:9000/%s", ServerIPAddr$, NowplayingURL[i]);
+					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingURL[i]);
 				}
 				Else If (find("/music",left(NowplayingURL[i],6))){
-					makestring(NowplayingCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
+					makestring(NowplayingCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
 				}
 				Else {
 					NowplayingCoverURL[i] = NowplayingURL[i];
 				}
 			}
 			Else {
-				makestring(NowplayingCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
+				makestring(NowplayingCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
 			}
 		}
 	}
@@ -2999,7 +3004,7 @@ Function Parse_Albums(String InAlbums$){
 				ListCoverURL[i] = CoverflowURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i], CoverflowSize, CoverflowSize);
+				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID[i], CoverflowSize, CoverflowSize);
 			}		
 		}
 		Else If (ListCoverURL_Enable = 1){
@@ -3008,7 +3013,7 @@ Function Parse_Albums(String InAlbums$){
 				ListCoverURL[i] = ListCoverURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, AlbumTrackID[i],ListCoverSize, ListCoverSize);
+				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID[i],ListCoverSize, ListCoverSize);
 			}
 		}
 	}
@@ -3106,7 +3111,7 @@ Function Parse_Titles(String InTitles$){
 		ListPlayable[i] = 1;
 		If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
-			makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, TrackID[i],ListCoverSize,ListCoverSize);
+			makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, TrackID[i],ListCoverSize,ListCoverSize);
 		}
 	}
 }
@@ -3259,7 +3264,7 @@ Function Parse_Apps(String InApps$){
 				ListCoverURL[i] = AppsIcon[i];
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,AppsIcon[i]);
+				makestring(ListCoverURL[i],"http://%s:%u/%s",ServerIPAddr$,ServerHttpPort,AppsIcon[i]);
 			}
 		}
 	}
@@ -3350,7 +3355,7 @@ Function Parse_Radios(String InRadios$){
 		List$[i] = left(RadiosName[i],ListWidth);
 		ListPlayable[i] = 0;
 		If (ListCoverURL_Enable = 1){
-			makestring(ListCoverURL[i],"http://%s:9000/%s",ServerIPAddr$,RadiosIcon[i]);
+			makestring(ListCoverURL[i],"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, RadiosIcon[i]);
 		}
 	}	
 }
@@ -3451,7 +3456,7 @@ Function Parse_Search(String InSearch$){
 			Length = indexEnd - indexStart;
 			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
 			If (ListCoverURL_Enable = 1){
-				makestring(ListCoverURL[i],"http://%s:9000/music/%s/cover_%ux%u.jpg", ServerIPAddr$, SearchID[i], ListCoverSize, ListCoverSize);
+				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.jpg", ServerIPAddr$,ServerHttpPort, SearchID[i], ListCoverSize, ListCoverSize);
 			}
 		}
 		Else {
@@ -4202,17 +4207,17 @@ Function Parse_Status(String InStatus$){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
 		Else If (find("plugins/",left(CurrentTrackRemoteCover$,8))){
-			makestring(CurrentTrackRemoteCover$,"http://%s:9000/%s",ServerIPAddr$,CurrentTrackRemoteCover$);
+			makestring(CurrentTrackRemoteCover$,"http://%s:%u/%s",ServerIPAddr$,ServerHttpPort, CurrentTrackRemoteCover$);
 		}
 		Else if (find("iplayer/",left(CurrentTrackRemoteCover$,8))){
 			CTRemoteService = 11;
 		}
 		Else If (find("/music",left(CurrentTrackRemoteCover$,6))){
 			If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
-				makestring(CurrentTrackRemoteCover$,"http://%s:9000/music/%s/cover_%ux%u.png", ServerIPAddr$, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+				makestring(CurrentTrackRemoteCover$,"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
 			}
 			Else {
-				makestring(CurrentTrackRemoteCover$,"http://%s:9000/music/-%s/cover_%ux%u.png", ServerIPAddr$, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+				makestring(CurrentTrackRemoteCover$,"http://%s:%u/music/-%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 			}
 		}
 		CurrentsongCoverURL = CurrentTrackRemoteCover$;
@@ -4220,10 +4225,10 @@ Function Parse_Status(String InStatus$){
 	Else If (CTRemoteService = 0){
 		CurrentTrackRemoteCover$ = "";
 		If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
-			makestring(CurrentsongCoverURL,"http://%s:9000/music/%s/cover_%ux%u.jpg",ServerIPAddr$,CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURL,"http://%s:%u/music/%s/cover_%ux%u.jpg",ServerIPAddr$, ServerHttpPort, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
 		}
 		Else {
-			makestring(CurrentsongCoverURL,"http://%s:9000/music/%s/cover_%ux%u.jpg",ServerIPAddr$,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURL,"http://%s:%u/music/%s/cover_%ux%u.jpg",ServerIPAddr$, ServerHttpPort,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 		}
 	}
 	Else If (len(CurrentsongCoverURL_push) > 0){
@@ -4232,10 +4237,10 @@ Function Parse_Status(String InStatus$){
 	Else {
 		CurrentTrackRemoteCover$ = "";
 		If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
-			makestring(CurrentsongCoverURL,"http://%s:9000/music/%s/cover_%ux%u.jpg",ServerIPAddr$,CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURL,"http://%s:%u/music/%s/cover_%ux%u.jpg",ServerIPAddr$, ServerHttpPort, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
 		}
 		else {
-			makestring(CurrentsongCoverURL,"http://%s:9000/music/%s/cover_%ux%u.jpg",ServerIPAddr$,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURL,"http://%s:%u/music/%s/cover_%ux%u.jpg",ServerIPAddr$, ServerHttpPort, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
 		}
 	}
 	If (CurrentTrackRemote = 1){
@@ -5780,6 +5785,9 @@ PUSH Rate_Up {
 		socketsend(TCPClient, OUT$);
 	}
 }
+PUSH CurrentSongTime_Enable {
+	CurrentsongTimer_fn();
+}
 PUSH Rate_Dn {
 	String Out$[64];
 	Integer rating_int;
@@ -6034,13 +6042,13 @@ Function Main() {
 	SetArray(ListRestrictor,"");
 	Nowplaying_reset_enable = 1;
 		// Coverflow missing & blank covers
-	makestring(CoverflowURL_blank,"http://%s:9000/html/images/blank_%ux%u.png", ServerIPAddr$, CoverflowSize, CoverflowSize);
-	makestring(CoverflowURL_missing,"http://%s:9000/music/0/cover_%ux%u.png", ServerIPAddr$, CoverflowSize, CoverflowSize);
+	makestring(CoverflowURL_blank,"http://%s:%u/html/images/blank_%ux%u.png", ServerIPAddr$, ServerHttpPort, CoverflowSize, CoverflowSize);
+	makestring(CoverflowURL_missing,"http://%s:%u/music/0/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, CoverflowSize, CoverflowSize);
 	// List item missing & blank covers
-	makestring(ListCoverURL_blank,"http://%s:9000/html/images/blank_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
-	makestring(ListCoverURL_missing,"http://%s:9000/music/0/cover_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+	makestring(ListCoverURL_blank,"http://%s:%u/html/images/blank_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
+	makestring(ListCoverURL_missing,"http://%s:%u/music/0/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 	// Nowplaying blank cover
-	makestring(NowplayingCoverURL_blank,"http://%s:9000/html/images/blank_%ux%u.png", ServerIPAddr$, NowplayingCoverSize, NowplayingCoverSize);
+	makestring(NowplayingCoverURL_blank,"http://%s:%u/html/images/blank_%ux%u.png", ServerIPAddr$, ServerHttpPort, NowplayingCoverSize, NowplayingCoverSize);
 	// create the home list according to the HomeItem parameters
  	TotalHome = HomeListLength;    
 	For (i = 1 to TotalHome){
@@ -6048,102 +6056,102 @@ Function Main() {
 			Case (1):{
 				ListHomeItem[i] = 1;
 				ListHome[i] = "Favorites";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/favorites_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/favorites_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (2):{
 				ListHomeItem[i] = 2;
 				ListHome[i] = "Genres";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/genres_%ux%u.png",ServerIPAddr$,ListCoverSize,ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/genres_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize,ListCoverSize);
 			}
 			Case (3):{
 				ListHomeItem[i] = 3;
 				ListHome[i] = "Artists";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/artists_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/artists_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (4):{
 				ListHomeItem[i] = 4;
 				ListHome[i] = "Albums";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/albums_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/albums_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (5):{
 				ListHomeItem[i] = 5;
 				ListHome[i] = "Playlists";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/playlists_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/playlists_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (6):{
 				ListHomeItem[i] = 6;
 				ListHome[i] = "Dynamic PL";    
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (7):{
 				ListHomeItem[i] = 7;
 				ListHome[i] = "Radios";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/radio_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (8):{
 				ListHomeItem[i] = 8;
 				ListHome[i] = "Apps";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/radio_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/radio_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (9):{
 				ListHomeItem[i] = 9;
 				ListHome[i] = "Pandora";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Pandora/html/images/icon_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Pandora/html/images/icon_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (10):{
 				ListHomeItem[i] = 10;
 				ListHome[i] = "Podcasts";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Podcast/html/images/icon_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Podcast/html/images/icon_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (11):{
 				ListHomeItem[i] = 11;
 				ListHome[i] = "Tracks";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/blank_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (12):{
 				ListHomeItem[i] = 12;
 				ListHome[i] = "New Albums";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/newmusic_%ux%u.png",ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/newmusic_%ux%u.png",ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (13):{
 				ListHomeItem[i] = 13;
 				ListHome[i] = "Custom Browse";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/CustomBrowse/html/images/custombrowse_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/CustomBrowse/html/images/custombrowse_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (14):{
 				ListHomeItem[i] = 14;
 				ListHome[i] = "Rhapsody";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/RhapsodyDirect/html/images/icon_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/RhapsodyDirect/html/images/icon_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (15):{
 				ListHomeItem[i] = 15;
 				ListHome[i] = "Slacker";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Slacker/html/images/icon_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Slacker/html/images/icon_%ux%u.png", ServerIPAddr$, ServerHttpPort,  ListCoverSize, ListCoverSize);
 			}
 			Case (16):{
 				ListHomeItem[i] = 16;
 				ListHome[i] = "Napster";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Napster/html/images/icon.png", ServerIPAddr$);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Napster/html/images/icon.png", ServerIPAddr$, ServerHttpPort);
 			}
 			Case (17):{
 				ListHomeItem[i] = 17;
 				ListHome[i] = "Last.fm";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/LastFM/html/images/icon_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/LastFM/html/images/icon_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			Case (18):{
 				ListHomeItem[i] = 18;
 				ListHome[i] = "Sirius";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Sirius/html/images/icon_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Sirius/html/images/icon_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);			
 			}
 			Case (19):{
 				ListHomeItem[i] = 19;
 				ListHome[i] = "Sound Effects";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/plugins/Sounds/html/images/icon_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/plugins/Sounds/html/images/icon_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 			default:{
 				ListHomeItem[i] = 0;
 				ListHome[i] = " ";
-				makestring(ListHomeCoverURL[i],"http://%s:9000/html/images/blank_%ux%u.png", ServerIPAddr$, ListCoverSize, ListCoverSize);
+				makestring(ListHomeCoverURL[i],"http://%s:%u/html/images/blank_%ux%u.png", ServerIPAddr$, ServerHttpPort, ListCoverSize, ListCoverSize);
 			}
 		}
 	}
