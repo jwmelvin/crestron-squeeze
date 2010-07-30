@@ -567,20 +567,20 @@ Function AlbumsRefresh_fn(){
 	}
 	Else If ((Coverflow = 0) && (ListCoverURL_Enable = 1)){
 		If (ASCII_only = 1){
-			makestring(OUT$,"albums %u %u %s tags:lj charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			makestring(OUT$,"albums %u %u %s tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		Else {
-			makestring(OUT$,"albums %u %u %s tags:lj \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 	Else {
 		If (ASCII_only = 1){
-			makestring(OUT$,"albums %u %u %s charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			makestring(OUT$,"albums %u %u %s tags:la charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		Else {
-			makestring(OUT$,"albums %u %u %s \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+			makestring(OUT$,"albums %u %u %s tags:la \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -2907,7 +2907,7 @@ Function Parse_Artists(String InArtists$){
 Function Parse_Albums(String InAlbums$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthAlbums;
-	String AlbumArtist[10][128], AlbumsParseItem[2048], AlbumTrackID[10][8];
+	String AlbumArtist[128], AlbumsParseItem[2048], AlbumTrackID[8], ListTemp[255];
 
 	indexEnd = find(" ",InAlbums$,9);
 	Length = indexEnd - 8;
@@ -2972,48 +2972,59 @@ Function Parse_Albums(String InAlbums$){
 		If (indexStart > 20){
 			indexEnd = find(" ",AlbumsParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			AlbumTrackID[i] = mid(AlbumsParseItem,indexStart,Length);
+			AlbumTrackID = mid(AlbumsParseItem,indexStart,Length);
 		}
 		Else {
-			AlbumTrackID[i] = "";
+			AlbumTrackID = "";
 		}
-		trace("AlbumTrackID[%u]=%s",i,AlbumTrackID[i]);
+		trace("AlbumTrackID[%u]=%s",i,AlbumTrackID);
 		indexStart = find(" artist%3A",AlbumsParseItem,indexEnd) + 10;
 		If (indexStart > 10){
 			indexEnd = find(" ",AlbumsParseItem, indexStart);
 			Length = indexEnd - indexStart;
-			AlbumArtist[i] = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
+			AlbumArtist = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
 		}
 		Else {
-			AlbumArtist[i] = "";
+			AlbumArtist = "";
 			
 		}
-		trace("albumArtist[%u]=%s",i,AlbumArtist[i]);
+		trace("albumArtist[%u]=%s",i,AlbumArtist);
+		// // generate the list item
+		// coverflow list item
 		If (Coverflow = 1){
 			trace("Coverflow = 1");
 			List$[i] = left(Album[i], CoverflowWidthAlbum);
-			ListCoverflowArtist[i] = left(AlbumArtist[i],CoverflowWidthArtist);
+			ListCoverflowArtist[i] = left(AlbumArtist,CoverflowWidthArtist);
 		}
+		// new albums list item includes artist name
+		Else If (restrictorAlbums = "sort:new"){
+			trace("Coverflow = 0; Sort = new");
+			ListTemp = Album[i] + " (" + AlbumArtist + ")";
+			List$[i] = left(ListTemp,ListWidth);
+		}
+		// otherwise just albums
 		Else {
 			trace("Coverflow = 0");
 			List$[i] = left(Album[i],ListWidth);
 		}
+		// set the playable indicate for the album
 		ListPlayable[i] = 1;
+		// generate cover image for the album
 		If (Coverflow = 1) {
-			If (len(AlbumTrackID[i]) = 0){
+			If (len(AlbumTrackID) = 0){
 				ListCoverURL[i] = CoverflowURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID[i], CoverflowSize, CoverflowSize);
+				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID, CoverflowSize, CoverflowSize);
 			}		
 		}
 		Else If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
-			If (len(AlbumTrackID[i]) = 0){
+			If (len(AlbumTrackID) = 0){
 				ListCoverURL[i] = ListCoverURL_missing;
 			}
 			Else {
-				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID[i],ListCoverSize, ListCoverSize);
+				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID,ListCoverSize, ListCoverSize);
 			}
 		}
 	}
