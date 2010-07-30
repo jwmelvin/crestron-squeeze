@@ -2996,20 +2996,16 @@ Function Parse_Albums(String InAlbums$){
 			List$[i] = left(Album[i], CoverflowWidthAlbum);
 			ListCoverflowArtist[i] = left(AlbumArtist,CoverflowWidthArtist);
 		}
-		// new albums list item includes artist name
-		Else If (restrictorAlbums = "sort:new"){
-			trace("Coverflow = 0; Sort = new");
+		// non-coverflow list item includes artist name in parentheses
+		Else {
+			trace("Coverflow = 0");
 			ListTemp = Album[i] + " (" + AlbumArtist + ")";
 			List$[i] = left(ListTemp,ListWidth);
 		}
-		// otherwise just albums
-		Else {
-			trace("Coverflow = 0");
-			List$[i] = left(Album[i],ListWidth);
-		}
 		// set the playable indicate for the album
 		ListPlayable[i] = 1;
-		// generate cover image for the album
+		// // generate cover image for the album
+		// coverflow images are bigger
 		If (Coverflow = 1) {
 			If (len(AlbumTrackID) = 0){
 				ListCoverURL[i] = CoverflowURL_missing;
@@ -3018,6 +3014,7 @@ Function Parse_Albums(String InAlbums$){
 				makestring(ListCoverURL[i],"http://%s:%u/music/%s/cover_%ux%u.png", ServerIPAddr$, ServerHttpPort, AlbumTrackID, CoverflowSize, CoverflowSize);
 			}		
 		}
+		// and noncoverflow images are smaller
 		Else If (ListCoverURL_Enable = 1){
 			trace("making List CoverURL outputs");
 			If (len(AlbumTrackID) = 0){
