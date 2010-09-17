@@ -239,6 +239,9 @@ INTEGER_PARAMETER HomeItem[20];
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
 // //////////////// Global Variables
+INTEGER inCount;
+INTEGER inCountNP;
+// INTEGER inCountStatus;
 INTEGER FirstHome, TotalHome, ListLengthHome;
 INTEGER FirstGenre, TotalGenres, GenreFirstNumber;
 INTEGER FirstArtist, TotalArtists, ArtistFirstNumber;
@@ -359,6 +362,20 @@ STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][255],RadiosType[10][
 STRING  PlayerID$[32], PlayersName[10][128], PlayersID[10][32], PlayersID_raw[10][32];
 INTEGER PlayersIndex[10];
 // ////////////////////// FUNCTIONS
+Function inCountIncrement(){
+	inCount = inCount + 1; 
+	trace("inCount = %u",inCount);
+}
+Function inCountNPIncrement(){
+	inCountNP = inCountNP + 1;
+	trace("inCountNP = %u",inCountNP);
+}
+/*
+//	add this back in if implementing a token for status update interrupt
+Function inCountStatusIncrement(){
+	inCountStatus = inCountStatus + 1;
+}
+*/
 Function ListShiftFwd_fn(){
 	Integer i;
 	For (i = 0 to 3){
@@ -2384,7 +2401,13 @@ Function Parse_Nowplaying(String InNowplaying$){
 	String  Nowplaying_int[512];
 	Integer Nowplaying_intLen;
 	String NowplayingURL[10][256];
+	Integer inCountNP_local;
 	
+	// store the global token for incomming NP data in the local thread
+	inCountNPIncrement();
+	inCountNP_local = inCountNP;
+	
+	// start to parse 
 	indexStart = find(" status",InNowplaying$,28) + 8;
 	indexEnd = find(" ",InNowplaying$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2420,6 +2443,13 @@ Function Parse_Nowplaying(String InNowplaying$){
 	ListLengthNowplaying  = NumberOfNowplaying;
 	indexNext = indexEnd;
 	For (i = 1 to ListLengthNowplaying)	{
+		// check for newly started parsing thread before starting each loop
+		trace("inCountNP = %u; inCountNP_local = %u",inCountNP,inCountNP_local);
+		if (inCountNP_local <> inCountNP){
+			break;
+			trace("new token break");
+		}
+		// start to parse the next item of NP data
 		indexStart = find(" playlist%20index%3A",InNowplaying$,indexNext) + 20;
 		If (indexStart > 20){
 			indexEnd = find(" ",InNowplaying$,indexStart);
@@ -2537,6 +2567,11 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingURL[i] = "";
 		}
+		// check for newly started parsing thread before outputting
+		if (inCountNP_local <> inCountNP){
+			trace("new token break");
+			break;
+		}
 		If (NowplayingConsolidatedOut_Enable = 1){
 			If (NowplayingArtist[i] = " "){
 				Nowplaying_int = left(NowplayingTitle[i],NowplayingWidthTotal);
@@ -2584,7 +2619,12 @@ Function Parse_FAR(String InFavorites$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthFavorites;
 	String FavoritesParseItem[16384];
-
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+	
 	indexStart = find(" items ",InFavorites$) + 7;
 	indexEnd = find(" ",InFavorites$,indexStart);
 	Length = indexEnd - indexStart;
@@ -2631,6 +2671,13 @@ Function Parse_FAR(String InFavorites$){
 		ListName$ = ListName[1];
 		indexNext = indexEnd;
 		For (i = 1 to ListLengthFavorites){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 			indexStart = find(" id%3A",InFavorites$,indexNext) + 6;
 			if (indexStart > 6){
 				indexEnd = find(" ",InFavorites$,indexStart);
@@ -2736,6 +2783,11 @@ Function Parse_FAR(String InFavorites$){
 Function Parse_Dynamic(String InDynamic$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthDynamic;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexStart = find(" playlists 1 ",InDynamic$,30) + 13;
 	indexEnd = find(" ",InDynamic$,indexStart + 13);
@@ -2757,6 +2809,13 @@ Function Parse_Dynamic(String InDynamic$){
 	ListLengthDynamic = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthDynamic){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" playlistid%3A",InDynamic$,indexEnd) + 14;
 		If (indexStart > 14){
 			indexEnd = find(" ",InDynamic$,indexStart);
@@ -2788,6 +2847,11 @@ Function Parse_Dynamic(String InDynamic$){
 Function Parse_Genres(String InGenres$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthGenres;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InGenres$,9);
 	Length = indexEnd - 8;
@@ -2813,6 +2877,13 @@ Function Parse_Genres(String InGenres$){
 	ListLengthGenres = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthGenres){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" id%3A",InGenres$,indexEnd) + 6;
 		If (IndexStart > 6){
 			indexEnd = find(" ",InGenres$,indexStart);
@@ -2844,6 +2915,11 @@ Function Parse_Genres(String InGenres$){
 Function Parse_Artists(String InArtists$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthArtists;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InArtists$,9);
 	Length = indexEnd - 8;
@@ -2876,6 +2952,13 @@ Function Parse_Artists(String InArtists$){
 		List$[1] = Artist[1];
 	}
 	For (i = (1 + ArtistsListTop) to ListLengthArtists){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
     	indexStart = find(" id%3A",InArtists$,indexEnd) + 6;
 		If (indexStart > 6){
 			indexEnd = find(" ",InArtists$,indexStart);
@@ -2908,6 +2991,11 @@ Function Parse_Albums(String InAlbums$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
 	Integer ListLengthAlbums;
 	String AlbumArtist[128], AlbumsParseItem[2048], AlbumTrackID[8], ListTemp[255];
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InAlbums$,9);
 	Length = indexEnd - 8;
@@ -2928,6 +3016,13 @@ Function Parse_Albums(String InAlbums$){
 	ListLengthAlbums = NumberOfAlbums;
 	indexNext = 1;
 	For (i = 1 to ListLengthAlbums) {
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" id%3A",InAlbums$,indexNext) + 6;
 		If (indexStart > 6){
 			indexEnd = find(" ",InAlbums$,indexStart);
@@ -3030,6 +3125,11 @@ Function Parse_Titles(String InTitles$){
 	Integer i, j, indexStart, indexNext, indexEnd, Length;
 	Integer ListLengthTitles;
 	String TitlesParseItem[2048];
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InTitles$,9);
 	Length = indexEnd - 8;
@@ -3056,6 +3156,13 @@ Function Parse_Titles(String InTitles$){
 	indexEnd = 1;
 	indexNext = 1;
 	For (i = 1 to ListLengthTitles){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" id%3A",InTitles$,indexNext) + 6;
 		If (indexStart > 6){
 			indexEnd = find(" ",InTitles$,indexStart);
@@ -3126,6 +3233,11 @@ Function Parse_Titles(String InTitles$){
 Function Parse_Playlists(String InPlaylists$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthPlaylists;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InPlaylists$,12);
 	Length = indexEnd - 11;
@@ -3148,6 +3260,13 @@ Function Parse_Playlists(String InPlaylists$){
 	ListLengthPlaylists = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthPlaylists) {
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" id%3A",InPlaylists$,indexEnd) + 6;
     	If (indexStart > 6){
 			indexEnd = find(" ",InPlaylists$,indexStart);
@@ -3182,6 +3301,11 @@ Function Parse_Playlists(String InPlaylists$){
 Function Parse_Apps(String InApps$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthApps;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 
 	indexStart = 6;
@@ -3212,6 +3336,13 @@ Function Parse_Apps(String InApps$){
 	indexEnd = 9;
 
 	For (i = 1 to ListLengthApps){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" icon%3A",InApps$,indexEnd) + 8;
 		If (indexStart > 8){
 			indexEnd = find(" ",InApps$,indexStart);
@@ -3280,6 +3411,11 @@ Function Parse_Apps(String InApps$){
 Function Parse_Radios(String InRadios$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthRadios;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexStart = 8;
 	indexEnd = find(" ",InRadios$,indexStart);
@@ -3307,6 +3443,13 @@ Function Parse_Radios(String InRadios$){
 	trace("listlengthRadios = %u",ListLengthRadios);
 	indexEnd = 9;
 	For (i = 1 to ListLengthRadios){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		indexStart = find(" icon%3A",InRadios$,indexEnd) + 8;
 		If (indexStart > 8){
 			indexEnd = find(" ",InRadios$,indexStart);
@@ -3370,6 +3513,11 @@ Function Parse_Radios(String InRadios$){
 Function Parse_Search(String InSearch$){
 	Integer i, j, indexStart, indexEnd, Length;
 	Integer ListLengthSearch;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 
 	indexEnd = find(" ",InSearch$,8);
 	Length = indexEnd - 8;
@@ -3392,6 +3540,13 @@ Function Parse_Search(String InSearch$){
 	ListLengthSearch = NumberOfList;
 	indexEnd = 1;
 	For (i = 1 to ListLengthSearch){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
 		If (find(" contributor_id",InSearch$,indexEnd)) { // parsing for artists in search results
 			trace("parsing contributor_id in search result");
 			indexStart = find(" contributor_id%3A",InSearch$,indexEnd) + 18;
@@ -3535,6 +3690,11 @@ Integer_Function ParseInt(String In, String tag){
 
 Function Parse_CB(String InCB$){
 	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
 	
 	indexEnd = find(" ",InCB$,49);
 	Length = indexEnd - 49;
@@ -3567,6 +3727,13 @@ Function Parse_CB(String InCB$){
 			OutListCount = TotalCB;
 			
 			For (i = 1 to NumberOfList){
+				// check for newly started parsing thread before starting each loop
+				trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+				if (inCount_local <> inCount){
+					trace("new token break");
+					break;
+				}
+				// start to parsse the next item of browse data
 				indexStart = find(" level%3A",InCB$,indexEnd) + 9;
 				If (indexStart > 9){
 					indexEnd = find(" ",InCB$, indexStart);
@@ -3752,7 +3919,16 @@ Function Parse_Status(String InStatus$){
 	String CoverURL_check[3];
 	String CurrentSongConsolidated[200];
 	String temp[2048];
-			
+	Integer inCountStatus_local;
+/*
+	// set local token to global token for status input
+	inCountStatusIncrement();
+	inCountStatus_local = inCountStatus;
+	
+	// using a token is more difficult without a loop to exit from
+	// if an interrupt is desired here, put the entire sequence in a while(inCountStatus_local = inCountStatus) loop
+	// and also add inCountStatusIncrement() at the end of the loop so it will only run once
+*/	
    	indexStart = find(" player_name%3A",InStatus$,1) + 15;
 	if (indexStart > 15){
 		indexEnd = find(" ",InStatus$,indexStart);
@@ -5924,9 +6100,10 @@ SOCKETRECEIVE TCPClient {
 	In$ = Gather("\n",TCPClient.SocketRxBuf);
 
 	Find$ = left(In$,64);
-//	debug = left (in$,255);  
-
+	trace("%s",Find$);  
 	If (find(StatusFind$,Find$)) { // status parsing
+//	add this back in if implementing a token for status update interrupt
+//		inCountStatusIncrement();
 		trace("parsing status");
 		Parse_Status(In$);
 	} 
@@ -6022,6 +6199,9 @@ Function Main() {
 	progInPageNowplaying = 0;
 	progInPagePlayers = 0;
 	progInTrackstat = 0;
+	inCount = 0;
+	inCountNP = 0;
+//	inCountStatus = 0;
 	FirstGenre = 0;
 	FirstArtist = 0;
 	FirstAlbum = 0;
