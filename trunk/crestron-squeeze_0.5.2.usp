@@ -376,6 +376,15 @@ Function inCountStatusIncrement(){
 	inCountStatus = inCountStatus + 1;
 }
 */
+Function ClearActive_fn(){
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ActiveArtist = "";
+	ActiveArtistID = "";
+	ActiveAlbum = "";
+	ActiveAlbumID = "";
+	ActivePlaylist = "";
+}
 Function ListShiftFwd_fn(){
 	Integer i;
 	For (i = 0 to 3){
@@ -517,6 +526,8 @@ Function HomeRefresh_fn(){
 }
 Function GenresRefresh_fn(){
 	String Out$[128];
+	ActiveArtist = "";
+	ActiveArtistID = "";
 	If (ASCII_only = 1){
 		makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
 	}
@@ -533,6 +544,8 @@ Function GenresRefresh_fn(){
 }
 Function ArtistsRefresh_fn(){
 	String Out$[128];
+	ActiveAlbum = "";
+	ActiveAlbumID = "";
 	If ((len(ActiveGenre) > 0) && (FirstArtist = 0)){ // with a genre and at top of artists list
 		ArtistsListTop = 1;
 		If (ASCII_only = 1){
@@ -783,8 +796,7 @@ Function Home_PgReset_fn(){
 	FirstHome = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 0;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "Home";
 	HomeRefresh_fn();
 }
@@ -793,8 +805,7 @@ Function Genres_PgReset_fn(){
 	restrictorGenres = "";
     ListShiftFwd_fn();
 	ListType[1] = 1;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All Genres";
 	GenresRefresh_fn();
 }
@@ -803,8 +814,7 @@ Function Artists_PgReset_fn(){
 	restrictorArtists = "";
     ListShiftFwd_fn();
 	ListType[1] = 2;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All Artists";
 	ArtistsRefresh_fn();
 }
@@ -813,8 +823,7 @@ Function Albums_PgReset_fn(){
 	restrictorAlbums = "";
     ListShiftFwd_fn();
 	ListType[1] = 3;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All Albums";
 	AlbumsRefresh_fn();
 }
@@ -823,8 +832,7 @@ Function NewMusic_PgReset_fn(){
 	restrictorAlbums = "sort:new";
     ListShiftFwd_fn();
 	ListType[1] = 3;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "New Albums";
 	ListRestrictor[1] = restrictorAlbums;
 	AlbumsRefresh_fn();
@@ -841,8 +849,7 @@ Function Titles_PgReset_fn(){
 		ListRestrictor[1] = "tags:te";
 	}
 	ListType[1] = 4;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All Titles";
 	TitlesRefresh_fn();
 }
@@ -851,8 +858,7 @@ Function Playlists_PgReset_fn(){
 	restrictorPlaylists = "";
     ListShiftFwd_fn();
 	ListType[1] = 5;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All Playlists";
 	PlaylistsRefresh_fn();
 }
@@ -860,8 +866,7 @@ Function Dynamic_PgReset_fn(){
 	FirstDynamic = 0;
     ListShiftFwd_fn();
 	ListType[1] = 6;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "All DynamicPlaylists";
 	DynamicRefresh_fn();
 }
@@ -873,8 +878,7 @@ Function FAR_PgReset_fn(String Cmd, String Name){
 	ActiveFAR_ID = "";
     ListShiftFwd_fn();
 	ListType[1] = 10;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = Name;
 	FavoritesRefresh_fn();
 }
@@ -909,8 +913,7 @@ Function Apps_PgReset_fn() {
 	FirstApps = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 11;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "Apps";
 	ListName$ = ListName[1];
 	AppsRefresh_fn();
@@ -919,8 +922,7 @@ Function Radios_PgReset_fn() {
 	FirstRadios = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 12;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "Radios";
 	ListName$ = ListName[1];
 	RadiosRefresh_fn();
@@ -929,8 +931,7 @@ Function CB_PgReset_fn(){
 	FirstCB = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 14;
-	ActiveGenre = "";
-	ActiveGenreID = "";
+	ClearActive_fn();
 	ListName[1] = "CustomBrowse";
 	restrictorCB = "";
 	restrictor2CB = "";
@@ -1386,10 +1387,15 @@ Function ArtistListSelect_fn(integer i){
 		ListName$ = ListName[1];
 	}
 }
+
 Function AlbumListSelect_fn(integer i){
 	String Out$[128];
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ActiveAlbumID = AlbumID[i];
+	ActiveAlbum = Album[i];
 	If (len(AlbumID[i]) > 0){
-		If (Coverflow = 0){
+		If (Coverflow = 0){  // not coverflow mode
 			trace("Coverflow = 0; AlbumListSelect");
 			ListShiftFwd_fn();
 			ListType[1] = 4;
@@ -1398,25 +1404,37 @@ Function AlbumListSelect_fn(integer i){
 //			ListFirst[1] = 0;
 //			ListActiveGenre[1] = "";
 //			ListActiveGenreID[1] = "";
-			ActiveGenre = "";
-			ActiveGenreID = "";
-			ActiveAlbumID = AlbumID[i];
-			ActiveAlbum = Album[i];
-			makestring(ListName[1],"Titles in %s",ActiveAlbum);
-			If (UseCoverID = 1){
-				makestring(restrictorTitles,"album_id:%s sort:tracknum tags:tec",AlbumID[i]);
+			If (find("No Album",ActiveAlbum)){
+				makestring(ListName[1],"Titles for %s; no album", ActiveArtist);
+				If (UseCoverID = 1){
+					makestring(restrictorTitles,"album_id:%s artist_id:%s sort:tracknum tags:tec",AlbumID[i],ActiveArtistID);
+				}
+				Else {
+					makestring(restrictorTitles,"album_id:%s artist_id:%s sort:tracknum tags:te",AlbumID[i],ActiveArtistID);
+				}
 			}
-			Else {
-				makestring(restrictorTitles,"album_id:%s sort:tracknum tags:te",AlbumID[i]);
+			else {
+				makestring(ListName[1],"Titles in %s",ActiveAlbum);
+				If (UseCoverID = 1){
+					makestring(restrictorTitles,"album_id:%s sort:tracknum tags:tec",AlbumID[i]);
+				}
+				Else {
+					makestring(restrictorTitles,"album_id:%s sort:tracknum tags:te",AlbumID[i]);
+				}
 			}
 			ListRestrictor[1] = restrictorTitles;
 			FirstTitle = 0;
 			TitlesRefresh_fn();
 			ListName$ = ListName[1];
 		}
-		Else {
+		else {
 			trace("Coverflow = 1; AlbumListSelect");
-			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, AlbumID[i]);
+			if (find("No Album",ActiveAlbum)){
+				makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s artist_id:%s \n",PlayerID$, AlbumID[i],ActiveArtistID);
+			}
+			else {
+				makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, AlbumID[i]);
+			}
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 			ActiveAlbumID = AlbumID[i];
@@ -1425,19 +1443,56 @@ Function AlbumListSelect_fn(integer i){
 		}
 	}
 }
+Function TitleListPlay_fn(integer i){
+	String Out$[128];
+	If (len(TrackID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		If (TotalNowplaying > 0){
+			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+		}
+		Else {
+			makestring(OUT$,"%s pause 0\n", PlayerID$);
+		}
+		delay(10);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
+}
 Function TitleListSelect_fn(integer i){
 	String Out$[128];
 	If (len(TrackID[i]) > 0){
-		ActiveAlbumID = TitleAlbumID[i];
-		ActiveTrackID = TrackID[i];
-		ActiveTitle = Title[i];
-		ActivePlaylist = "";
-		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, TitleAlbumID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
+		If (find("No Album",ActiveAlbum)){
+			TitleListPlay_fn(i);
+/*			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0\n", PlayerID$);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+*/
+		}
+		else {
+			ActiveAlbumID = TitleAlbumID[i];
+			ActiveTrackID = TrackID[i];
+			ActiveTitle = Title[i];
+			ActivePlaylist = "";
+			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, TitleAlbumID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
 	}
 }
 Function PlaylistListSelect_fn(integer i){
@@ -1724,25 +1779,6 @@ Function AlbumListPlay_fn(integer i){
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 //		ActiveAlbumID = AlbumID[i];
-		ActivePlaylist = "";
-	}
-}
-Function TitleListPlay_fn(integer i){
-	String Out$[128];
-	If (len(TrackID[i]) > 0){
-		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-		If (TotalNowplaying > 0){
-			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
-		}
-		Else {
-			makestring(OUT$,"%s pause 0\n", PlayerID$);
-		}
-		delay(10);
-		trace("sending: %s",OUT$);
-		socketsend(TCPClient,OUT$);
-//		ActiveTrackID = TrackID[i];
 		ActivePlaylist = "";
 	}
 }
@@ -3084,6 +3120,7 @@ Function Parse_Albums(String InAlbums$){
 			
 		}
 		trace("albumArtist[%u]=%s",i,AlbumArtist);
+		
 		// // generate the list item
 		// coverflow list item
 		If (Coverflow = 1){
