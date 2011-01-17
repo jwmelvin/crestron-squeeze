@@ -337,7 +337,7 @@ STRING CurrentTrackRemoteCover$[512];
 STRING CurrentsongCoverURL_push[255];
 String CoverURL_base_music[128];
 STRING CurrentTrackCoverID[64];
-STRING CurrentTrackURL$[1024], CurrentTrackURL$_raw[2048];
+STRING CurrentTrackURL$[2048], CurrentTrackURL$_raw[2048];
 STRING CoverflowURL_blank[64], CoverflowURL_missing[64];
 STRING ListCoverURL_blank[64], ListCoverURL_missing[64];
 STRING NowplayingCoverURL_blank[64];
