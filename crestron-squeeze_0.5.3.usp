@@ -147,6 +147,8 @@ DIGITAL_OUTPUT repeat_all_fb;
 DIGITAL_OUTPUT shuffle_off_fb;
 DIGITAL_OUTPUT shuffle_track_fb;
 DIGITAL_OUTPUT shuffle_album_fb;
+DIGITAL_OUTPUT showbriefly;
+STRING_OUTPUT  showbriefly$;
 // CurrentSong feedback
 DIGITAL_OUTPUT CurrentsongIsRemote;
 DIGITAL_OUTPUT CurrentSongRateable;
@@ -212,6 +214,11 @@ Integer_parameter VolumeIncrement;
 	propBounds=1d,100d;
 	propDefaultValue=10d;
 #END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER suppressShowbrieflyPause;
+#BEGIN_PARAMETER_PROPERTIES suppressShowbrieflyPause
+	propDefaultValue=0d;
+	propList={0d,"show all messages"}, {1d,"suppress showbriefly for pause"};
+#END_PARAMETER_PROPERTIES
 INTEGER_PARAMETER  ListWidth, CurrentsongWidth;
 INTEGER_PARAMETER  NowplayingWidthArtist, NowplayingWidthTotal;
 INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
@@ -263,6 +270,7 @@ STRING 	ActiveGenreID[8],
 			ActiveTrackID[8], 
 			ActivePlaylistID[8];
 //
+STRING suppressShowbriefly[19];
 INTEGER NumberOfAlbums;
 //
 INTEGER CurrentsongIndex;
@@ -1455,7 +1463,7 @@ Function TitleListPlay_fn(integer i){
 			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 		}
 		Else {
-			makestring(OUT$,"%s pause 0\n", PlayerID$);
+			makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 		}
 		delay(10);
 		trace("sending: %s",OUT$);
@@ -1476,7 +1484,7 @@ Function TitleListSelect_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -1827,7 +1835,7 @@ Function FavoritesListPlay_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -1851,7 +1859,7 @@ Function SearchListPlay_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -1865,7 +1873,7 @@ Function SearchListPlay_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -1881,7 +1889,7 @@ Function SearchListPlay_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -1895,7 +1903,7 @@ Function SearchListPlay_fn(integer i){
 				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
 			}
 			Else {
-				makestring(OUT$,"%s pause 0\n", PlayerID$);
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 			}
 			delay(10);
 			trace("sending: %s",OUT$);
@@ -4713,6 +4721,37 @@ Function Parse_Volume(String InVol$){
 		}
 	}
 }
+Function Parse_Showbriefly(String InShow$){
+	Integer indexStart, indexEnd, Length, i;
+	String temp$[2][256], temp[768];
+	setarray(temp$,"");
+	if (find(" type%3Ashowbriefly",InShow$)){
+		indexEnd = 1;
+		for (i=0 to 2){
+			trace("i:%u",i);
+			indexStart = find(" line",InShow$, indexEnd) + 9;
+			trace("indexStart:%u",indexStart);
+			if (indexStart > 9){
+				indexEnd = find(" ",InShow$, indexStart);
+				if (indexEnd = 0){
+					indexEnd = len(InShow$) - 1;
+				}
+				trace("indexEnd:%u",indexEnd);
+				Length = indexEnd - indexStart;
+				trace("Length:%u",Length);
+				temp$[i] = mid(InShow$,indexStart,Length);
+				trace("temp$[%u]:%s",i,temp$[i]);
+			}
+			else {
+				break;
+				trace("breaking");
+			}
+		}
+		temp = temp$[0] + temp$[1] + temp$[2];
+		Showbriefly$ = left(Parsepercent(temp),255);
+		Pulse(300, showbriefly);
+	}
+}
 
 // ////////////// Events 
 PUSH Jump_Home{
@@ -5322,6 +5361,7 @@ PUSH Select_DefaultPlayer{
 			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
 		}
 		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
 		PlayerID$ = PlayerID$_Default;
 		CurrentPlayerID = PlayerID$;
 		StatusFind$ = PlayersID_raw[0] + " status - 1";
@@ -5341,6 +5381,12 @@ PUSH Select_DefaultPlayer{
 			makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
 		}
 		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		delay(20);
+		// subscribe to showbriefly messages
+		makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
 	}
 }
 PUSH Players_Refresh {
@@ -5359,6 +5405,7 @@ PUSH PlayersSelect {
 			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
 		}
 		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
 		PlayerID$ = PlayersID[i];
 		CurrentPlayerID = PlayerID$;
 		For (j = 1 to GetNumArrayRows(PlayersID)){
@@ -5384,6 +5431,12 @@ PUSH PlayersSelect {
 			makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
 		}
 		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		delay(20);
+		// subscribe to showbriefly messages
+		makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
 	}
 }   
 PUSH PlayersSyncTog {
@@ -5414,7 +5467,7 @@ PUSH Play {
 }
 PUSH Pause_On {
 	String Out$[64];
-	makestring(OUT$,"%s pause 1\n", PlayerID$);
+	makestring(OUT$,"%s pause 1 %s\n", PlayerID$, suppressShowbriefly);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 
@@ -5428,7 +5481,7 @@ PUSH Pause_On {
 }
 PUSH Pause_Off {
 	String Out$[64];
-	makestring(OUT$,"%s pause 0\n", PlayerID$);
+	makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -5441,7 +5494,7 @@ PUSH Pause_Tog {
 		socketsend(TCPClient,OUT$);
 		trace("saved playlist: %s",ActivePlaylist);
 	}
-	makestring(OUT$,"%s pause\n",PlayerID$);
+	makestring(OUT$,"%s pause %s\n",PlayerID$, suppressShowbriefly);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -6066,7 +6119,7 @@ RELEASE TCPIP_Connect{
 	String Out$[64];
     SIGNED_INTEGER status;
     If (OnDisconnect_Pause = 1){
-		makestring(out$,"%s pause 1\n",PlayerID$);
+		makestring(out$,"%s pause 1 %s\n",PlayerID$, suppressShowbriefly);
 		socketsend(TCPClient, out$);
 		delay(200);
 	}
@@ -6113,8 +6166,14 @@ SOCKETCONNECT TCPClient{
 	}
 	socketsend(TCPClient, out$);
 	trace("sending: %s",OUT$);
-	delay(50);
-	If (OnConnect_Play = 1){ // play if that option is enabled
+	delay(20);
+	// subscribe to showbriefly messages
+	makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+	socketsend(TCPClient, out$);
+	trace("sending: %s",OUT$);
+	delay(20);
+	// play if that option is enabled
+	If (OnConnect_Play = 1){
 		makestring(out$,"%s play \n",PlayerID$);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
@@ -6150,6 +6209,12 @@ Function Main() {
 	NowplayingFind$ = PlayersID_raw[0] + " status ";
 	TimeFind$ = PlayersID_raw[0] + " time ";
     FAR_parse = "favorites items ";
+	if (suppressShowbrieflyPause){
+		suppressShowbriefly = "suppressShowBriefly";
+	}
+	else {
+		suppressShowbriefly = "";
+	}
 	progInTimeBar = 0;
 	progInPageList = 0;
 	progInPageNowplaying = 0;
@@ -6329,6 +6394,10 @@ Function Main() {
 	//		RetimeWait(100,waitCountTime);
 			In$ = mid(In$,34,len(In$) - 35);
 			Parse_Time(AtoI(In$)); // parse_time requires integer input
+		}
+		Else If (find(" displaystatus",Find$)){
+			trace("parsing showbriefly");
+			Parse_Showbriefly(In$); 
 		}
 		Else If (find(" mixer volume",Find$)){
 			trace("parsing volume");
