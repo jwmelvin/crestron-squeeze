@@ -4728,26 +4728,21 @@ Function Parse_Showbriefly(String InShow$){
 	if (find(" type%3Ashowbriefly",InShow$)){
 		indexEnd = 1;
 		for (i=0 to 2){
-			trace("i:%u",i);
 			indexStart = find(" line",InShow$, indexEnd) + 9;
-			trace("indexStart:%u",indexStart);
 			if (indexStart > 9){
 				indexEnd = find(" ",InShow$, indexStart);
 				if (indexEnd = 0){
 					indexEnd = len(InShow$) - 1;
 				}
-				trace("indexEnd:%u",indexEnd);
 				Length = indexEnd - indexStart;
-				trace("Length:%u",Length);
 				temp$[i] = mid(InShow$,indexStart,Length);
 				trace("temp$[%u]:%s",i,temp$[i]);
 			}
 			else {
 				break;
-				trace("breaking");
 			}
 		}
-		temp = temp$[0] + temp$[1] + temp$[2];
+		temp = temp$[0] + " " + temp$[1] + " " + temp$[2];
 		Showbriefly$ = left(Parsepercent(temp),255);
 		Pulse(300, showbriefly);
 	}
@@ -6373,7 +6368,6 @@ Function Main() {
 	CurrentPlayerID = PlayerID$;
 
 	while (1){
-		
 		trace("starting Gather for incoming data");
 		In$ = Gather("\n",TCPClient.SocketRxBuf);
 		trace("received data; looking for type");
@@ -6464,6 +6458,8 @@ Function Main() {
 			trace("parsing players");
 			Parse_Players(In$);
 		}
-		delay(5);
+		Else {
+			delay(5);
+		}
 	}
 }
