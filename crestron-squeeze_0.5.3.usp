@@ -32,6 +32,7 @@ License:
 #DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
 #PRINT_TO_TRACE
 // #ENABLE_TRACE
+#define_constant delayShowbriefly 300
 
 // ///////////// Inputs & Outputs
 DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, 
@@ -288,8 +289,12 @@ INTEGER timeclock_run;
 INTEGER waitUpdateTime_running;
 INTEGER TCPIP_Connected_int;
 //
-INTEGER progInTimeBar, progInPageList, progInPageNowplaying, progInPagePlayers;
-INTEGER progInTrackstat;
+INTEGER progInTimeBar, 
+		progInPageList, 
+		progInPageNowplaying, 
+		progInPagePlayers, 
+		progInTrackstat;
+//		progShowbriefly;
 //
 INTEGER parsePosition;
 //
@@ -4724,7 +4729,14 @@ Function Parse_Volume(String InVol$){
 Function Parse_Showbriefly(String InShow$){
 	Integer indexStart, indexEnd, Length, i;
 	String temp$[2][256], temp[768];
+	/*
+	while (progShowbriefly = 1){
+		delay(delayShowbriefly);
+	}
+	progShowbriefly = 1;
+	*/
 	setarray(temp$,"");
+	
 	if (find(" type%3Ashowbriefly",InShow$)){
 		indexEnd = 1;
 		for (i=0 to 2){
@@ -4744,7 +4756,8 @@ Function Parse_Showbriefly(String InShow$){
 		}
 		temp = temp$[0] + " " + temp$[1] + " " + temp$[2];
 		Showbriefly$ = left(Parsepercent(temp),255);
-		Pulse(300, showbriefly);
+		Pulse(delayShowbriefly, showbriefly);
+		// progShowbriefly = 1;
 	}
 }
 
@@ -6215,6 +6228,7 @@ Function Main() {
 	progInPageNowplaying = 0;
 	progInPagePlayers = 0;
 	progInTrackstat = 0;
+	// progShowbriefly = 0;
 	inCount = 0;
 	inCountNP = 0;
 //	inCountStatus = 0;
