@@ -542,6 +542,7 @@ Function HomeRefresh_fn(){
 }
 Function GenresRefresh_fn(){
 	String Out$[128];
+	integer i;
 	ActiveArtist = "";
 	ActiveArtistID = "";
 	If (ASCII_only = 1){
@@ -554,12 +555,19 @@ Function GenresRefresh_fn(){
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
+		#IF_SERIES3
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
 	}
 	//	ListType = 1;
 }
 Function ArtistsRefresh_fn(){
 	String Out$[128];
+	integer i;
 	ActiveAlbum = "";
 	ActiveAlbumID = "";
 	If ((len(ActiveGenre) > 0) && (FirstArtist = 0)){ // with a genre and at top of artists list
@@ -584,7 +592,13 @@ Function ArtistsRefresh_fn(){
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
+		#IF_SERIES3
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
 	}
 	//	ListType = 2;
 }
@@ -648,6 +662,7 @@ Function TitlesRefresh_fn(){
 }
 Function PlaylistsRefresh_fn(){
 	String Out$[128];
+	integer i;
 	If (ASCII_only = 1){
 		makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
 	}
@@ -658,12 +673,19 @@ Function PlaylistsRefresh_fn(){
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
+		#IF_SERIES3
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
 	}
 //	ListType = 5;
 }
 Function DynamicRefresh_fn(){
 	String Out$[128];
+	integer i;
 	If (ASCII_only = 1){
 		makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
 	}
@@ -674,7 +696,13 @@ Function DynamicRefresh_fn(){
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
+		#IF_SERIES3
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
 	}
 //	ListType = 6
 }
@@ -944,6 +972,7 @@ Function Radios_PgReset_fn() {
 	RadiosRefresh_fn();
 }
 Function CB_PgReset_fn(){
+	integer i;
 	FirstCB = 0;
 	ListShiftFwd_fn();
 	ListType[1] = 14;
@@ -953,15 +982,21 @@ Function CB_PgReset_fn(){
 	restrictor2CB = "";
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
-		SetArray(ListCoverURL,ListCoverURL_blank);
+		#IF_SERIES3
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
 	}
 	CBRefresh_fn();
 }
 Function Nowplaying_PgReset_fn(){
-	If (CurrentsongIndex - NowplayingShowPrev S< 0)
-		FirstNowplaying = 0;
+	If (CurrentsongIndex > NowplayingShowPrev)
+		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;	
 	Else
-		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;
+		FirstNowplaying = 0;
     Cancelwait(Nowplaying_reset_enable_timer);
 	Nowplaying_reset_enable = 1;
 	NowplayingRefresh_fn();
@@ -4979,8 +5014,15 @@ PUSH Coverflow {
 	}
 }
 RELEASE Coverflow {
+	integer i;
 	SetArray(ListCoverflowArtist," ");
-	SetArray(ListCoverURL,ListCoverURL_blank);
+	#IF_SERIES3
+		for (i = 1 to GetNumArrayRows(ListCoverURL)){
+			ListCoverURL[i] = ListCoverURL_blank;
+		}
+	#ELSE
+		SetArray(ListCoverURL,ListCoverURL_blank);
+	#ENDIF
 	NumberOfAlbums = NumberOfList;   
 	If (ListType[1] = 3){
 		AlbumsRefresh_fn();
@@ -5990,7 +6032,7 @@ PUSH CurrentSongTime_Enable {
 }
 PUSH Rate_Dn {
 	String Out$[64];
-	Integer rating_int;
+	Signed_Integer rating_int;
 	If (CurrentTrackRemote = 0){
 		If (CurrentsongTrackstat = 0){
 			rating_int = 60 - TrackstatIncrement;
@@ -5998,7 +6040,7 @@ PUSH Rate_Dn {
 		Else {
 			rating_int = CurrentsongTrackstat - TrackstatIncrement;
 		}
-		If (rating_int S< 0){
+		If (rating_int < 0){
 			rating_int = 0;
 		}
 		makestring(OUT$,"trackstat setrating %s %u%%\n",CurrentTrackID,rating_int);
@@ -6030,7 +6072,7 @@ CHANGE CurrentsongTrackstatSet{
 			If (CurrentsongTrackstatSet > 100){
 				rating_int = 100;
 			}
-			Else If (CurrentsongTrackstatSet S< 0){
+			Else If (CurrentsongTrackstatSet < 0){
 				rating_int = 0;
 			}
 			Else {
