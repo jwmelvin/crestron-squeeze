@@ -57,7 +57,6 @@ DIGITAL_INPUT CurrentSongConsolidatedOut_Enable;
 DIGITAL_INPUT ListCoverURL_Enable;
 DIGITAL_INPUT NowplayingCoverURL_Enable;
 DIGITAL_INPUT FavoriteAdd_toEnd;
-DIGITAL_INPUT ASCII_only;
 DIGITAL_INPUT UseCoverID;
 //
 DIGITAL_INPUT Select_DefaultPlayer;
@@ -306,7 +305,7 @@ INTEGER OutGenreCount, OutGenresBar;
 INTEGER OutArtistCount, OutArtistsBar;
 INTEGER OutAlbumCount, OutAlbumsBar;
 INTEGER OutTitleCount;
-LONG_INTEGER OutTitlesBar;
+INTEGER OutTitlesBar;
 INTEGER OutPlaylistCount, OutPlaylistsBar;
 INTEGER OutDynamicCount, OutDynamicBar;
 INTEGER OutSearchCount, OutSearchBar; 
@@ -378,6 +377,13 @@ STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][255],RadiosType[10][
 STRING  PlayerID$[32], PlayersName[10][128], PlayersID[10][32], PlayersID_raw[10][32];
 INTEGER PlayersIndex[10];
 // ////////////////////// FUNCTIONS
+Function MySetArray(string array[], string value){
+	integer i;
+	for (i = 1 to GetNumArrayRows(array)){
+		array[i] = value;
+	}
+}
+
 Function inCountIncrement(){
 	inCount = inCount + 1; 
 	trace("inCount = %u",inCount);
@@ -545,17 +551,13 @@ Function GenresRefresh_fn(){
 	integer i;
 	ActiveArtist = "";
 	ActiveArtistID = "";
-	If (ASCII_only = 1){
-		makestring(OUT$,"genres %u %u %s charset:ascii \n", FirstGenre, NumberOfList, restrictorGenres);
-	}
-	Else {
-		makestring(OUT$,"genres %u %u %s \n", FirstGenre, NumberOfList, restrictorGenres);
-	}
+	makestring(OUT$,"genres %u %u %s \n", FirstGenre, NumberOfList, restrictorGenres);
 	socketsend(TCPClient,OUT$);
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
 			for (i = 1 to GetNumArrayRows(ListCoverURL)){
 				ListCoverURL[i] = ListCoverURL_blank;
 			}
@@ -572,27 +574,18 @@ Function ArtistsRefresh_fn(){
 	ActiveAlbumID = "";
 	If ((len(ActiveGenre) > 0) && (FirstArtist = 0)){ // with a genre and at top of artists list
 		ArtistsListTop = 1;
-		If (ASCII_only = 1){
-			makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList - 1, restrictorArtists);
-		}
-		Else {
-			makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList - 1, restrictorArtists);
-		}
+		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList - 1, restrictorArtists);
 	}
 	Else { // not with a genre and at top of artists list
 		ArtistsListTop = 0;
-		If (ASCII_only = 1){
-			makestring(OUT$,"artists %u %u %s charset:ascii \n", FirstArtist, NumberOfList, restrictorArtists);
-		}
-		Else {
-			makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
-		}
+		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
 	}
 	socketsend(TCPClient,OUT$);
 	trace("sending: %s",OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
 			for (i = 1 to GetNumArrayRows(ListCoverURL)){
 				ListCoverURL[i] = ListCoverURL_blank;
 			}
@@ -607,41 +600,21 @@ Function AlbumsRefresh_fn(){
 //	ListType = 3;
 	If (Coverflow = 1) {
 		If (restrictorAlbums = "sort:new"){
-			If (ASCII_only = 1){
-				makestring(OUT$,"albums %u %u %s tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-			}
-			Else {
-				makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-			}
+			makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		Else {
-			If (ASCII_only = 1){
-				makestring(OUT$,"albums %u %u %s sort:artflow tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-			}
-			Else {
-				makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-			}
+			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		}
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 	Else If ((Coverflow = 0) && (ListCoverURL_Enable = 1)){
-		If (ASCII_only = 1){
-			makestring(OUT$,"albums %u %u %s tags:lja charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-		}
-		Else {
-			makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-		}
+		makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
 	Else {
-		If (ASCII_only = 1){
-			makestring(OUT$,"albums %u %u %s tags:la charset:ascii \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-		}
-		Else {
-			makestring(OUT$,"albums %u %u %s tags:la \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
-		}
+		makestring(OUT$,"albums %u %u %s tags:la \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
 		trace("sending: %s",OUT$);
 		socketsend(TCPClient,OUT$);
 	}
@@ -649,12 +622,7 @@ Function AlbumsRefresh_fn(){
 }
 Function TitlesRefresh_fn(){
 	String Out$[128];
-	If (ASCII_only = 1){
-		makestring(OUT$,"titles %u %u %s charset:ascii \n", FirstTitle, NumberOfList, restrictorTitles);
-	}
-	Else {
-		makestring(OUT$,"titles %u %u %s \n", FirstTitle, NumberOfList, restrictorTitles);
-	}
+	makestring(OUT$,"titles %u %u %s \n", FirstTitle, NumberOfList, restrictorTitles);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -663,17 +631,13 @@ Function TitlesRefresh_fn(){
 Function PlaylistsRefresh_fn(){
 	String Out$[128];
 	integer i;
-	If (ASCII_only = 1){
-		makestring(OUT$,"playlists %u %u %s charset:ascii \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
-	}
-	Else {
-		makestring(OUT$,"playlists %u %u %s \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
-	}
+	makestring(OUT$,"playlists %u %u %s \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
 			for (i = 1 to GetNumArrayRows(ListCoverURL)){
 				ListCoverURL[i] = ListCoverURL_blank;
 			}
@@ -686,17 +650,13 @@ Function PlaylistsRefresh_fn(){
 Function DynamicRefresh_fn(){
 	String Out$[128];
 	integer i;
-	If (ASCII_only = 1){
-		makestring(OUT$,"dynamicplaylist playlists 1 %u %u charset:ascii \n",FirstDynamic, NumberOfList);
-	}
-	Else {
-		makestring(OUT$,"dynamicplaylist playlists 1 %u %u \n",FirstDynamic, NumberOfList);
-	}
+	makestring(OUT$,"dynamicplaylist playlists 1 %u %u \n",FirstDynamic, NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
 			for (i = 1 to GetNumArrayRows(ListCoverURL)){
 				ListCoverURL[i] = ListCoverURL_blank;
 			}
@@ -708,12 +668,7 @@ Function DynamicRefresh_fn(){
 }
 Function SearchRefresh_fn(){
 	String Out$[128];
-	If (ASCII_only = 1){
-		makestring(OUT$,"search %u %u term:%s charset:ascii \n",FirstSearch,NumberOfList, search_in);
-	}
-	Else {
-		makestring(OUT$,"search %u %u term:%s \n",FirstSearch,NumberOfList, search_in);
-	}
+	makestring(OUT$,"search %u %u term:%s \n",FirstSearch,NumberOfList, search_in);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 	ListName$ = ListName[1];
@@ -721,45 +676,25 @@ Function SearchRefresh_fn(){
 } 
 Function FavoritesRefresh_fn(){
 	String Out$[256];
-	If (ASCII_only = 1){
-		makestring(OUT$,"%s %s items %u %u %s charset:ascii \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
-	}
-	Else {
-		makestring(OUT$,"%s %s items %u %u %s \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
-	}
+	makestring(OUT$,"%s %s items %u %u %s \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function AppsRefresh_fn(){
 	String Out$[128];
-	If (ASCII_only = 1){
-		makestring(OUT$,"apps %u %u charset:ascii \n",FirstApps,NumberOfList);
-	}
-	Else {
-		makestring(OUT$,"apps %u %u \n",FirstApps,NumberOfList);
-	}
+	makestring(OUT$,"apps %u %u \n",FirstApps,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function RadiosRefresh_fn(){
 	String Out$[128];
-	If (ASCII_only = 1){
-		makestring(OUT$,"radios %u %u charset:ascii \n",FirstRadios,NumberOfList);
-	}
-	Else {
-		makestring(OUT$,"radios %u %u \n",FirstRadios,NumberOfList);
-	}
+	makestring(OUT$,"radios %u %u \n",FirstRadios,NumberOfList);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
 Function CBRefresh_fn(){
 	String Out$[1024];
-	If (ASCII_only = 1){
-		makestring(OUT$,"custombrowse browse %u %u %s %s charset:ascii \n", FirstCB, NumberOfList, restrictorCB, restrictor2CB);
-	}
-	Else {
-		makestring(OUT$,"custombrowse browse %u %u %s %s \n",FirstCB, NumberOfList, restrictorCB, restrictor2CB);
-	}
+	makestring(OUT$,"custombrowse browse %u %u %s %s \n",FirstCB, NumberOfList, restrictorCB, restrictor2CB);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);	
 }
@@ -771,12 +706,7 @@ Function NowplayingRefresh_fn(){
 	Else {
 		tags$ = "alK";
 	}
-	If (ASCII_only = 1){
-		makestring(Out$,"%s status %u %u tags:%s charset:ascii \n",PlayerID$,FirstNowplaying, NumberOfNowplaying, tags$);
-	}
-	Else {
-		makestring(Out$,"%s status %u %u tags:%s \n",PlayerID$,FirstNowplaying, NumberOfNowplaying, tags$);
-	}
+	makestring(Out$,"%s status %u %u tags:%s \n",PlayerID$,FirstNowplaying, NumberOfNowplaying, tags$);
 	trace("sending: %s",OUT$);
 	socketsend(TCPClient,OUT$);
 }
@@ -983,6 +913,7 @@ Function CB_PgReset_fn(){
 	ListName$ = ListName[1];
 	If (ListCoverURL_Enable = 1){
 		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
 			for (i = 1 to GetNumArrayRows(ListCoverURL)){
 				ListCoverURL[i] = ListCoverURL_blank;
 			}
@@ -2351,74 +2282,51 @@ String_Function ParsePercent(STRING Parse$){
 	String output$[2048], dump[6];
 	i = 1;
 	output$ = "";
-	If (ASCII_only = 1){
-		While(i <= len (parse$)) {
-			char = Byte (parse$, i); // char = integer of the byte at position i
-			if (char = '%'){ // if char is the escape character, %
-				if (i > 1){
-					output$ = output$ + removebylength(i - 1,parse$);
-				}
+	While(i <= len (parse$)) {
+		char = Byte (parse$, i); // char = integer of the byte at position i
+		if (char = '%'){ // if char is the escape character, %
+			if (i > 1){
+				output$ = output$ + removebylength(i - 1,parse$);
+			}
+			code = HexToI(mid(parse$,2,2)); // extract hex code for testing
+			If (code < 128){ // test for regular ascii character
 				If (len(Parse$) > 2){
-					output$ = output$ + chr(HexToI(mid(Parse$,2,2)));
+					output$ = output$ + chr(code);
 					dump = removebylength(3,parse$);
 					i = 1;
 				}
-				Else {
+				Else { // if not 3 characters remaining
 					Break;
 				}
 			}
-			else {
-				i = i + 1;
-			}
-		}
-	}
-	Else {
-		While(i <= len (parse$)) {
-			char = Byte (parse$, i); // char = integer of the byte at position i
-			if (char = '%'){ // if char is the escape character, %
-				if (i > 1){
-					output$ = output$ + removebylength(i - 1,parse$);
-				}
-				code = HexToI(mid(parse$,2,2)); // extract hex code for testing
-				If (code < 128){ // test for regular ascii character
-					If (len(Parse$) > 2){
-						output$ = output$ + chr(code);
-						dump = removebylength(3,parse$);
-						i = 1;
-					}
-					Else { // if not 3 characters remaining
-						Break;
-					}
-				}
-				Else If (code = 194){ // test for C2
-					If (len(Parse$) > 5){ // make sure there are 6 characters remaining
-						output$ = output$ + chr(HexToI(mid(parse$,5,2))); // 2nd byte = crestron chr
-						dump = removebylength(6,parse$);
-						i = 1;
-					}
-					Else { // if not 6 characters remaining
-						Break;
-					}
-				}
-				Else if (code = 195){ // test for C3
-					If (len(Parse$) > 5){ // make sure there are 6 characters remaining
-						output$ = output$ + chr(HexToI(mid(parse$,5,2)) + 64);  // 2nd byte + 64 = crestron chr
-						dump = removebylength(6,parse$);
-						i = 1;
-					}
-					Else { // if not 6 characters remaining
-						Break;
-					}
-				}
-				Else { // if code is not known then replace with ?
-					output$ = output$ + "?";
-					dump = removebylength(3,parse$);
+			Else If (code = 194){ // test for C2
+				If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+					output$ = output$ + chr(HexToI(mid(parse$,5,2))); // 2nd byte = crestron chr
+					dump = removebylength(6,parse$);
 					i = 1;
 				}
+				Else { // if not 6 characters remaining
+					Break;
+				}
 			}
-			else {
-				i = i + 1;
+			Else if (code = 195){ // test for C3
+				If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+					output$ = output$ + chr(HexToI(mid(parse$,5,2)) + 64);  // 2nd byte + 64 = crestron chr
+					dump = removebylength(6,parse$);
+					i = 1;
+				}
+				Else { // if not 6 characters remaining
+					Break;
+				}
 			}
+			Else { // if code is not known then replace with ?
+				output$ = output$ + "?";
+				dump = removebylength(3,parse$);
+				i = 1;
+			}
+		}
+		else {
+			i = i + 1;
 		}
 	}
 	output$ = output$ + parse$;
@@ -2455,8 +2363,7 @@ String_Function FormatSearch(String input){
 // //////////// PARSING FUNCTIONS
 Function Parse_Time(Integer InTime){     
 	Integer indexEnd, Length; // indexStart
-	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
-	Long_Integer BarTemp;  
+	Integer Time_hr, Time_min, Time_sec, Time_rmd;
 	
 	Time_sec = InTime;
 	Time_min = Time_sec / 60;
@@ -2470,8 +2377,13 @@ Function Parse_Time(Integer InTime){
 		makestring(CurrentsongTime,"%u:%02u:%02u",Time_hr,Time_min,Time_rmd);
 	}
 	If ((CTDuration_sec > 0) && (Time_sec > 0)){
-		BarTemp =  (65535 * Time_sec) / CTDuration_sec;
-		OutTimeBar = BarTemp;
+		// maybe this is where the problem is for Marc's error?
+		// Error: Invalid join number -35 in BuildCresnetLongAnalog_14h
+		// insert debugging code ***
+		// Muldiv seems to be the same as simply performing the math 
+		// (internal multiplication is done in 32-bit until assignment
+		// OutTimeBar =  Muldiv(65535, Time_sec, CTDuration_sec);
+		OutTimeBar =  (65535 * Time_sec) / CTDuration_sec;
 	}
 	Else If (Time_sec = 0){
 		OutTimeBar = 0;
@@ -3233,7 +3145,7 @@ Function Parse_Titles(String InTitles$){
 	TotalTitles = AtoI(mid(InTitles$,indexStart,Length));
 	OutTitleCount = TotalTitles;
 	If (TotalTitles > 0){
-		OutTitlesBar = 65535 - ((65535 * TitleFirstNumber ) / TotalTitles);
+		OutTitlesBar = 65535 - Muldiv(65535, TitleFirstNumber, TotalTitles);
 	}
 	else {
 		OutTitlesBar = 65535;
@@ -4421,6 +4333,11 @@ Function Parse_Status(String InStatus$){
 			CurrentSongRateable = 0;
 			trace("CurrentSong is Mediafly");
 		}
+		Else If (find("spotify:",CurrentTrackURL$)){
+			CTRemoteService = 12;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is Spotify");
+		}
 		Else If (find("http:",CurrentTrackURL$) || find("mms:",CurrentTrackURL$) || find("rtmp:",CurrentTrackURL$)){
 			CTRemoteService = 9;
 			CurrentsongRateable = 0;
@@ -4432,6 +4349,7 @@ Function Parse_Status(String InStatus$){
 			trace("CurrentSong is Sounds & Effects");
 		}
 		// CTRemoteService = 11 for BBC iPlayer, determed by Cover URL below
+		// CTRemoteService = 12 fo Spotify, see above
 		Else {
 			If (CurrentTrackRemote = 1){
 				CTRemoteService = 9;
@@ -4475,16 +4393,20 @@ Function Parse_Status(String InStatus$){
 			Length = len(InStatus$) - indexStart - 1; 
 		}
 		CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
-		If (find("slacker.com",left(CurrentTrackRemoteCover$,32))){
+		temp = left(CurrentTrackRemoteCover$,32);
+		If (find("slacker.com", temp)){
 			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
 		}
-		Else If (find("plugins/",left(CurrentTrackRemoteCover$,8))){
+		Else If (find("plugins/", temp)){
 			makestring(CurrentTrackRemoteCover$,"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, CurrentTrackRemoteCover$);
 		}
-		Else if (find("iplayer/",left(CurrentTrackRemoteCover$,8))){
+		Else if (find("iplayer/", temp)){
 			CTRemoteService = 11;
 		}
-		Else If (find("/music",left(CurrentTrackRemoteCover$,6))){
+		Else If (find("spotify", temp)){
+			makestring(CurrentTrackRemoteCover$,"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, CurrentTrackRemoteCover$);
+		}
+		Else If (find("/music", temp)){
 			If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
 				makestring(CurrentTrackRemoteCover$,"%s%s/cover_%ux%u.png", CoverURL_base_music, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
 			}
@@ -5017,6 +4939,7 @@ RELEASE Coverflow {
 	integer i;
 	SetArray(ListCoverflowArtist," ");
 	#IF_SERIES3
+//		MySetArray(ListCoverURL,ListCoverURL_blank);
 		for (i = 1 to GetNumArrayRows(ListCoverURL)){
 			ListCoverURL[i] = ListCoverURL_blank;
 		}
@@ -5408,12 +5331,7 @@ PUSH NowplayingMoveDown {
 PUSH Select_DefaultPlayer{
 	String Out$[128],tags$[16];
 	If (PlayerID$ <> PlayerID$_Default){
-		If (ASCII_only = 1){
-			makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
-		}
-		Else {
-			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
-		}
+		makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
 		socketsend(TCPClient, out$);
 		trace("sending: %s",OUT$);
 		PlayerID$ = PlayerID$_Default;
@@ -5428,12 +5346,7 @@ PUSH Select_DefaultPlayer{
 		else {
 			tags$ = "pgsaeluKNr";
 		}
-		If (ASCII_only = 1){
-			makestring(out$,"%s status - 1 tags:%s charset:ascii subscribe:0\n",PlayerID$, tags$);  
-		}
-		Else {
-			makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
-		}
+		makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
 		socketsend(TCPClient, out$);
 		trace("sending: %s",OUT$);
 		delay(20);
@@ -5452,12 +5365,7 @@ PUSH PlayersSelect {
 	i = GetLastModifiedArrayIndex ();
 	If (i <= ListLengthPlayers){
 		i = i + FirstPlayers;
-		If (ASCII_only = 1){
-			makestring(out$,"%s status - 1 charset:ascii subscribe:-\n",PlayerID$);  
-		}
-		Else {
-			makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
-		}
+		makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
 		socketsend(TCPClient, out$);
 		trace("sending: %s",OUT$);
 		PlayerID$ = PlayersID[i];
@@ -5478,12 +5386,7 @@ PUSH PlayersSelect {
 		else {
 			tags$ = "pgsaeluKNr";
 		}
-		If (ASCII_only = 1){
-			makestring(out$,"%s status - 1 tags:%s charset:ascii subscribe:0\n",PlayerID$, tags$);  
-		}
-		Else {
-			makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
-		}
+		makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
 		socketsend(TCPClient, out$);
 		trace("sending: %s",OUT$);
 		delay(20);
@@ -6212,12 +6115,7 @@ SOCKETCONNECT TCPClient{
 	else {
 		tags$ = "pgsaeluKNr";
 	}
-	If (ASCII_only = 1){
-		makestring(out$,"%s status - 1 tags:%s charset:ascii subscribe:0\n",PlayerID$, tags$);  
-	}
-	Else {
-		makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
-	}
+	makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
 	socketsend(TCPClient, out$);
 	trace("sending: %s",OUT$);
 	delay(20);
@@ -6446,6 +6344,9 @@ Function Main() {
 		Else If (find(" time",Find$)) { // time parsing
 			trace("parsing time fb");
 	//		RetimeWait(100,waitCountTime);
+			// insert debugging code here to look for Marc's error
+			// ***
+			// Error: Invalid join number -35 in BuildCresnetLongAnalog_14h
 			In$ = mid(In$,34,len(In$) - 35);
 			Parse_Time(AtoI(In$)); // parse_time requires integer input
 		}
