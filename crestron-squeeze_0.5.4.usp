@@ -1,27 +1,24 @@
 /*
 Dealer Name:Harmony Home Theaters
 System Name: SqueezeBox Server
+System Number: 7.5
 Programmer: JWM 
 License:
 	
-	© Copyright 2009-2011 Jason Melvin    
+	(c) 2009-2010 Jason Melvin    
 
 	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Lesser General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU Lesser General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-	
-	http://www.gnu.org/licenses/gpl.txt
-	and
-	http://www.gnu.org/licenses/lgpl.txt
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
 #SYMBOL_NAME "SqueezeBox 0.5.4" 
@@ -2403,6 +2400,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 	String  Nowplaying_int[512];
 	Integer Nowplaying_intLen;
 	String NowplayingURL[10][256];
+	String temp[256];
 	Integer inCountNP_local;
 	
 	// store the global token for incomming NP data in the local thread
@@ -2564,7 +2562,11 @@ Function Parse_Nowplaying(String InNowplaying$){
 				indexEnd = Len(NowplayingParseItem) + 1;
 				Length = indexEnd - indexStart;
 			}
-			NowplayingURL[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+			temp = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+			If (find("spotify", temp)){
+				makestring(temp,"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, temp);
+			}
+			NowplayingURL[i] = temp;
 		}
 		Else {
 			NowplayingURL[i] = "";
