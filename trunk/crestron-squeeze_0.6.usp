@@ -1,0 +1,6517 @@
+/*
+Dealer Name:Harmony Home Theaters
+System Name: SqueezeBox Server
+System Number: 7.6
+Programmer: JWM 
+License:
+	
+	(c) Copyright 2009-2011 Jason Melvin    
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	and GNU General Public License along with this program.  
+	If not, see <http://www.gnu.org/licenses/>.
+*/
+// ///////////////////Compiler Directives
+#DEFINE_CONSTANT ARRAY_SIZE 10
+#DEFINE_CONSTANT NP_TIMER 1000
+#DEFINE_CONSTANT DELAY_SHOWBRIEFLY 300
+
+
+#SYMBOL_NAME "SqueezeBox 0.6" 
+#HELP_BEGIN
+	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
+#HELP_END
+#OUTPUT_SHIFT 35
+#ENABLE_DYNAMIC
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#PRINT_TO_TRACE
+// #ENABLE_TRACE
+
+// ///////////// Inputs & Outputs
+DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, 
+				_SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_,
+				_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+				_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+				_SKIP_;
+DIGITAL_INPUT TCPIP_Connect;
+DIGITAL_INPUT TCPIP_ReconnectEnable;
+DIGITAL_INPUT OnDisconnect_Pause;
+DIGITAL_INPUT OnConnect_Play;
+DIGITAL_INPUT OnConnect_DefaultPlayer;
+DIGITAL_INPUT DirectIn_DefaultPlayerOnly;
+DIGITAL_INPUT Playlist_Save_Enable;
+DIGITAL_INPUT Playlist_NeverResume;
+DIGITAL_INPUT NowplayingSeparateOuts_Enable;
+DIGITAL_INPUT NowplayingConsolidatedOut_Enable;
+DIGITAL_INPUT BrowseCS_AlwaysSearch; 
+DIGITAL_INPUT CurrentSongTime_Enable;
+DIGITAL_INPUT CurrentSongSeparateOut_Enable;
+DIGITAL_INPUT CurrentSongConsolidatedOut_Enable;
+DIGITAL_INPUT ListCoverURL_Enable;
+DIGITAL_INPUT NowplayingCoverURL_Enable;
+DIGITAL_INPUT FavoriteAdd_toEnd;
+DIGITAL_INPUT UseCoverID;
+//
+DIGITAL_INPUT Select_DefaultPlayer;
+//
+DIGITAL_OUTPUT TCPIP_Connected;
+ANALOG_OUTPUT TCPIP_Status;
+DIGITAL_INPUT Play, Pause_On, Pause_Off, Pause_Tog, Stop, Next, Prev;
+DIGITAL_INPUT Pwr_On, Pwr_Off;
+Digital_input VolumeUp, VolumeDn;
+Analog_input VolumeBar;
+DIGITAL_INPUT ButtonUp, ButtonDn, ButtonLt, ButtonRt, Button0, Button1, Button2, Button3, Button4, Button5, Button6, Button7, Button8, Button9, ButtonSearch, ButtonNP, ButtonSize, ButtonBrightness, ButtonShuffle, ButtonRepeat, ButtonSleep;
+DIGITAL_INPUT Repeat_Off, Repeat_Track, Repeat_All;
+DIGITAL_INPUT Shuffle_Off, Shuffle_Track, Shuffle_Album;
+DIGITAL_INPUT Playlist_Clear;
+DIGITAL_INPUT Currentsong_AddFavorite;
+// DIGITAL_INPUT PlaylistSave;
+//
+// Jump inputs
+DIGITAL_INPUT Jump_Home;
+DIGITAL_INPUT Jump_Favorites;
+DIGITAL_INPUT Jump_Genres;
+DIGITAL_INPUT Jump_Artists;
+DIGITAL_INPUT Jump_Albums;
+DIGITAL_INPUT Jump_Tracks;
+DIGITAL_INPUT Jump_Playlists;
+DIGITAL_INPUT Jump_Dynamic;
+DIGITAL_INPUT Jump_Pandora;
+DIGITAL_INPUT Jump_Rhapsody;
+DIGITAL_INPUT Jump_Slacker;
+DIGITAL_INPUT Jump_Napster;
+DIGITAL_INPUT Jump_LastFM;
+DIGITAL_INPUT Jump_Sirius;
+DIGITAL_INPUT Jump_Sounds;
+DIGITAL_INPUT Jump_Podcasts;
+DIGITAL_INPUT Jump_Radios;
+
+// Direct Browse inputs
+DIGITAL_INPUT BrowseCurrentGenre,BrowseCurrentArtist,BrowseCurrentAlbum,BrowseCurrentSong;
+// Direct string inputs
+STRING_INPUT  PlaylistPlay$[255], PlaylistResume$[255], FavoritePlay$[16];
+STRING_INPUT  DynamicResume$[255];
+// Search inputs
+DIGITAL_INPUT	Search_Submit;
+STRING_INPUT	Search_in$[64];
+DIGITAL_OUTPUT	Search_KeyboardPopup;
+DIGITAL_OUTPUT	Search_RequiresSubmit;
+// RATING inputs
+DIGITAL_INPUT Rate_Up, Rate_Dn;
+ANALOG_INPUT CurrentsongTrackstatSet;
+ANALOG_INPUT TrackstatIncrement;
+
+// coverflow 
+DIGITAL_INPUT Coverflow;
+// List scroll inputs
+DIGITAL_INPUT List_PgUp, List_PgDn, List_Back;
+DIGITAL_INPUT Nowplaying_Refresh, Nowplaying_PgUp, Nowplaying_PgDn;
+DIGITAL_INPUT Players_Refresh, Players_PgUp, Players_PgDn;
+// Analog scroll inputs
+ANALOG_INPUT  InPageList;
+ANALOG_INPUT  InPageNowplaying;
+ANALOG_INPUT  InPagePlayers;
+ANALOG_INPUT  InTimeBar;
+ANALOG_INPUT  NowplayingShowPrev;
+ANALOG_INPUT  NumberOfList, NumberOfCoverflow, NumberOfNowplaying, NumberOfPlayers;
+// Scroll Feedback
+ANALOG_OUTPUT  OutListCount, OutListBar;
+ANALOG_OUTPUT  OutNowplayingCount, OutNowplayingBar; 
+ANALOG_OUTPUT  OutPlayersCount, OutPlayersBar;
+ANALOG_OUTPUT  OutTimeBar;
+STRING_OUTPUT  ListName$;
+//
+DIGITAL_OUTPUT FavoriteAdd_success;
+// Player feedback
+STRING_OUTPUT  CurrentPlayerName;
+STRING_OUTPUT  CurrentPlayerID;
+DIGITAL_OUTPUT CurrentPlayerPower;
+DIGITAL_OUTPUT CurrentPlayerConnected;
+String_output  CurrentPlayerVolume;
+Analog_output  CurrentPlayerVolumeBar;
+DIGITAL_OUTPUT CurrentPlayerMaster;
+DIGITAL_OUTPUT CurrentPlayerSlave;
+STRING_OUTPUT  CurrentPlayerMasterName;
+DIGITAL_OUTPUT mode_play_fb;
+DIGITAL_OUTPUT mode_pause_fb;
+DIGITAL_OUTPUT mode_stop_fb;
+DIGITAL_OUTPUT repeat_off_fb;
+DIGITAL_OUTPUT repeat_track_fb;
+DIGITAL_OUTPUT repeat_all_fb;
+DIGITAL_OUTPUT shuffle_off_fb;
+DIGITAL_OUTPUT shuffle_track_fb;
+DIGITAL_OUTPUT shuffle_album_fb;
+DIGITAL_OUTPUT showbriefly;
+STRING_OUTPUT  showbriefly$;
+// CurrentSong feedback
+DIGITAL_OUTPUT CurrentsongIsRemote;
+DIGITAL_OUTPUT CurrentSongRateable;
+STRING_OUTPUT  CurrentsongTitle;
+STRING_OUTPUT  CurrentsongAlbum;
+STRING_OUTPUT  CurrentsongArtist;
+STRING_OUTPUT  CurrentsongGenre;
+STRING_OUTPUT  CurrentsongCoverURL;
+STRING_OUTPUT  CurrentsongCoverURLfull;
+STRING_OUTPUT  CurrentsongTime;
+// STRING_OUTPUT  CurrentsongRate;
+STRING_OUTPUT  CurrentsongDuration; 
+STRING_OUTPUT  CurrentsongBitrate;
+STRING_OUTPUT  CurrentsongConsolidatedText;
+ANALOG_OUTPUT  CurrentsongTrackstat;
+STRING_OUTPUT  CurrentsongTrackstat$;
+ANALOG_OUTPUT  CurrentsongType;
+// ARRAYS
+// Nowplaying i/o
+DIGITAL_INPUT  NowplayingPlay[ARRAY_SIZE];
+DIGITAL_INPUT  NowplayingRemove[ARRAY_SIZE];
+DIGITAL_INPUT  NowplayingMoveUp[ARRAY_SIZE];
+DIGITAL_INPUT  NowPlayingMoveDown[ARRAY_SIZE];
+DIGITAL_OUTPUT NowplayingPageFlip;
+STRING_OUTPUT  Nowplaying[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingTitle$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingArtist$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingAlbum$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingCoverURL[ARRAY_SIZE];
+DIGITAL_OUTPUT NowplayingCurrentSong[ARRAY_SIZE];
+// List i/o
+DIGITAL_INPUT  ListSelect[ARRAY_SIZE];
+DIGITAL_INPUT  ListPlay[ARRAY_SIZE];
+DIGITAL_INPUT  ListAdd[ARRAY_SIZE];
+DIGITAL_INPUT  ListInsert[ARRAY_SIZE];
+STRING_OUTPUT  List$[ARRAY_SIZE];
+DIGITAL_OUTPUT ListPlayable[ARRAY_SIZE];
+STRING_OUTPUT  ListCoverURL[ARRAY_SIZE];
+STRING_OUTPUT  ListCoverflowArtist[ARRAY_SIZE];
+// Players i/o
+DIGITAL_INPUT  PlayersSelect[ARRAY_SIZE];
+DIGITAL_INPUT  PlayersSyncTog[ARRAY_SIZE,ARRAY_SIZE];
+STRING_OUTPUT  Players$[ARRAY_SIZE];
+STRING_OUTPUT  PlayersID$[ARRAY_SIZE,ARRAY_SIZE];
+DIGITAL_OUTPUT PlayersSynced[ARRAY_SIZE,ARRAY_SIZE];
+//
+///////////////////////////// Parameters
+STRING_PARAMETER PlayerID$_Default[17];
+STRING_PARAMETER ServerIPAddr$[16];
+INTEGER_PARAMETER ServerPort;
+#BEGIN_PARAMETER_PROPERTIES ServerPort
+	propValidUnits=unitDecimal;
+	propDefaultValue=9090d;
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER ServerHttpPort;
+#BEGIN_PARAMETER_PROPERTIES ServerHttpPort
+	propValidUnits=unitDecimal;
+	propDefaultValue=9000d;
+#END_PARAMETER_PROPERTIES
+Integer_parameter VolumeIncrement;
+#BEGIN_PARAMETER_PROPERTIES VolumeIncrement
+	propValidUnits=unitDecimal;
+	propBounds=1d,100d;
+	propDefaultValue=10d;
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER suppressShowbrieflyPause;
+#BEGIN_PARAMETER_PROPERTIES suppressShowbrieflyPause
+	propDefaultValue=0d;
+	propList={0d,"show all messages"}, {1d,"suppress showbriefly for pause"};
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER  ListWidth, CurrentsongWidth;
+INTEGER_PARAMETER  NowplayingWidthArtist, NowplayingWidthTotal;
+INTEGER_PARAMETER  CoverflowWidthArtist, CoverflowWidthAlbum;
+#BEGIN_PARAMETER_PROPERTIES ListWidth, CurrentsongWidth, NowplayingWidthArtist, NowplayingWidthTotal, CoverflowWidthArtist, CoverflowWidthAlbum
+	propValidUnits=unitDecimal;
+	propBounds=1d,255d;
+	propDefaultValue=64d;
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER ListCoverSize;
+INTEGER_PARAMETER CoverflowSize;
+Integer_parameter CurrentsongCoverSize;
+INTEGER_PARAMETER NowplayingCoverSize;
+INTEGER_PARAMETER TotalHome;
+#BEGIN_PARAMETER_PROPERTIES TotalHome
+	propValidUnits=unitDecimal;
+	propBounds=1d,20d; // increase the 20d if you want more items on the home list
+	propDefaultValue=10d;
+	propShortDescription= "set to the number of items desired in the home list and make the number of HomeItem parameters below the same";
+#END_PARAMETER_PROPERTIES
+INTEGER_PARAMETER HomeItem[20]; // increase the number in brackets if you want more items on the home list
+#BEGIN_PARAMETER_PROPERTIES HomeItem
+	propDefaultValue=0d;
+	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {13d,"Custom Browse"}, {14d,"Rhapsody"}, {15d,"Slacker"}, {16d,"Napster"}, {17d,"Last.fm"}, {18d,"Sirius"}, {19d,"Sound Effects"}, {0d,"Empty"};
+#END_PARAMETER_PROPERTIES
+
+// ///////////////////////// Sockets
+TCP_CLIENT TCPClient[16384];
+// //////////////// Global Variables
+INTEGER	inCount,
+		inCountNP,
+		ListLengthHome,
+		TotalGenres,
+		TotalArtists,
+		TotalAlbums,
+		TotalTitles,
+		TotalPlaylists,
+		TotalDynamic,
+		TotalSearch,
+		TotalFavorites,
+		TotalApps,
+		TotalRadios,
+		TotalCB,
+		TotalPlayers,
+		FirstHome,
+		FirstGenre,
+		FirstArtist,
+		FirstAlbum,
+		FirstTitle,
+		FirstPlaylist,
+		FirstNowplaying,
+		FirstDynamic,
+		FirstSearch,
+		FirstFavorites,
+		FirstApps,
+		FirstRadios,
+		FirstCB,
+		FirstPlayers,
+		GenreFirstNumber,
+		ArtistFirstNumber,
+		AlbumFirstNumber,
+		TitleFirstNumber,
+		PlaylistFirstNumber,
+		TotalNowplaying,
+		NowplayingFirstNumber,
+		DynamicFirstNumber,
+		SearchFirstNumber,
+		FavoritesFirstNumber,
+		AppsFirstNumber,
+		RadiosFirstNumber,
+		CBFirstNumber,
+		PlayersFirstNumber,
+		NumberOfAlbums,
+		CurrentsongIndex,
+		CTDuration_sec, 
+		CTTime_sec,
+		CurrentPlaylistModified,
+		Repeat,
+		Shuffle, 
+		CurrentTrackRemote, 
+		CTRemoteService,
+		Volume,
+		timeclock_run,
+		waitUpdateTime_running,
+		TCPIP_Connected_int,
+		progInTimeBar, 
+		progInPageList, 
+		progInPageNowplaying, 
+		progInPagePlayers, 
+		progInTrackstat,
+		parsePosition,
+		OutHomeCount,
+		OutHomeBar,
+		OutGenreCount,
+		OutGenresBar,
+		OutArtistCount,
+		OutArtistsBar,
+		OutAlbumCount,
+		OutAlbumsBar,
+		OutTitleCount,
+		OutTitlesBar,
+		OutPlaylistCount,
+		OutPlaylistsBar,
+		OutDynamicCount,
+		OutDynamicBar,
+		OutSearchCount,
+		OutSearchBar, 
+		OutFavoritesCount,OutFavoritesBar,
+		OutAppsCount,OutAppsBar,
+		OutRadiosCount,OutRadiosBar,
+		Nowplaying_reset_enable, 
+		ArtistsListTop,
+		ListType[5], 
+		ListFirst[5], 
+		ListSearchRS[5],
+		TitleTracknum[ARRAY_SIZE],
+		SearchIDType[ARRAY_SIZE],
+		NowplayingIndex[ARRAY_SIZE],
+		ListHomeItem[20],
+		CBPlayable[ARRAY_SIZE], 
+		CBMixable[ARRAY_SIZE],
+		FavoritesIsAudio[ARRAY_SIZE], 
+		FavoritesHasItems[ARRAY_SIZE],
+		PlayersIndex[ARRAY_SIZE];
+
+// INTEGER	inCountStatus;
+// INTEGER	progShowbriefly;
+// INTEGER	waitCountTime_running;
+
+STRING 	ActiveGenreID[8], 
+		ActiveArtistID[8], 
+		ActiveAlbumID[8], 
+		ActiveTrackID[8], 
+		ActivePlaylistID[8],
+		suppressShowbriefly[19],
+		CurrentTrackID[32], 
+		CurrentPlaylistID[8],
+		CurrentGenreID[8], 
+		CurrentArtistID[8], 
+		CurrentAlbumID[8],
+		search_in[64], 
+		search_in_raw[64],
+		ListActiveGenreID[5][8],
+		GenreID[ARRAY_SIZE][8],
+		ArtistID[ARRAY_SIZE][8],
+		AlbumID[ARRAY_SIZE][8],
+		TitleAlbumID[ARRAY_SIZE][8],
+		TrackID[ARRAY_SIZE][8],
+		SearchID[ARRAY_SIZE][8],
+		NowplayingID[ARRAY_SIZE][32],
+		PlaylistID[ARRAY_SIZE][16],
+		CBLevel[ARRAY_SIZE][256], 
+		CBID[ARRAY_SIZE][64], 
+		CBName[ARRAY_SIZE][64], 
+		CBType[ARRAY_SIZE][64],
+		ActivePlayerID[32], 
+		StatusFind$[64], 
+		NowplayingFind$[64], 
+		TimeFind$[64],
+		FAR_parse[32], 
+		FAR_cmd[32],
+		CurrentPlayerMode[8],
+		CurrentTrackTime$[32],
+		CurrentTrackRate$[16],
+		CurrentTrackDuration$[32],
+		SyncMaster[32],
+		SyncSlaves_in[512],
+		SyncSlaves[ARRAY_SIZE][32],
+		CurrentPlaylistName[255],
+		CurrentTrackTitle$[255],
+		CurrentTrackTitle$_raw[255],
+		CurrentTrackGenre$[255],
+		CurrentTrackArtist$[255],
+		CurrentTrackAlbum$[255],
+		CurrentTrackCTitle$[255],
+		CurrentTrackRTitle$[255],
+		CurrentTrackRemoteCover$[512],
+		CurrentsongCoverURL_push[255],
+		CoverURL_base_music[128],
+		CurrentTrackCoverID[64],
+		CurrentTrackURL$[2048],
+		CurrentTrackURL$_raw[2048],
+		CoverflowURL_blank[64],
+		CoverflowURL_missing[64],
+		ListCoverURL_blank[64],
+		ListCoverURL_missing[64],
+		NowplayingCoverURL_blank[64],
+		restrictorGenres[255],
+		restrictorArtists[255],
+		restrictorAlbums[255],
+		restrictorTitles[255],
+		restrictorPlaylists[255],
+		restrictorSearch[255],
+		restrictorFavorites[255],
+		ActiveFAR_ID[64],
+		restrictorCB[255],
+		restrictor2CB[255],
+		ListName[5][255],
+		ListRestrictor[5][255],
+		ListRestrictor2[5][255],
+		ListActiveGenre[5][255],
+		ListHome[20][16],
+		ListHomeCoverURL[20][128],
+		ActiveGenre[128],
+		ActiveArtist[128],
+		ActiveAlbum[128],
+		ActiveTitle[128],
+		ActivePlaylist[128],
+		ActiveDynamic[128],
+		ActiveDynamicFile[128],
+		ActiveFavoritesName[255],
+		ActiveFavoritesID[255],
+		FavoritesTitle[255],
+		Genre[ARRAY_SIZE][255], 
+		Artist[ARRAY_SIZE][255], 
+		Album[ARRAY_SIZE][255], 
+		Title[ARRAY_SIZE][255], 
+		Playlist[ARRAY_SIZE][255],
+		PlaylistRaw[ARRAY_SIZE][255], 
+		DynamicName[ARRAY_SIZE][255], 
+		DynamicFile[ARRAY_SIZE][255], 
+		Search[ARRAY_SIZE][255],
+		NowplayingTitle[ARRAY_SIZE][255], 
+		NowplayingArtist[ARRAY_SIZE][255], 
+		NowplayingAlbum[ARRAY_SIZE][255],
+		FavoritesName[ARRAY_SIZE][255], 
+		FavoritesID[ARRAY_SIZE][64], 
+		FavoritesType[ARRAY_SIZE][255],
+		FavoritesImage[ARRAY_SIZE][255],
+		AppsCmd[ARRAY_SIZE][64],
+		AppsName[ARRAY_SIZE][64],
+		AppsIcon[ARRAY_SIZE][255],
+		AppsType[ARRAY_SIZE][64],
+		RadiosCmd[ARRAY_SIZE][64],
+		RadiosName[ARRAY_SIZE][64], 
+		RadiosIcon[ARRAY_SIZE][255],
+		RadiosType[ARRAY_SIZE][64],
+		PlayerID$[32], 
+		PlayersName[ARRAY_SIZE][128], 
+		PlayersID[ARRAY_SIZE][32], 
+		PlayersID_raw[ARRAY_SIZE][32];
+
+// ////////////////////// FUNCTIONS
+Function MySetArray(string array[], string value){
+	integer i;
+	for (i = 1 to GetNumArrayRows(array)){
+		array[i] = value;
+	}
+}
+
+Function inCountIncrement(){
+	inCount = inCount + 1; 
+	trace("inCount = %u",inCount);
+}
+Function inCountNPIncrement(){
+	inCountNP = inCountNP + 1;
+	trace("inCountNP = %u",inCountNP);
+}
+/*
+//	add this back in if implementing a token for status update interrupt
+Function inCountStatusIncrement(){
+	inCountStatus = inCountStatus + 1;
+}
+*/
+Function ClearActive_fn(){
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ActiveArtist = "";
+	ActiveArtistID = "";
+	ActiveAlbum = "";
+	ActiveAlbumID = "";
+	ActivePlaylist = "";
+}
+Function ListShiftFwd_fn(){
+	Integer i;
+	For (i = 0 to 3){
+		ListType[5-i] = ListType[4-i];
+		ListName[5-i] = ListName[4-i];
+		ListRestrictor[5-i] = ListRestrictor[4-i];
+		ListRestrictor2[5-i] = ListRestrictor2[4-i];
+		ListFirst[5-i] = ListFirst[4-i];
+		ListSearchRS[5-i] = ListSearchRS[4-i];
+		ListActiveGenre[5-i] = ListActiveGenre[4-i];
+		ListActiveGenreID[5-i] = ListActiveGenreID[4-i];
+		trace("listShiftFwd_fn");
+	}
+	ListName[1] = " ";
+	ListRestrictor[1] = "";
+	ListRestrictor2[1] = "";
+	ListFirst[1] = 0;
+	ListSearchRS[1] = 0;
+	Search_RequiresSubmit = 0;
+	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = "";
+}
+Function ListShiftBk_fn(){
+	Integer i;
+	For (i = 1 to 4){
+		ListType[i] = ListType[i+1];
+		ListName[i] = ListName[i+1];
+		ListRestrictor[i] = ListRestrictor[i+1];
+		ListRestrictor2[i] = ListRestrictor2[i+1];
+		ListFirst[i] = ListFirst[i+1];
+		ListSearchRS[i] = ListSearchRS[i+1];
+		ListActiveGenre[i] = ListActiveGenre[i+1];
+//		trace("History %u = Type: %u, Name: %s, Restr: %s, 1st: %u",i,ListType[i],ListName[i],ListRestrictor[i],ListFirst[i]);
+	}
+	ListType[5] = 0;
+	ListName[5] = "Home";
+	ListRestrictor[5] = "";
+	ListRestrictor2[5] = "";
+	ListFirst[5] = 0;
+	ListSearchRS[5] = 0;
+	ListActiveGenre[5] = "";
+	ListName$ = ListName[1];
+	If (ListSearchRS[1] = 1){
+		Search_RequiresSubmit = 1;
+	}
+	Else {
+		Search_RequiresSubmit = 0;
+	}
+	If (ListType[1] = 0){
+		FirstHome = ListFirst[1];
+	}
+	Else If (ListType[1] = 1){
+		FirstGenre = ListFirst[1];
+		restrictorGenres = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 2){
+		FirstArtist = ListFirst[1];
+		ActiveGenre = ListActiveGenre[1];
+		restrictorArtists = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 3){
+		FirstAlbum = ListFirst[1];
+		restrictorAlbums = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 4){
+		FirstTitle = ListFirst[1];
+		restrictorTitles = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 5){
+		FirstPlaylist = ListFirst[1];
+		restrictorPlaylists = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 6){
+		FirstDynamic = ListFirst[1];
+	}
+//	Else If (listType[1] = 7)
+//  ...some code for nowplaying list type
+//
+	Else If (ListType[1] = 8){
+		FirstSearch = ListFirst[1];
+		restrictorSearch = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 10) {
+		FirstFavorites = ListFirst[1];
+		restrictorFavorites = ListRestrictor[1];
+	}
+	Else If (ListType[1] = 11) {
+		FirstApps = ListFirst[1];
+	}
+	Else If (ListType[1] = 12) {
+		FirstRadios = ListFirst[1];
+	}
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+	Else If (ListType[1] = 14){
+		FirstCB = ListFirst[1];
+		restrictorCB = ListRestrictor[1];
+		restrictor2CB = ListRestrictor2[1];
+	}
+}
+Function Nowplaying_wait(){
+	Wait(NP_TIMER, NP_TIMERr){
+		Nowplaying_reset_enable = 1;
+	}
+}
+Function Nowplaying_wait_fn(){
+	Nowplaying_reset_enable = 0;
+	Cancelwait(NP_TIMERr);
+	Nowplaying_wait();
+}
+Function HomeRefresh_fn(){
+	integer i;
+ 	trace("HomeRefresh");
+ 	ListName$ = ListName[1];
+	SetArray(ListPlayable,0);
+	OutHomeBar = 65535 - ((65535 / TotalHome) * FirstHome );
+	OutListBar = OutHomeBar;
+	OutListCount = TotalHome;
+	If ((TotalHome - FirstHome) < NumberOfList) {
+		ListLengthHome = TotalHome - FirstHome;
+	}
+	Else {
+		ListLengthHome = NumberOfList;
+	}
+	trace("FirstHome = %u",FirstHome);
+	trace("ListLengthHome = %u",ListLengthHome);
+	For (i = 1 to ListLengthHome){
+		List$[i] = ListHome[i + FirstHome];
+		If (ListCoverURL_Enable = 1){
+			ListCoverURL[i] = ListHomeCoverURL[i + FirstHome];
+		}
+	}
+	If (ListLengthHome < NumberOfList){
+		For (i = (ListLengthHome + 1) to NumberOfList){
+			List$[i] = " ";
+			ListCoverURL[i] = ListCoverURL_blank;
+		}
+	}
+}
+Function GenresRefresh_fn(){
+	String Out$[128];
+	integer i;
+	ActiveArtist = "";
+	ActiveArtistID = "";
+	makestring(OUT$,"genres %u %u %s \n", FirstGenre, NumberOfList, restrictorGenres);
+	socketsend(TCPClient,OUT$);
+	trace("sending: %s",OUT$);
+	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
+	}
+	//	ListType = 1;
+}
+Function ArtistsRefresh_fn(){
+	String Out$[128];
+	integer i;
+	ActiveAlbum = "";
+	ActiveAlbumID = "";
+	If ((len(ActiveGenre) > 0) && (FirstArtist = 0)){ // with a genre and at top of artists list
+		ArtistsListTop = 1;
+		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList - 1, restrictorArtists);
+	}
+	Else { // not with a genre and at top of artists list
+		ArtistsListTop = 0;
+		makestring(OUT$,"artists %u %u %s \n", FirstArtist, NumberOfList, restrictorArtists);
+	}
+	socketsend(TCPClient,OUT$);
+	trace("sending: %s",OUT$);
+	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
+	}
+	//	ListType = 2;
+}
+Function AlbumsRefresh_fn(){
+	String Out$[128];
+//	ListType = 3;
+	If (Coverflow = 1) {
+		If (restrictorAlbums = "sort:new"){
+			makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
+		Else {
+			makestring(OUT$,"albums %u %u %s sort:artflow tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		}
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	Else If ((Coverflow = 0) && (ListCoverURL_Enable = 1)){
+		makestring(OUT$,"albums %u %u %s tags:lja \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	Else {
+		makestring(OUT$,"albums %u %u %s tags:la \n",FirstAlbum, NumberOfAlbums, restrictorAlbums);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	ListName$ = ListName[1];
+}
+Function TitlesRefresh_fn(){
+	String Out$[128];
+	makestring(OUT$,"titles %u %u %s \n", FirstTitle, NumberOfList, restrictorTitles);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+	ListName$ = ListName[1];
+//	ListType = 4;
+}
+Function PlaylistsRefresh_fn(){
+	String Out$[128];
+	integer i;
+	makestring(OUT$,"playlists %u %u %s \n",FirstPlaylist, NumberOfList, restrictorPlaylists);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
+	}
+//	ListType = 5;
+}
+Function DynamicRefresh_fn(){
+	String Out$[128];
+	integer i;
+	makestring(OUT$,"dynamicplaylist playlists 1 %u %u \n",FirstDynamic, NumberOfList);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
+	}
+//	ListType = 6
+}
+Function SearchRefresh_fn(){
+	String Out$[128];
+	makestring(OUT$,"search %u %u term:%s \n",FirstSearch,NumberOfList, search_in);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+	ListName$ = ListName[1];
+//	ListType = 8
+} 
+Function FavoritesRefresh_fn(){
+	String Out$[256];
+	makestring(OUT$,"%s %s items %u %u %s \n", PlayerID$, FAR_cmd, FirstFavorites, NumberOfList, restrictorFavorites);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function AppsRefresh_fn(){
+	String Out$[128];
+	makestring(OUT$,"apps %u %u \n",FirstApps,NumberOfList);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function RadiosRefresh_fn(){
+	String Out$[128];
+	makestring(OUT$,"radios %u %u \n",FirstRadios,NumberOfList);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function CBRefresh_fn(){
+	String Out$[1024];
+	makestring(OUT$,"custombrowse browse %u %u %s %s \n",FirstCB, NumberOfList, restrictorCB, restrictor2CB);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);	
+}
+Function NowplayingRefresh_fn(){
+	String Out$[128], tags$[8];
+	If (UseCoverID = 1){
+		tags$ = "alKc";
+	}
+	Else {
+		tags$ = "alK";
+	}
+	makestring(Out$,"%s status %u %u tags:%s \n",PlayerID$,FirstNowplaying, NumberOfNowplaying, tags$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function PlayersRefresh_fn(){
+	String Out$[128];
+	makestring(OUT$,"players %u %u \n",FirstPlayers,NumberOfPlayers);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function ListRefresh_fn(){
+	If (ListType[1] = 0){
+		HomeRefresh_fn();
+	}
+	Else If (ListType[1] = 1){
+		GenresRefresh_fn();
+	}
+	Else If (ListType[1] = 2){
+		ArtistsRefresh_fn();
+	}
+	Else If (ListType[1] = 3){
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 4){
+		TitlesRefresh_fn();
+	}
+	Else If (ListType[1] = 5){
+		PlaylistsRefresh_fn();
+	}
+	Else If (ListType[1] = 6){
+		DynamicRefresh_fn();
+	}
+//	Else If (ListType[1] = 7){
+//	nowplaying
+//	}
+	Else If (ListType[1] = 8){
+		SearchRefresh_fn();
+	}
+	Else If (ListType[1] = 10){
+		FavoritesRefresh_fn();
+	}
+	Else If (ListType[1] = 11){
+		AppsRefresh_fn();
+	}
+	Else If (ListType[1] = 12){
+		RadiosRefresh_fn();
+	}
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+	Else If (ListType[1] = 14){
+		CBRefresh_fn();
+	}
+}
+Function trackstat_get(string TrackID){
+	String Out$[64];
+	makestring(OUT$,"trackstat getrating %s\n", TrackID);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+Function Home_PgReset_fn(){
+	Integer i;
+	FirstHome = 0;
+	ListShiftFwd_fn();
+	ListType[1] = 0;
+	ClearActive_fn();
+	ListName[1] = "Home";
+	HomeRefresh_fn();
+}
+Function Genres_PgReset_fn(){
+	FirstGenre = 0;
+	restrictorGenres = "";
+    ListShiftFwd_fn();
+	ListType[1] = 1;
+	ClearActive_fn();
+	ListName[1] = "All Genres";
+	GenresRefresh_fn();
+}
+Function Artists_PgReset_fn(){
+	FirstArtist = 0;
+	restrictorArtists = "";
+    ListShiftFwd_fn();
+	ListType[1] = 2;
+	ClearActive_fn();
+	ListName[1] = "All Artists";
+	ArtistsRefresh_fn();
+}
+Function Albums_PgReset_fn(){
+	FirstAlbum = 0;
+	restrictorAlbums = "";
+    ListShiftFwd_fn();
+	ListType[1] = 3;
+	ClearActive_fn();
+	ListName[1] = "All Albums";
+	AlbumsRefresh_fn();
+}
+Function NewMusic_PgReset_fn(){
+	FirstAlbum = 0;
+	restrictorAlbums = "sort:new";
+    ListShiftFwd_fn();
+	ListType[1] = 3;
+	ClearActive_fn();
+	ListName[1] = "New Albums";
+	ListRestrictor[1] = restrictorAlbums;
+	AlbumsRefresh_fn();
+}
+Function Titles_PgReset_fn(){
+	FirstTitle = 0;
+    ListShiftFwd_fn();
+	If (UseCoverID = 1){
+		restrictorTitles = "tags:tec";
+		ListRestrictor[1] = "tags:tec";
+	}
+	Else {
+		restrictorTitles = "tags:te";
+		ListRestrictor[1] = "tags:te";
+	}
+	ListType[1] = 4;
+	ClearActive_fn();
+	ListName[1] = "All Titles";
+	TitlesRefresh_fn();
+}
+Function Playlists_PgReset_fn(){
+	FirstPlaylist = 0;
+	restrictorPlaylists = "";
+    ListShiftFwd_fn();
+	ListType[1] = 5;
+	ClearActive_fn();
+	ListName[1] = "All Playlists";
+	PlaylistsRefresh_fn();
+}
+Function Dynamic_PgReset_fn(){
+	FirstDynamic = 0;
+    ListShiftFwd_fn();
+	ListType[1] = 6;
+	ClearActive_fn();
+	ListName[1] = "All DynamicPlaylists";
+	DynamicRefresh_fn();
+}
+Function FAR_PgReset_fn(String Cmd, String Name){
+	FAR_cmd = Cmd;
+	FAR_parse = FAR_cmd + " items ";
+	FirstFavorites = 0;
+	restrictorFavorites = "";
+	ActiveFAR_ID = "";
+    ListShiftFwd_fn();
+	ListType[1] = 10;
+	ClearActive_fn();
+	ListName[1] = Name;
+	FavoritesRefresh_fn();
+}
+Function Pandora_PgReset_fn() {
+	FAR_PgReset_fn("pandora","Pandora");
+}
+Function Rhapsody_PgReset_fn() {
+	FAR_PgReset_fn("rhapsodydirect","Rhapsody");
+}
+Function Slacker_PgReset_fn() {
+	FAR_PgReset_fn("slacker","slacker");
+}
+Function Napster_PgReset_fn() {
+	FAR_PgReset_fn("napster","Napster");
+}
+Function LastFM_PgReset_fn() {
+	FAR_PgReset_fn("lfm","Last.fm");
+}
+Function Sirius_PgReset_fn() {
+	FAR_PgReset_fn("sirius","Sirius");
+}
+Function Sounds_PgReset_fn() {
+	FAR_PgReset_fn("sounds","Sound Effects");
+}
+Function Podcasts_PgReset_fn() {
+	FAR_PgReset_fn("podcast","Podcasts");
+}
+Function Favorites_PgReset_fn() {
+	FAR_PgReset_fn("favorites","Favorites");
+}
+Function Apps_PgReset_fn() {
+	FirstApps = 0;
+	ListShiftFwd_fn();
+	ListType[1] = 11;
+	ClearActive_fn();
+	ListName[1] = "Apps";
+	ListName$ = ListName[1];
+	AppsRefresh_fn();
+}
+Function Radios_PgReset_fn() {
+	FirstRadios = 0;
+	ListShiftFwd_fn();
+	ListType[1] = 12;
+	ClearActive_fn();
+	ListName[1] = "Radios";
+	ListName$ = ListName[1];
+	RadiosRefresh_fn();
+}
+Function CB_PgReset_fn(){
+	integer i;
+	FirstCB = 0;
+	ListShiftFwd_fn();
+	ListType[1] = 14;
+	ClearActive_fn();
+	ListName[1] = "CustomBrowse";
+	restrictorCB = "";
+	restrictor2CB = "";
+	ListName$ = ListName[1];
+	If (ListCoverURL_Enable = 1){
+		#IF_SERIES3
+//			MySetArray(ListCoverURL,ListCoverURL_blank);
+			for (i = 1 to GetNumArrayRows(ListCoverURL)){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		#ELSE
+			SetArray(ListCoverURL,ListCoverURL_blank);
+		#ENDIF
+	}
+	CBRefresh_fn();
+}
+Function Nowplaying_PgReset_fn(){
+	If (CurrentsongIndex > NowplayingShowPrev)
+		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;	
+	Else
+		FirstNowplaying = 0;
+	Cancelwait(NP_TIMERr);
+	Nowplaying_reset_enable = 1;
+	NowplayingRefresh_fn();
+	// ListType[1] = 7 reserved for Nowplaying
+	// not yet a possible List type
+}
+Function Players_PgReset_fn(){
+	FirstPlayers = 0;
+	PlayersRefresh_fn();
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+}
+Function Home_PgUp_fn(){
+ 	If (FirstHome = 0 && (NumberOfList <= TotalHome)){
+ 		FirstHome = TotalHome - NumberOfList;
+ 	}
+ 	Else If (FirstHome < NumberOfList){
+ 		FirstHome = 0;
+ 	}
+ 	Else {
+ 		FirstHome = FirstHome - NumberOfList;
+ 	}
+ 	ListFirst[1] = FirstHome;
+ 	HomeRefresh_fn();
+}                     
+Function Genres_PgUp_fn(){
+	If (FirstGenre = 0 && (NumberOfList <= TotalGenres)){
+		FirstGenre = TotalGenres - NumberOfList;
+    }
+    Else If (FirstGenre < NumberOfList){
+		FirstGenre = 0;//(TotalGenres / NumberOfList) * NumberOfList;
+	}
+    Else {
+    	FirstGenre = FirstGenre - NumberOfList;
+    }
+	ListFirst[1] = FirstGenre;
+	GenresRefresh_fn();
+}
+Function Artists_PgUp_fn(){
+	If (FirstArtist = 0 && (NumberOfList <= TotalArtists)){
+		FirstArtist = TotalArtists - NumberOfList;
+	}
+    Else If (FirstArtist < NumberOfList) {		
+		FirstArtist = 0;//(TotalArtists / NumberOfList) * NumberOfList;
+	}
+	Else {
+		FirstArtist = FirstArtist - NumberOfList;
+    }
+	ListFirst[1] = FirstArtist;
+	ArtistsRefresh_fn();
+}
+Function Albums_PgUp_fn(){
+	If (FirstAlbum = 0 && (NumberOfAlbums <= TotalAlbums)){
+		FirstAlbum = TotalAlbums - NumberOfAlbums;
+	}
+    Else If (FirstAlbum < NumberOfAlbums){
+		FirstAlbum = 0;//(TotalAlbums / NumberOfAlbums) * NumberOfAlbums;
+	}
+	else {
+		FirstAlbum = FirstAlbum - NumberOfAlbums;
+    }
+	ListFirst[1] = FirstAlbum;
+	AlbumsRefresh_fn();
+}
+Function Titles_PgUp_fn(){
+	If (FirstTitle = 0 && (NumberOfList <= TotalTitles)){
+		FirstTitle = TotalTitles - NumberOfList;
+	}
+    Else If (FirstTitle < NumberOfList){
+		FirstTitle = 0;//(TotalTitles / NumberOfList) * NumberOfList;
+	}
+	Else {
+		FirstTitle = FirstTitle - NumberOfList;
+    }
+	ListFirst[1] = FirstTitle;
+	TitlesRefresh_fn();
+}
+Function Playlists_PgUp_fn(){
+	If (FirstPlaylist = 0 && (NumberOfList <= TotalPlaylists)){
+		FirstPlaylist = TotalPlaylists - NumberOfList;
+	}
+    Else If (FirstPlaylist < NumberOfList){
+		FirstPlaylist = 0;//(TotalPlaylists / NumberOfList) * NumberOfList;
+	}
+	Else {
+		FirstPlaylist = FirstPlaylist - NumberOfList;
+    }
+	ListFirst[1] = FirstPlaylist;
+	PlaylistsRefresh_fn();
+}
+Function Dynamic_PgUp_fn(){
+	If (FirstDynamic = 0 && (NumberOfList <= TotalDynamic)){
+		FirstDynamic = TotalDynamic - NumberOfList;
+	}
+    Else If (FirstDynamic < NumberOfList){
+		FirstDynamic = 0;//(TotalDynamic / NumberOfList) * NumberOfList;
+	}
+	Else {
+		FirstDynamic = FirstDynamic - NumberOfList;
+    }
+	ListFirst[1] = FirstDynamic;
+	DynamicRefresh_fn();
+}
+Function Search_PgUp_fn(){
+	If (FirstSearch = 0 && (NumberOfList <= TotalSearch)){
+		FirstSearch = TotalSearch - NumberOfList;
+	}
+    Else If (FirstSearch < NumberOfList) {
+		FirstSearch = 0;//(TotalSearch / NumberOfList) * NumberOfList;
+	}
+	Else {
+		FirstSearch = FirstSearch - NumberOfList;
+    }
+	ListFirst[1] = FirstSearch;
+	SearchRefresh_fn();
+}
+Function Nowplaying_PgUp_fn(){
+	Nowplaying_wait_fn();
+	If (FirstNowplaying = 0 && (NumberOfNowplaying <= TotalNowplaying)){
+		FirstNowplaying = TotalNowplaying - NumberOfNowplaying;
+	}
+	Else If (FirstNowplaying < NumberOfNowplaying){
+		FirstNowplaying = 0;
+	}
+	Else {
+		FirstNowplaying = FirstNowplaying - NumberOfNowplaying;
+    }
+	NowplayingRefresh_fn();
+}
+Function Favorites_PgUp_fn() {
+	If (FirstFavorites = 0 && (NumberOfList <= TotalFavorites)) {
+		FirstFavorites = TotalFavorites - NumberOfList;
+	}
+    Else If (FirstFavorites < NumberOfList)	{
+		FirstFavorites = 0; 
+	}
+	Else {
+		FirstFavorites = FirstFavorites - NumberOfList;
+    }
+	ListFirst[1] = FirstFavorites;
+	FavoritesRefresh_fn();
+}  
+Function Apps_PgUp_fn() {
+	If (FirstApps = 0 && (NumberOfList <= TotalApps)) {
+		FirstApps = TotalApps - NumberOfList;
+	}
+    Else If (FirstApps < NumberOfList)	{
+		FirstApps = 0; 
+	}
+	Else {
+		FirstApps = FirstApps - NumberOfList;
+    }
+	ListFirst[1] = FirstApps;
+	AppsRefresh_fn();
+}
+Function Radios_PgUp_fn() {
+	If (FirstRadios = 0 && (NumberOfList <= TotalRadios)) {
+		FirstRadios = TotalRadios - NumberOfList;
+	}
+    Else If (FirstRadios < NumberOfList)	{
+		FirstRadios = 0; 
+	}
+	Else {
+		FirstRadios = FirstRadios - NumberOfList;
+    }
+	ListFirst[1] = FirstRadios;
+	RadiosRefresh_fn();
+}
+Function CB_PgUp_fn() {
+	If ((FirstCB > 0) && (FirstCB < NumberOfList))	{
+		FirstCB = 0; 
+	}
+	Else If (FirstCB > 0){
+		FirstCB = FirstCB - NumberOfList;
+    }
+/* // CustomBrowse does not report the actual total, only a number up to the number you request
+	If (FirstCB = 0 && (NumberOfList <= TotalCB)) {
+		FirstCB = TotalCB - NumberOfList;
+	}
+    Else If (FirstCB < NumberOfList)	{
+		FirstCB = 0; 
+	}
+	Else {
+		FirstCB = FirstCB - NumberOfList;
+    }
+*/
+	ListFirst[1] = FirstCB;
+	CBRefresh_fn();
+}
+Function Players_PgUp_fn(){
+	If (FirstPlayers = 0 && (NumberOfPlayers <= TotalPlayers)){
+		FirstPlayers = TotalPlayers - NumberOfPlayers;
+	}
+    Else If (FirstPlayers < NumberOfPlayers) {
+		FirstPlayers = 0;
+	}
+	Else {
+		FirstPlayers = FirstPlayers - NumberOfPlayers;
+    }
+	PlayersRefresh_fn();
+}
+Function Home_PgDn_fn(){
+	If (FirstHome + NumberOfList < TotalHome){
+    	FirstHome = FirstHome + NumberOfList;
+	}
+	else {
+		FirstHome = 0;
+	}
+	ListFirst[1] = FirstHome;
+	HomeRefresh_fn();
+}
+Function Genres_PgDn_fn(){
+	If (FirstGenre + NumberOfList < TotalGenres){
+    	FirstGenre = FirstGenre + NumberOfList;
+	}
+	else {
+		FirstGenre = 0;
+	}
+	ListFirst[1] = FirstGenre;
+	GenresRefresh_fn();
+}
+Function Artists_PgDn_fn(){
+	If (FirstArtist + NumberOfList < TotalArtists){
+    	FirstArtist = FirstArtist + NumberOfList;
+	}
+	else {
+		FirstArtist = 0;
+	}
+	ListFirst[1] = FirstArtist;
+	ArtistsRefresh_fn();
+}
+Function Albums_PgDn_fn(){
+	If (FirstAlbum + NumberOfAlbums < TotalAlbums){
+    	FirstAlbum = FirstAlbum + NumberOfAlbums;
+	}
+	else {
+		FirstAlbum = 0;
+	}
+	ListFirst[1] = FirstAlbum;
+	AlbumsRefresh_fn();
+}
+Function Titles_PgDn_fn(){
+	If (FirstTitle + NumberOfList < TotalTitles){
+    	FirstTitle = FirstTitle + NumberOfList;
+	}
+	else {
+		FirstTitle = 0;
+	}
+	ListFirst[1] = FirstTitle;
+	TitlesRefresh_fn();
+}
+Function Playlists_PgDn_fn(){
+	If (FirstPlaylist + NumberOfList < TotalPlaylists){
+    	FirstPlaylist = FirstPlaylist + NumberOfList;
+	}
+	else {
+		FirstPlaylist = 0;
+	}
+	ListFirst[1] = FirstPlaylist;
+	PlaylistsRefresh_fn();
+}
+Function Dynamic_PgDn_fn(){
+	If (FirstDynamic + NumberOfList < TotalDynamic){
+    	FirstDynamic = FirstDynamic + NumberOfList;
+	}
+	else {
+		FirstDynamic = 0;
+	}
+	ListFirst[1] = FirstDynamic;
+	DynamicRefresh_fn();
+}
+Function Search_PgDn_fn(){
+	If (FirstSearch + NumberOfList < TotalSearch)	{
+    	FirstSearch = FirstSearch + NumberOfList;
+	}
+	else {
+		FirstSearch = 0;
+	}
+	ListFirst[1] = FirstSearch;
+	SearchRefresh_fn();
+}
+Function Nowplaying_PgDn_fn(){
+	Nowplaying_wait_fn();
+    If (FirstNowplaying + NumberOfNowplaying < TotalNowplaying){
+		FirstNowplaying = FirstNowplaying + NumberOfNowplaying;
+	}
+	else {
+		FirstNowplaying = 0;
+    }
+	NowplayingRefresh_fn();
+}
+Function Favorites_PgDn_fn(){
+	If (FirstFavorites + NumberOfList < TotalFavorites){
+    	FirstFavorites = FirstFavorites + NumberOfList;
+	}
+	else {
+		FirstFavorites = 0;
+	}
+	ListFirst[1] = FirstFavorites;
+	FavoritesRefresh_fn();
+}  
+Function Apps_PgDn_fn(){
+	If (FirstApps + NumberOfList < TotalApps){
+    	FirstApps = FirstApps + NumberOfList;
+	}
+	else {
+		FirstApps = 0;
+	}
+	ListFirst[1] = FirstApps;
+	AppsRefresh_fn();
+}  
+Function Radios_PgDn_fn(){
+	If (FirstRadios + NumberOfList < TotalRadios){
+    	FirstRadios = FirstRadios + NumberOfList;
+	}
+	else {
+		FirstRadios = 0;
+	}
+	ListFirst[1] = FirstRadios;
+	RadiosRefresh_fn();
+}  
+Function CB_PgDn_fn(){
+	FirstCB = FirstCB + NumberOfList;
+/* // Custombrowse does not report actual total, only the total returned in a request
+	If (FirstCB + NumberOfList < TotalCB){
+    	FirstCB = FirstCB + NumberOfList;
+	}
+	else {
+		FirstCB = 0;
+	}
+*/
+	ListFirst[1] = FirstCB;
+	CBRefresh_fn();
+}  
+Function Players_PgDn_fn(){
+	If (FirstPlayers + NumberOfPlayers < TotalPlayers)	{
+    	FirstPlayers = FirstPlayers + NumberOfPlayers;
+	}
+	else {
+		FirstPlayers = 0;
+	}
+	ListFirst[1] = FirstPlayers;
+	PlayersRefresh_fn();
+}
+Function HomeListSelect_fn(integer i){
+	If (ListHomeItem[i]=1){Favorites_PgReset_fn();}
+	Else If (ListHomeItem[i]=2){Genres_PgReset_fn();}
+	Else If (ListHomeItem[i]=3){Artists_PgReset_fn();}
+	Else If (ListHomeItem[i]=4){Albums_PgReset_fn();}
+	Else If (ListHomeItem[i]=5){Playlists_PgReset_fn();}
+	Else If (ListHomeItem[i]=6){Dynamic_PgReset_fn();}
+	Else If (ListHomeItem[i]=7){Radios_PgReset_fn();}  
+	Else If (ListHomeItem[i]=8){Apps_PgReset_fn();}
+	Else If (ListHomeItem[i]=9){Pandora_PgReset_fn();}
+	Else If (ListHomeItem[i]=10){Podcasts_PgReset_fn();}
+	Else If (ListHomeItem[i]=11){Titles_PgReset_fn();}
+	Else If (ListHomeItem[i]=12){NewMusic_PgReset_fn();}
+	Else If (ListHomeItem[i]=13){CB_PgReset_fn();}
+	Else If (ListHomeItem[i]=14){Rhapsody_PgReset_fn();}
+	Else If (ListHomeItem[i]=15){Slacker_PgReset_fn();}
+	Else If (ListHomeItem[i]=16){Napster_PgReset_fn();}
+	Else If (ListHomeItem[i]=17){LastFM_PgReset_fn();}
+	Else If (ListHomeItem[i]=18){Sirius_PgReset_fn();}
+	Else If (ListHomeItem[i]=19){Sounds_PgReset_fn();}
+}
+Function GenreListSelect_fn(integer i){
+	If (len(GenreID[i]) > 0){
+		ListShiftFwd_fn();
+		ListType[1] = 2;
+//		Search_RequiresSubmit = 0;
+//		ListSearchRS[1] = 0;
+//		ListFirst[1] = 0;
+		ActiveGenreID = GenreID[i];
+		ActiveGenre = Genre[i];
+		ListActiveGenre[1] = ActiveGenre;
+		makestring(ListName[1], "Artists in %s",ActiveGenre);
+		makestring(restrictorArtists,"genre_id:%s",GenreID[i]);
+		ListRestrictor[1] = restrictorArtists;
+		restrictorAlbums = restrictorArtists;
+		If (UseCoverID = 1){
+			restrictorTitles = restrictorArtists + " tags:tec";
+		}
+		Else {
+			restrictorTitles = restrictorArtists + " tags:te";
+		}
+		FirstArtist = 0;
+		ArtistsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+Function ArtistListSelect_fn(integer i){
+	If ((len(ArtistID[i]) > 0) || (Artist[i] = "All Albums")){
+		ListShiftFwd_fn();	
+		ListType[1] = 3;
+//		ListSearchRS[1] = 0;
+//		Search_RequiresSubmit = 0;
+//		ListFirst[1] = 0;
+		ActiveArtistID = ArtistID[i];
+		ActiveArtist = Artist[i];
+		If (len(ActiveGenre) > 0){
+			If ((ActiveArtist = "All Albums") && (ActiveArtistID = "")){
+				ListName[1] = "All Albums in " + ActiveGenre;
+				restrictorAlbums =  restrictorArtists;
+				ListActiveGenre[1] = ActiveGenre;
+				ListActiveGenreID[1] = ActiveGenreID;
+			}
+			Else If (ActiveArtist = "Various Artists"){
+				ListName[1] = "Albums for " + ActiveArtist + " in " + ActiveGenre;
+				makestring(restrictorAlbums,"%s artist_id:%s",restrictorArtists, ArtistID[i]);
+				ListActiveGenre[1] = ActiveGenre;
+				ListActiveGenreID[1] = ActiveGenreID;
+			}
+			Else {
+				ListName[1] = "Albums for " + ActiveArtist;	
+				makestring(restrictorAlbums,"artist_id:%s",ArtistID[i]);
+				ActiveGenre = "";
+				ActiveGenreID = "";
+				ListActiveGenre[1] = "";
+				ListActiveGenreID[1] = "";
+			}	
+		}
+		Else If (ActiveArtist = "Various Artists"){
+			ListName[1] = "Albums for Various Artists";
+			makestring(restrictorAlbums,"artist_id:%s",ArtistID[i]);
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+		}
+		Else {
+			ListName[1] = "Albums for " + ActiveArtist;	
+			makestring(restrictorAlbums,"artist_id:%s",ArtistID[i]);
+			ActiveGenre = "";
+			ActiveGenreID = "";
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+		}
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		AlbumsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+
+Function AlbumListSelect_fn(integer i){
+	String Out$[128];
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ActiveAlbumID = AlbumID[i];
+	ActiveAlbum = Album[i];
+	If (len(AlbumID[i]) > 0){
+		If (Coverflow = 0){  // not coverflow mode
+			trace("Coverflow = 0; AlbumListSelect");
+			ListShiftFwd_fn();
+			ListType[1] = 4;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+//			ListFirst[1] = 0;
+//			ListActiveGenre[1] = "";
+//			ListActiveGenreID[1] = "";
+			If (find("No Album",ActiveAlbum)){
+				makestring(ListName[1],"Titles for %s; no album", ActiveArtist);
+				If (UseCoverID = 1){
+					makestring(restrictorTitles,"album_id:%s artist_id:%s sort:tracknum tags:tec",AlbumID[i],ActiveArtistID);
+				}
+				Else {
+					makestring(restrictorTitles,"album_id:%s artist_id:%s sort:tracknum tags:te",AlbumID[i],ActiveArtistID);
+				}
+			}
+			else {
+				makestring(ListName[1],"Titles in %s",ActiveAlbum);
+				If (UseCoverID = 1){
+					makestring(restrictorTitles,"album_id:%s sort:tracknum tags:tec",AlbumID[i]);
+				}
+				Else {
+					makestring(restrictorTitles,"album_id:%s sort:tracknum tags:te",AlbumID[i]);
+				}
+			}
+			ListRestrictor[1] = restrictorTitles;
+			FirstTitle = 0;
+			TitlesRefresh_fn();
+			ListName$ = ListName[1];
+		}
+		else {
+			trace("Coverflow = 1; AlbumListSelect");
+			if (find("No Album",ActiveAlbum)){
+				makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s artist_id:%s \n",PlayerID$, AlbumID[i],ActiveArtistID);
+			}
+			else {
+				makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, AlbumID[i]);
+			}
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			ActiveAlbumID = AlbumID[i];
+			ActiveAlbum = Album[i];
+			ActivePlaylist = "";
+		}
+	}
+}
+Function TitleListPlay_fn(integer i){
+	String Out$[128];
+	If (len(TrackID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		If (TotalNowplaying > 0){
+			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+		}
+		Else {
+			makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+		}
+		delay(10);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
+}
+Function TitleListSelect_fn(integer i){
+	String Out$[128];
+	If (len(TrackID[i]) > 0){
+		If (find("No Album",ActiveAlbum)){
+			TitleListPlay_fn(i);
+/*			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+*/
+		}
+		else {
+			ActiveAlbumID = TitleAlbumID[i];
+			ActiveTrackID = TrackID[i];
+			ActiveTitle = Title[i];
+			ActivePlaylist = "";
+			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, TitleAlbumID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+	}
+}
+Function PlaylistListSelect_fn(integer i){
+	String Out$[128];
+	If (len(PlaylistID[i]) > 0){
+		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		ActivePlaylistID = PlaylistID[i]; //set the active playlist ID
+		trace("ActivePlaylistID = %s",PlaylistID[i]);
+		ActivePlaylist = PlaylistRaw[i]; //set the active playlist name
+		trace("ActivePlaylist = %s",PlaylistRaw[i]);
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$,PlaylistRaw[i]); // play the selected playlist by resuming from it's last saved position
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		pulse(20,NowplayingPageFlip);
+	}
+}
+Function DynamicListSelect_fn(integer i){
+	String Out$[128];
+	If (DynamicName[i] <> ""){
+		ActiveDynamicFile = DynamicFile[i];
+		ActiveDynamic = DynamicName[i];
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		pulse(20,NowplayingPageFlip);
+	}
+}
+Function SearchListSelect_fn(integer i){
+	String Out$[128];
+	If (len(SearchID[i]) > 0){
+		trace("SearchListSelect_fn");
+		If (SearchIDType[i] = 1){ // searchID is an artist_id
+			ListShiftFwd_fn();
+			ListType[1] = 3;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+			ListActiveGenre[1] = "";
+			ActiveArtistID = SearchID[i];
+			ActiveArtist = Search[i];
+			makestring(ListName[1], "Albums for %s",ActiveArtist);
+			makestring(restrictorAlbums,"artist_id:%s",SearchID[i]);
+			ListRestrictor[1] = restrictorAlbums;
+			FirstAlbum = 0;
+			AlbumsRefresh_fn();
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			ListShiftFwd_fn();
+			ListType[1] = 4;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+			ActiveAlbumID = SearchID[i];
+			ActiveAlbum = Search[i];
+			ListActiveGenre[1] = "";
+			makestring(ListName[1],"Titles in %s",ActiveAlbum);
+			If (UseCoverID = 1){
+				makestring(restrictorTitles,"album_id:%s sort:tracknum tags:tec",SearchID[i]);
+			}
+			Else {
+				makestring(restrictorTitles,"album_id:%s sort:tracknum tags:te",SearchID[i]);
+			}
+			ListRestrictor[1] = restrictorTitles;
+			FirstTitle = 0;
+			TitlesRefresh_fn();
+		}
+		Else If (SearchIDType[i] = 3){ // searchID is a track_id
+			// insert then next track
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			ActivePlaylist = "";
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			delay(10);
+			makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ // searchID is a genre_id
+			ListShiftFwd_fn();
+			ListType[1] = 2;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+			ActiveGenreID = SearchID[i];
+			ActiveGenre = Search[i];
+			ListActiveGenre[1] = ActiveGenre;
+			ListActiveGenreID[1] = ActiveGenreID;
+			makestring(ListName[1], "Artists in %s",ActiveGenre);
+			makestring(restrictorArtists,"genre_id:%s",SearchID[i]);
+			ListRestrictor[1] = restrictorArtists;
+			restrictorAlbums = restrictorArtists;
+			If (UseCoverID = 1){
+				restrictorTitles = restrictorArtists + " tags:tec";
+			}
+			Else {
+				restrictorTitles = restrictorArtists + " tags:te";
+			}
+			FirstArtist = 0;
+			ArtistsRefresh_fn();
+		}
+		ListName$ = ListName[1];
+	}
+}
+Function FavoritesListSelect_fn(integer i){
+	String Out$[256];
+	If (FavoritesID[i] <> ""){
+		// push the image of the item forward in case it gets played
+		If (len(FavoritesImage[i]) > 0){
+			CurrentsongCoverURL_push = FavoritesImage[i];
+		}
+		Else {
+			CurrentsongCoverURL_push = "";
+		}
+		// now decide what to do with the selected item
+		If (FavoritesType[i] = "search"){
+			ListName$ = ListName[1] + ": " + FavoritesName[i];
+			Search_RequiresSubmit = 1;
+			Pulse (20,Search_KeyboardPopup);
+			// restrictorFavorites = "item_id:" + FavoritesID[i];
+			ActiveFAR_ID = FavoritesID[i];
+		}
+//		Else If (FavoritesIsAudio[i] = 0 && FavoritesHasItems[i] = 1){
+//		Changing this to continue browsing when an item has sub-items
+		Else If (FavoritesHasItems[i] = 1){
+			ListShiftFwd_fn();
+			FirstFavorites = 0;
+			restrictorFavorites = "item_id:" + FavoritesID[i];
+			ListRestrictor[1] = restrictorFavorites;
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+			FavoritesRefresh_fn();
+		}
+		Else If (FavoritesIsAudio[i] = 1){
+			makestring(OUT$,"%s %s playlist play item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			pulse(20,NowplayingPageFlip);
+		}
+		Else If ((FavoritesHasItems[i] = 0) && (FavoritesIsAudio[i] = 0)){
+			ListName$ = "Empty";
+			delay(100);
+			ListName$ = ListName[1];
+		}
+	}
+}
+Function AppsListSelect_fn(integer i){
+	If (AppsCmd[i] <> ""){
+		ListShiftFwd_fn();
+		ListType[1] = 10;
+//		ListFirst[1] = 0;
+//		ListSearchRS[1] = 0;
+//		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		FAR_cmd = AppsCmd[i];
+		FAR_parse = FAR_cmd + " items ";
+		trace("FAR_parse = %s",FAR_parse);
+		ActiveFAR_ID = "";
+		restrictorFavorites = "";
+		ListName[1] = AppsName[i];
+		ListName$ = ListName[1];
+		FirstFavorites = 0;
+		FavoritesRefresh_fn();
+	}
+}
+Function RadiosListSelect_fn(integer i){
+	If (RadiosCmd[i] <> ""){
+		If (RadiosCmd[i] = "search"){
+			Search_RequiresSubmit = 1;
+			Pulse (20,Search_KeyboardPopup);
+		}
+		Else {
+			ListShiftFwd_fn();
+			ListType[1] = 10;
+//			ListFirst[1] = 0;
+//			ListSearchRS[1] = 0;
+//			Search_RequiresSubmit = 0;
+			FAR_cmd = RadiosCmd[i];
+			FAR_parse = FAR_cmd + " items ";
+			trace("FAR_parse = %s",FAR_parse);
+			ActiveFAR_ID = "";
+			restrictorFavorites = "";
+			ListName[1] = RadiosName[i];
+			ListName$ = ListName[1];
+			FirstFavorites = 0;
+			FavoritesRefresh_fn();
+		}
+	}
+}
+Function CBListSelect_fn(integer i){
+	trace("CBLevel[%u]: %s",i,CBLevel[i]);
+	If (CBLevel[i] <> ""){
+		ListShiftFwd_fn();
+		ListType[1] = 14;
+		If (restrictorCB = ""){
+			restrictorCB = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			restrictorCB = restrictorCB + "," + CBLevel[i];
+		}
+		restrictor2CB = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		ListRestrictor[1] = restrictorCB;
+		ListRestrictor2[1] = restrictor2CB;
+		FirstCB = 0;
+		ListName[1] = "CB: " + CBName[i];
+		ListName$ = ListName[1];
+		CBRefresh_fn();
+	}
+}
+Function CBListPlay_fn(integer i){
+	String Out$[512];
+	String CBplayRestrictor[256], CBplayRestrictor2[256];
+	If (CBPlayable[i] = 1){
+		If (restrictorCB = ""){
+			CBplayrestrictor = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			CBplayrestrictor = restrictorCB + "," + CBLevel[i];
+		}
+		CBplayrestrictor2 = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		
+		makestring(Out$,"%s custombrowse play %s %s \n",PlayerID$, CBplayRestrictor, CBPlayRestrictor2);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = "";
+	}
+}
+Function CBListAdd_fn(integer i){
+	String Out$[512];
+	String CBplayRestrictor[256], CBplayRestrictor2[256];
+	If (CBPlayable[i] = 1){
+		If (restrictorCB = ""){
+			CBplayrestrictor = "hierarchy:" + CBLevel[i];
+		}
+		Else {
+			CBplayrestrictor = restrictorCB + "," + CBLevel[i];
+		}
+		CBplayrestrictor2 = restrictor2CB + " " + CBLevel[i] + ":" + CBID[i];
+		
+		makestring(Out$,"%s custombrowse add %s %s \n",PlayerID$, CBplayRestrictor, CBPlayRestrictor2);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = "";
+	}
+}
+Function GenreListPlay_fn(integer i){
+	String Out$[128];
+	If (len(GenreID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%s \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = "";
+	}
+}
+Function ArtistListPlay_fn(integer i){
+	String Out$[128];
+	If (len(ArtistID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load artist_id:%s \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
+	Else if (Artist[i] = "All Albums"){
+		makestring(OUT$,"%s playlistcontrol cmd:load genre_id:%s \n",PlayerID$, ActiveGenreID);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
+}
+Function AlbumListPlay_fn(integer i){
+	String Out$[128];
+	If (len(AlbumID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
+}
+Function PlaylistListPlay_fn(integer i){
+	String Out$[128];
+	If (len(PlaylistID[i]) > 0){
+		makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+		makestring(OUT$,"%s playlistcontrol cmd:load playlist_id:%s \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = PlaylistID[i];
+		ActivePlaylist = PlaylistRaw[i];
+//		pulse(20,NowplayingPageFlip);
+	}
+}
+Function DynamicListPlay_fn(integer i){
+	String Out$[256];
+	If (DynamicFile[i] <> ""){
+		ActiveDynamicFile = DynamicFile[i];
+		ActiveDynamic = DynamicName[i];
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, ActiveDynamicFile);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+}
+Function FavoritesListPlay_fn(integer i){
+	String Out$[256];
+	If (FavoritesID[i] <> ""){
+		// push the image of the item forward in case it gets played
+		If (len(FavoritesImage[i]) > 0){
+			CurrentsongCoverURL_push = FavoritesImage[i];
+		}
+		Else {
+			CurrentsongCoverURL_push = "";
+		}
+		If (FavoritesIsAudio[i] = 1){
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else {
+			FavoritesListSelect_fn(i); // if not audio, just take the select action
+		}
+	}
+}
+Function SearchListPlay_fn(integer i){
+	String Out$[128];
+	If (len(SearchID[i]) > 0){
+		ActivePlaylist = "";
+		trace("SearchListPLay_fn");
+		If (SearchIDType[i] = 1){ //searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ //searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+			If (TotalNowplaying > 0){
+				makestring(OUT$,"%s playlist index %u\n", PlayerID$, CurrentsongIndex + 1);
+			}
+			Else {
+				makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+			}
+			delay(10);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+	}
+}
+Function GenreListAdd_fn(integer i){
+	String Out$[128];
+	If (len(GenreID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%s \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveGenreID = GenreID[i];
+		ActivePlaylist = "";
+	}
+}
+Function ArtistListAdd_fn(integer i){
+	String Out$[128];
+	If (len(ArtistID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%s \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
+}
+Function AlbumListAdd_fn(integer i){
+	String Out$[128];
+	If (len(AlbumID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add album_id:%s \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
+}
+Function TitleListAdd_fn(integer i){
+	String Out$[128];
+	If (len(TrackID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add track_id:%s \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
+}
+Function PlaylistListAdd_fn(integer i){
+	String Out$[128];
+	If (len(PlaylistID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:add playlist_id:%s \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = ""; // clear the active playlist ID (used to set to PlaylistID[i])
+		ActivePlaylist = ""; // clear the active playlist
+	}
+}
+Function FavoritesListAdd_fn(integer i){
+	String Out$[256];
+	If (FavoritesID[i] <> ""){
+/*		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
+			FavoritesListSelect_fn(i);
+		}
+		Else
+*/
+		If (FavoritesIsAudio[i] = 1) {
+			makestring(OUT$,"%s %s playlist add item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			ActivePlaylistID = ""; 
+			ActivePlaylist = ""; 
+		}
+		Else {
+			FavoritesListSelect_fn(i);
+		}
+	}
+}
+Function SearchListAdd_fn(integer i){
+	String Out$[128];
+	If (len(SearchID[i]) > 0){
+		trace("SearchListAdd_fn");
+		ActivePlaylist = "";
+		If (SearchIDType[i] = 1){ //searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:add artist_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:add album_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ //searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:add track_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ //searchID is a genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:add genre_id:%s  \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+	}
+}
+Function GenreListInsert_fn(integer i){
+	String Out$[128];
+	If (len(GenreID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%s \n",PlayerID$, GenreID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+//		ActiveGenreID = GenreID[i];
+		ActivePlaylist = "";
+	}
+}
+Function ArtistListInsert_fn(integer i){
+	String Out$[128];
+	If (len(ArtistID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%s \n",PlayerID$, ArtistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveArtistID = ArtistID[i];
+		ActivePlaylist = "";
+	}
+}
+Function AlbumListInsert_fn(integer i){
+	String Out$[128];
+	If (len(AlbumID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%s \n",PlayerID$, AlbumID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveAlbumID = AlbumID[i];
+		ActivePlaylist = "";
+	}
+}
+Function TitleListInsert_fn(integer i){
+	String Out$[128];
+	If (len(TrackID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, TrackID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActiveTrackID = TrackID[i];
+		ActivePlaylist = "";
+	}
+}
+Function PlaylistListInsert_fn(integer i){
+	String Out$[128];
+	If (len(PlaylistID[i]) > 0){
+		makestring(OUT$,"%s playlistcontrol cmd:insert playlist_id:%s \n",PlayerID$, PlaylistID[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylistID = ""; // clear the active playlist ID 
+		ActivePlaylist = ""; // clear the active playlist
+	}
+}
+Function FavoritesListInsert_fn(integer i){
+	String Out$[256];
+	If (FavoritesID[i] <> ""){
+/*		If ((FAR_cmd <> "favorites") && (FAR_cmd <> "rhapsodydirect")){
+			FavoritesListSelect_fn(i);
+		}
+		Else 
+*/		If (FavoritesIsAudio[i] = 1) {
+			makestring(OUT$,"%s %s playlist insert item_id:%s\n",PlayerID$, FAR_cmd ,FavoritesID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+			ActivePlaylistID = ""; // clear the active playlist ID 
+			ActivePlaylist = ""; // clear the active playlist
+		}
+		Else {
+			FavoritesListSelect_fn(i);
+		}
+	}
+}
+Function SearchListInsert_fn(integer i){
+	String Out$[128];
+	If (len(SearchID[i]) > 0){
+		ActivePlaylist = "";
+		trace("SearchListInsert_fn");
+		If (SearchIDType[i] = 1){ // searchID is an artist_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert artist_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 2){ // SearchID is an album_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert album_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 3){ // searchID is a track_id
+			ActiveTrackID = SearchID[i];
+			ActiveTitle = Search[i];
+			makestring(OUT$,"%s playlistcontrol cmd:insert track_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+		Else If (SearchIDType[i] = 4){ // SearchID is an genre_id
+			makestring(OUT$,"%s playlistcontrol cmd:insert genre_id:%s \n",PlayerID$, SearchID[i]);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient,OUT$);
+		}
+	}
+}
+Function NowplayingPlay_fn(integer i){
+	String Out$[64];
+	If (NowplayingIndex[i] = 65534){
+		Nowplaying_PgReset_fn();
+	}
+	Else {
+		Cancelwait(NP_TIMERr);
+		Nowplaying_reset_enable = 1;
+		makestring(OUT$,"%s playlist index %u \n",PlayerID$, NowplayingIndex[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+Function NowplayingRemove_fn(integer i){
+	String Out$[64];
+	If (NowplayingIndex[i] < 65534){
+		Cancelwait(NP_TIMERr);
+		Nowplaying_reset_enable = 1;
+		Activeplaylist = "";
+		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+Function NowplayingMoveUp_fn(integer i){
+	String Out$[64];
+	If (NowplayingIndex[i] < 65534){
+		Cancelwait(NP_TIMERr);
+		Nowplaying_reset_enable = 1;
+		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+Function NowplayingMoveDown_fn(integer i){
+	String Out$[64];
+	If (NowplayingIndex[i] < 65534){
+		Cancelwait(NP_TIMERr);
+		Nowplaying_reset_enable = 1;
+		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+Function Search_fn(){
+	If (ListType[1] != 8){
+		ListShiftFwd_fn(); // move the history forward to make room for the new entry
+		ListType[1] = 8; // search list type = 8
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		trace("adding search to history");
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1]=0;
+	makestring(ListName[1],"\"%s\" anywhere",search_in_raw);
+	restrictorSearch = search_in;
+	ListRestrictor[1] = search_in;
+	FirstSearch = 0;
+	SearchRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_genres_fn(){
+	If (ListType[1] <> 1){
+	    ListShiftFwd_fn();
+		ListType[1] = 1;
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	makestring(ListName[1], "\"%s\" in Genres",search_in_raw);
+    makestring(restrictorGenres,"search:%s",search_in);
+	ListRestrictor[1] = restrictorGenres;
+	FirstGenre = 0;
+	GenresRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_artists_fn(){
+	If (ListType[1] != 2){
+	    ListShiftFwd_fn();
+		ListType[1] = 2;
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	makestring(ListName[1], "\"%s\" in Artists",search_in_raw);
+    makestring(restrictorArtists,"search:%s",search_in);
+	ListRestrictor[1] = restrictorArtists;
+	FirstArtist = 0;
+	ArtistsRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_albums_fn(){
+	If (ListType[1] != 3){
+	    ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	makestring(ListName[1], "\"%s\" in Albums",search_in_raw);
+    makestring(restrictorAlbums,"search:%s",search_in);
+	ListRestrictor[1] = restrictorAlbums;
+	FirstAlbum = 0;
+	AlbumsRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_titles_fn(){
+	If (ListType[1] != 4){
+	    ListShiftFwd_fn();
+		ListType[1] = 4;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	makestring(ListName[1], "\"%s\" in Titles",search_in_raw);
+    If (UseCoverID =1 ){
+		makestring(restrictorTitles,"search:%s tags:tec",search_in);
+	}
+	Else {
+		makestring(restrictorTitles,"search:%s tags:te",search_in);
+	}
+	ListRestrictor[1] = restrictorTitles;
+	FirstTitle = 0;
+	TitlesRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_playlists_fn(){
+	If (ListType[1] != 5){
+    	ListShiftFwd_fn();
+		ListType[1] = 5;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		Search_RequiresSubmit = 0;
+	}
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	makestring(ListName[1], "\"%s\" in Playlists",search_in_raw);
+    makestring(restrictorPlaylists,"search:%s",search_in);
+	ListRestrictor[1] = restrictorPlaylists;
+	FirstPlaylist = 0;
+	PlaylistsRefresh_fn();
+	ListName$ = ListName[1];
+}
+Function Search_Radios_fn(){
+	ListShiftFwd_fn();
+	ListType[1] = 10;
+	ListActiveGenre[1] = "";
+	ListActiveGenreID[1] = "";
+	ListSearchRS[1] = 1;
+	Search_RequiresSubmit = 1;
+	ActiveGenre = "";
+	ActiveGenreID = "";
+	ListFirst[1] = 0;
+	FAR_cmd = "search";
+	FAR_parse = "search items ";
+	restrictorFavorites = "search:" + search_in;
+	ListRestrictor[1] = restrictorFavorites;
+	FirstFavorites = 0;
+	FavoritesRefresh_fn();
+}
+Function Search_Favorites_fn(){
+	If (ListSearchRS[1] = 0){
+		ListShiftFwd_fn();
+		ListType[1] = 10;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 1;
+		Search_RequiresSubmit = 1;
+		ActiveGenre = "";
+		ListFirst[1] = 0;
+	}
+	restrictorFavorites = "item_id:" + ActiveFAR_ID + " search:" + search_in;
+	ListRestrictor[1] = restrictorFavorites;
+	FirstFavorites = 0;
+	FavoritesRefresh_fn();
+}
+String_Function ParsePercent(STRING Parse$){
+	Integer i, char, code;
+	String output$[2048], dump[6];
+	i = 1;
+	output$ = "";
+	While(i <= len (parse$)) {
+		char = Byte (parse$, i); // char = integer of the byte at position i
+		if (char = '%'){ // if char is the escape character, %
+			if (i > 1){
+				output$ = output$ + removebylength(i - 1,parse$);
+			}
+			code = HexToI(mid(parse$,2,2)); // extract hex code for testing
+			If (code < 128){ // test for regular ascii character
+				If (len(Parse$) > 2){
+					output$ = output$ + chr(code);
+					dump = removebylength(3,parse$);
+					i = 1;
+				}
+				Else { // if not 3 characters remaining
+					Break;
+				}
+			}
+			Else If (code = 194){ // test for C2
+				If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+					output$ = output$ + chr(HexToI(mid(parse$,5,2))); // 2nd byte = crestron chr
+					dump = removebylength(6,parse$);
+					i = 1;
+				}
+				Else { // if not 6 characters remaining
+					Break;
+				}
+			}
+			Else if (code = 195){ // test for C3
+				If (len(Parse$) > 5){ // make sure there are 6 characters remaining
+					output$ = output$ + chr(HexToI(mid(parse$,5,2)) + 64);  // 2nd byte + 64 = crestron chr
+					dump = removebylength(6,parse$);
+					i = 1;
+				}
+				Else { // if not 6 characters remaining
+					Break;
+				}
+			}
+			Else { // if code is not known then replace with ?
+				output$ = output$ + "?";
+				dump = removebylength(3,parse$);
+				i = 1;
+			}
+		}
+		else {
+			i = i + 1;
+		}
+	}
+	output$ = output$ + parse$;
+	return (output$);
+}
+String_Function FormatPlayerID(String PlayerID){
+	Integer i, indexMatch;
+	String playeridLocal[32], dump$[255], KeepL$[255], output$[255], search$[1], replace$[3];
+	PlayerIDLocal = PlayerID;
+	While (find(":",PlayerIDLocal))	{
+     	indexMatch = find(":",PlayerIDLocal); // ##:$$ --> 3
+		KeepL$ = removebylength(indexMatch - 1,PlayerIDLocal); //  keepl$ = ##
+		dump$ = removebylength(1,PlayerIDLocal); // dump$ = :
+		PlayerIDLocal = KeepL$ + "%3A" + PlayerIDLocal;
+	}
+	Return (PlayerIDLocal);
+}
+String_Function FormatSearch(String input){
+	Integer indexMatch;
+	String output[1024], dump$[4], KeepL$[1024];
+	If (find(" ",input)) {
+		While (find(" ",input)) {
+			indexMatch = find(" ",input);
+			KeepL$ = removebylength(indexMatch - 1,input); 
+			dump$ = removebylength(1,input); 
+			output = KeepL$ + "%20" + input;
+		}
+	}
+	Else {
+		output = input;
+	}
+	Return (output);
+}
+// //////////// PARSING FUNCTIONS
+Function Parse_Time(Integer InTime){     
+	Integer indexEnd, Length; // indexStart
+	Integer Time_hr, Time_min, Time_sec, Time_rmd;
+	
+	Time_sec = InTime;
+	Time_min = Time_sec / 60;
+	Time_rmd = Time_sec - (Time_min * 60);
+	If (Time_min < 60){
+		makestring(CurrentsongTime,"%u:%02u",Time_min,Time_rmd);
+	}
+	Else {
+		Time_hr = Time_min / 60;
+		Time_min = Time_min - (Time_hr * 60);
+		makestring(CurrentsongTime,"%u:%02u:%02u",Time_hr,Time_min,Time_rmd);
+	}
+	If ((CTDuration_sec > 0) && (Time_sec > 0)){
+		// maybe this is where the problem is for Marc's error?
+		// Error: Invalid join number -35 in BuildCresnetLongAnalog_14h
+		// insert debugging code ***
+		// Muldiv seems to be the same as simply performing the math 
+		// (internal multiplication is done in 32-bit until assignment
+		// OutTimeBar =  Muldiv(65535, Time_sec, CTDuration_sec);
+		OutTimeBar =  (65535 * Time_sec) / CTDuration_sec;
+	}
+	Else If (Time_sec = 0){
+		OutTimeBar = 0;
+	}
+	Else {
+		OutTimeBar = 32767;
+	}
+}
+Function Parse_Nowplaying(String InNowplaying$){
+	Integer i, j;
+	Integer indexStart, indexEnd, Length, indexNext;
+	String NowplayingParseItem[16384];
+	String  Nowplaying_int[512];
+	Integer Nowplaying_intLen;
+	String NowplayingCover[ARRAY_SIZE][256];
+	Integer inCountNP_local;
+	Integer artworkRemote;
+	
+	// store the global token for incomming NP data in the local thread
+	inCountNPIncrement();
+	inCountNP_local = inCountNP;
+	
+	// start to parse 
+	indexStart = find(" status",InNowplaying$,28) + 8;
+	indexEnd = find(" ",InNowplaying$,indexStart);
+	Length = indexEnd - indexStart;
+	NowplayingFirstNumber = AtoI(mid(InNowplaying$,indexStart,Length));
+	trace("NowplayingFirstNumber: %u",NowplayingFirstNumber);
+	indexStart = find(" playlist_cur_index%3A",InNowplaying$,indexEnd) + 22;
+	If (indexStart > 22) {
+		indexEnd = find(" ",InNowplaying$, indexStart);
+		Length = indexEnd - IndexStart;
+		CurrentsongIndex = AtoI(mid(InNowplaying$,indexStart, Length));
+		trace("CurrentsongIndex: %u",CurrentsongIndex);
+	}
+	Else {
+		CurrentsongIndex = 0;
+	}
+	indexStart = find(" playlist_tracks%3A",InNowplaying$,indexEnd) + 19;
+	If (indexStart > 19){
+		indexEnd = find(" ",InNowplaying$, indexStart);
+		Length = indexEnd - indexStart;
+		TotalNowplaying = AtoI(mid(InNowplaying$,indexStart,Length));
+		trace("TotalNowplaying: %u",TotalNowplaying);
+		OutNowplayingCount = TotalNowplaying;
+	}
+	Else {
+		TotalNowplaying = 0;
+	}
+	If (TotalNowplaying > 0){
+		OutNowplayingBar = 65535 - ((65535 / TotalNowplaying) * NowplayingFirstNumber );
+	}
+	Else {
+		OutNowplayingBar = 65535;
+	}
+	indexNext = indexEnd;
+	For (i = 1 to NumberOfNowplaying)	{
+		// check for newly started parsing thread before starting each loop
+		trace("inCountNP = %u; inCountNP_local = %u",inCountNP,inCountNP_local);
+		if (inCountNP_local <> inCountNP){
+			break;
+			trace("new token break");
+		}
+		// identify the next (or first) group of data for Nowplaying, and put it in NowplayingParseItem
+		indexStart = find(" playlist%20index%3A",InNowplaying$,indexNext) + 20;
+		If (indexStart > 20){
+			indexEnd = find(" ",InNowplaying$,indexStart);
+			Length = indexEnd - indexStart;
+			NowplayingIndex[i] = AtoI(mid(InNowplaying$,indexStart,Length));
+			trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); 
+			// compare Index w/ CurrentsongIndex for NowplayingCurrentSong
+			If (NowplayingIndex[i] = CurrentsongIndex){  
+				NowplayingCurrentSong[i] = 1;
+			}
+			Else {
+				NowplayingCurrentSong[i] = 0;
+			}
+		}
+		Else { 
+			// zero the remaining array elements if no more matches for index (should be unnecessary)
+			// !!! instead of zeroing, the code should request items from the top of the list for wraparound
+			For (j = i to NumberOfNowplaying){
+				NowplayingCurrentSong[j] = 0;
+				NowplayingID[j] = "";
+				NowplayingTitle[j] = "";
+				NowplayingArtist[j] = "";
+				NowplayingAlbum[j] = "";
+				Nowplaying[j] = " ";
+				NowplayingIndex[j] = 65534; // dummy value to test for disabling button action if empty
+				If (NowplayingSeparateOuts_Enable = 1){
+					NowplayingAlbum$[j] = " ";
+					NowplayingArtist$[j] = " ";
+					NowplayingTitle$[j] = " ";
+				}
+				If (NowplayingCoverURL_Enable){
+					NowplayingCoverURL[j] = NowplayingCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		indexNext = find(" playlist%20index%3A",InNowplaying$,indexEnd);
+		if (indexNext > 0){
+			Length = indexNext - indexEnd;
+			NowplayingParseItem = mid(InNowplaying$,indexEnd,Length);
+		}
+		Else {
+			NowplayingParseItem = mid(InNowplaying$,indexEnd,len(InNowplaying$) - indexEnd - 1);
+		}
+		// now start looking through the NowplayingParseItem
+		indexStart = find(" id%3A",NowplayingParseItem,1) + 6;
+		If (indexStart > 6){
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
+			If (indexEnd > 0){
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				indexEnd = Len(NowplayingParseItem) + 1;
+				Length = indexEnd - indexStart;
+			}
+			NowplayingID[i] = mid(NowplayingParseItem,indexStart,Length);
+			trace("NowplayingID (i=%u)= %s",i,NowplayingID[i]);
+		}
+		Else {
+			NowplayingID[i] = "";
+		}
+		indexStart = find(" title%3A",NowplayingParseItem,indexEnd) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
+			If (indexEnd > 0){
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				indexEnd = Len(NowplayingParseItem) + 1;
+				Length = indexEnd - indexStart;
+			}
+			NowplayingTitle[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+		}
+		Else {
+			NowplayingTitle[i] = " ";
+		}
+		indexStart = find(" artist%3A",NowplayingParseItem,indexEnd) + 10;
+		If (indexStart > 10){
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
+			If (indexEnd > 0){
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				indexEnd = Len(NowplayingParseItem) + 1;
+				Length = indexEnd - indexStart;
+			}
+			NowplayingArtist[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+		}
+		Else {
+			NowplayingArtist[i] = " ";
+		}
+		indexStart = find(" album%3A",NowplayingParseItem,indexEnd) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
+			If (indexEnd > 0){
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				indexEnd = Len(NowplayingParseItem) + 1;
+				Length = indexEnd - indexStart;
+			}
+			NowplayingAlbum[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+		}
+		Else {
+			NowplayingAlbum[i] = " ";
+		}
+		indexStart = find(" artwork_url%3A",NowplayingParseItem,indexEnd) + 15;
+		If (indexStart > 15){
+			artworkRemote = 1;
+			indexEnd = find(" ",NowplayingParseItem, indexStart);
+			If (indexEnd > 0){
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				indexEnd = Len(NowplayingParseItem) + 1;
+				Length = indexEnd - indexStart;
+			}
+			NowplayingCover[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+		}
+		Else {
+			artworkRemote = 0;
+			indexStart = find(" coverid%3A",NowplayingParseItem,indexEnd) + 11;
+			If (indexStart > 11){
+				indexEnd = find(" ",NowplayingParseItem, indexStart);
+				If (indexEnd > 0){
+					Length = indexEnd - indexStart;
+				}
+				Else {
+					indexEnd = Len(NowplayingParseItem) + 1;
+					Length = indexEnd - indexStart;
+				}
+				NowplayingCover[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+			}
+			Else {
+				NowplayingCover[i] = "";
+			}
+		}
+		
+		// check for newly started parsing thread before outputting
+		if (inCountNP_local <> inCountNP){
+			trace("new token break");
+			break;
+		}
+		If (NowplayingConsolidatedOut_Enable = 1){
+			If (NowplayingArtist[i] = " "){
+				Nowplaying_int = left(NowplayingTitle[i],NowplayingWidthTotal);
+			}
+			Else If ((len(NowplayingTitle[i]) + len(NowplayingArtist[i]) + 3) <= NowplayingWidthTotal){
+				Nowplaying_int = NowplayingTitle[i] + " - " + NowplayingArtist[i];
+			}
+			Else {
+				Nowplaying_int = left(NowplayingTitle[i], NowplayingWidthTotal - len(left(NowplayingArtist[i],NowplayingWidthArtist)) - 3) + " - " + left(NowplayingArtist[i],NowplayingWidthArtist);
+				Nowplaying_intLen = len(Nowplaying_int);
+				If (Nowplaying_intLen < NowplayingWidthTotal){
+					Nowplaying_int = NowplayingTitle[i] + " - " + left(NowplayingArtist[i], NowplayingWidthArtist + NowplayingWidthTotal - Nowplaying_intLen);
+				}
+			}
+			Nowplaying[i] = Nowplaying_int;
+		}
+		If (NowplayingSeparateOuts_Enable = 1){
+
+			NowplayingTitle$[i] = NowplayingTitle[i];
+			NowplayingArtist$[i] = NowplayingArtist[i];
+			NowplayingAlbum$[i] = NowplayingAlbum[i];
+		}
+		If (NowplayingCoverURL_Enable = 1){
+			If (len(NowplayingCover[i]) > 0){
+				If (find("plugins/",left(NowplayingCover[i],8))){
+					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingCover[i]);
+				}
+				Else If (find("spotify", left(NowplayingCover[i],32))){
+					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingCover[i]);
+				}
+				Else If (find("slacker.com",left(NowplayingCover[i],32))){
+					NowplayingCoverURL[i] = NowplayingCover[i] + "?.jpg";
+				}
+				Else If (find("/music",left(NowplayingCover[i],6))){
+					makestring(NowplayingCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music , NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
+				}
+				Else If ( UseCoverID && !artworkRemote ){
+					makestring(NowplayingCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music , NowplayingCover[i], NowplayingCoverSize, NowplayingCoverSize);
+				}
+				Else {
+					NowplayingCoverURL[i] = NowplayingCover[i];
+				}
+			}
+			Else {
+				makestring(NowplayingCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music, NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
+			}
+		}
+	}
+}
+Function Parse_FAR(String InFavorites$){
+	Integer i, j, indexStart, indexEnd, indexNext, Length;
+	String FavoritesParseItem[16384];
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+	
+	indexStart = find(" items ",InFavorites$) + 7;
+	indexEnd = find(" ",InFavorites$,indexStart);
+	Length = indexEnd - indexStart;
+	FavoritesFirstNumber = AtoI(mid(InFavorites$,indexStart,Length));
+	trace("FavoritesFirstNumber = %u",FavoritesFirstNumber);
+	indexStart = find(" count%3A",InFavorites$,30) + 9;
+	indexEnd = find(" ",InFavorites$, indexStart);
+	if (indexEnd = 0){
+		indexEnd = len(InFavorites$) - 1;
+	}
+	Length = indexEnd - indexStart;
+	TotalFavorites = AtoI(mid(InFavorites$,indexStart,Length));
+	OutFavoritesCount = TotalFavorites;
+	trace("TotalFavorites = %u",TotalFavorites);
+	If (TotalFavorites = 0){
+		OutFavoritesBar = 65535;
+		SetArray(FavoritesType,"");
+		SetArray(FavoritesName,"");
+		SetArray(FavoritesID,"");
+		FavoritesTitle = "Empty";
+		OutListBar = 65535;
+		OutListCount = 0;
+		ListName[1] = "Empty";
+		ListName$ = ListName[1];
+		SetArray(List$," "); 
+	}
+	Else {
+		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
+		OutListBar = OutFavoritesBar;
+		OutListCount = OutFavoritesCount;
+		indexEnd = 20;
+		indexStart = find(" title%3A",InFavorites$,indexEnd) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",InFavorites$,indexStart);
+			Length = indexEnd - indexStart;
+			FavoritesTitle = ParsePercent(mid(InFavorites$,indexStart,Length));
+		}
+		Else {
+			FavoritesTitle = "Blank";
+		}
+		trace("Favorites title: %s",FavoritesTitle);
+		ListName[1] = FavoritesTitle;
+		ListName$ = ListName[1];
+		indexNext = indexEnd;
+		For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+			indexStart = find(" id%3A",InFavorites$,indexNext) + 6;
+			if (indexStart > 6){
+				indexEnd = find(" ",InFavorites$,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesID[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
+				trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
+			}
+			Else {
+				For (j = i to NumberOfList){
+					FavoritesID[j] = "";
+					FavoritesName[j] = "";
+					FavoritesType[j] = "";
+					FavoritesIsAudio[j] = 0;
+					FavoritesHasItems[j] = 0;
+					List$[j] = " ";
+					ListPlayable[j] = 0;
+					If (ListCoverURL_Enable = 1){
+						ListCoverURL[j] = ListCoverURL_blank;
+					}	
+				}
+				trace("no more favorites; breaking.");
+				break;
+			}
+			indexNext = find(" id%3A",InFavorites$,indexEnd);
+			if (indexNext > 0){
+				Length = indexNext - indexEnd;
+				FavoritesParseItem = mid(InFavorites$,indexEnd,Length);
+			}
+			Else {
+				FavoritesParseItem = mid(InFavorites$,indexEnd,len(InFavorites$) - indexEnd - 1);
+			}
+			indexStart = find(" name%3A",FavoritesParseItem,1) + 8;
+			If (indexStart > 8){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesName[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites name[%u]: %s",i,FavoritesName[i]);
+			}
+			Else {
+				indexStart = find(" title%3A",FavoritesParseItem,1) + 9;
+				If (indexStart > 9){
+					indexEnd = find(" ",FavoritesParseItem,indexStart);
+					Length = indexEnd - indexStart;
+					FavoritesName[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+					trace("Favorites name[%u]: %s",i,FavoritesName[i]);
+				}
+				Else {
+					FavoritesName[i] = "";
+				}
+			}
+			indexStart = find(" image%3A",FavoritesParseItem,1) + 9;
+			If (indexStart > 9){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesImage[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites image[%u]: %s",i,FavoritesName[i]);
+			}
+			Else {
+				FavoritesImage[i] = "";
+			}
+			indexStart = find(" type%3A",FavoritesParseItem,indexEnd) + 8;
+			If (indexStart > 8){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesType[i] = ParsePercent(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites type[%u]: %s",i,FavoritesType[i]);
+			}
+			Else {
+				FavoritesType[i] = "";
+			}
+			indexStart = find(" isaudio%3A",FavoritesParseItem,indexEnd) + 11;
+			if (indexStart > 11){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesIsAudio[i] = AtoI(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites IsAudio[%u]: %u",i,FavoritesIsAudio[i]);
+			}
+			Else {
+				FavoritesIsAudio[i] = 0;
+			}
+			indexStart = find(" hasitems%3A",FavoritesParseItem,indexEnd) + 12;
+			If (indexStart > 12){
+				indexEnd = find(" ",FavoritesParseItem,indexStart);
+				Length = indexEnd - indexStart;
+				FavoritesHasItems[i] = AtoI(mid(FavoritesParseItem,indexStart,Length));
+				trace("Favorites HasItems[%u]: %u",i,FavoritesHasItems[i]);
+			}
+			Else {FavoritesHasItems[i] = 0;
+			}
+			List$[i] = left(FavoritesName[i],ListWidth);
+			ListPlayable[i] = FavoritesIsAudio[i];
+			If (ListCoverURL_Enable = 1){
+				If (len(FavoritesImage[i]) > 0){
+					ListCoverURL[i] = FavoritesImage[i];
+				}
+				Else {
+					ListCoverURL[i] = ListCoverURL_blank;
+				}
+			}
+		}
+	}
+}
+Function Parse_Dynamic(String InDynamic$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexStart = find(" playlists 1 ",InDynamic$,30) + 13;
+	indexEnd = find(" ",InDynamic$,indexStart + 13);
+	Length = indexEnd - indexStart;
+	DynamicFirstNumber = AtoI(mid(InDynamic$,indexStart,Length));
+	indexStart = find(" count%3A",InDynamic$,40) + 9;
+	indexEnd = find(" ",InDynamic$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalDynamic = AtoI(mid(InDynamic$,indexStart,Length));
+	OutDynamicCount = TotalDynamic;
+	If (TotalDynamic > 0){
+		OutDynamicBar = 65535 - ((65535 / TotalDynamic) * DynamicFirstNumber );
+	}
+	Else {
+		OutDynamicBar = 65535;
+	}
+	OutListBar = OutDynamicBar;
+	OutListCount = OutDynamicCount;
+	indexEnd = 1;
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" playlistid%3A",InDynamic$,indexEnd) + 14;
+		If (indexStart > 14){
+			indexEnd = find(" ",InDynamic$,indexStart);
+			Length = indexEnd - indexStart;
+			DynamicFile[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
+		}
+		Else {
+			For (j = i to NumberOfList){
+				DynamicFile[j] = "";
+				DynamicName[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+			}
+			Break;
+		}
+		indexStart = find(" playlistname%3A",InDynamic$,indexEnd) + 16;
+		If (indexStart > 16){
+			indexEnd = find(" ",InDynamic$, indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InDynamic$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			DynamicName[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
+		}
+		List$[i] = left(DynamicName[i],ListWidth);
+		ListPlayable[i] = 1;
+	}
+}
+Function Parse_Genres(String InGenres$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InGenres$,9);
+	Length = indexEnd - 8;
+	GenreFirstNumber = AtoI(mid(InGenres$,8,Length));
+	indexStart = find(" count%3A",InGenres$,1) + 9;
+	indexEnd = find(" ",InGenres$, indexStart);
+	if (indexEnd > 0){
+		Length = indexEnd - indexStart;
+	}
+	Else {
+		Length = len(InGenres$) - indexStart - 1;
+	}
+	TotalGenres = AtoI(mid(InGenres$,indexStart,Length));
+	OutGenreCount = TotalGenres;
+	If (TotalGenres > 0){
+		OutGenresBar = 65535 - ((65535 / TotalGenres) * GenreFirstNumber);
+	}
+	else {
+		OutGenresBar = 65535;
+	}
+	OutListBar = OutGenresBar;
+	OutListCount = OutGenreCount;
+	indexEnd = 1;
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" id%3A",InGenres$,indexEnd) + 6;
+		If (IndexStart > 6){
+			indexEnd = find(" ",InGenres$,indexStart);
+			Length = indexEnd - indexStart;
+			GenreID[i] = mid(InGenres$,indexStart,Length);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				GenreID[j] = "";
+				Genre[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+			}
+			Break;
+		}
+		indexStart = indexEnd + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",InGenres$, indexStart);
+			Length = indexEnd - indexStart;
+			Genre[i] = ParsePercent(mid(InGenres$,indexStart,Length));
+		}
+		Else {
+			Genre[i] = " ";
+		}
+		List$[i] = left(Genre[i],ListWidth);
+		ListPlayable[i] = 1;
+	}
+}
+Function Parse_Artists(String InArtists$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InArtists$,9);
+	Length = indexEnd - 8;
+	ArtistFirstNumber = AtoI(mid(InArtists$,8,Length));
+	trace("ArtistFirstNumber = %u",ArtistFirstNumber);
+	indexStart = find(" count%3A",InArtists$,1) + 9;
+	indexEnd = find(" ",InArtists$, indexStart);
+	if (indexEnd > 0){
+		Length = indexEnd - indexStart;
+	}
+	Else {
+		Length = len(InArtists$) - indexStart - 1;
+	}
+	TotalArtists = AtoI(mid(InArtists$,indexStart,Length));
+	trace("TotalArtists = %u",TotalArtists);
+	OutArtistCount = TotalArtists;
+	If (TotalArtists > 0){
+		OutArtistsBar = 65535 - ((65535 / TotalArtists) * ArtistFirstNumber);
+	}
+	else {
+		OutArtistsBar = 65535;
+	}
+	OutListBar = OutArtistsBar;
+	OutListCount = OutArtistCount;
+	indexEnd = 1;  
+	If (ArtistsListTop = 1){
+		Artist[1] = "All Albums";
+		ArtistID[1] = "";
+		List$[1] = Artist[1];
+	}
+	For (i = (1 + ArtistsListTop) to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+    	indexStart = find(" id%3A",InArtists$,indexEnd) + 6;
+		If (indexStart > 6){
+			indexEnd = find(" ",InArtists$,indexStart);
+			Length = indexEnd - indexStart;
+			ArtistID[i] = mid(InArtists$,indexStart,Length);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				ArtistID[j] = "";
+				Artist[j]  = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+			}
+			Break;
+		}
+		indexStart = find(" artist%3A",InArtists$,indexEnd) + 10;
+		If (indexStart > 10){
+			indexEnd = find(" ",InArtists$, indexStart);
+			Length = indexEnd - indexStart;		
+			Artist[i] = ParsePercent(mid(InArtists$,indexStart,Length));
+		}
+		Else {
+			Artist[i] = " ";
+		}
+		List$[i] = left(Artist[i],ListWidth);
+		ListPlayable[i] = 1;
+	}
+}
+Function Parse_Albums(String InAlbums$){
+	Integer i, j, indexStart, indexEnd, indexNext, Length;
+	String AlbumArtist[128], AlbumsParseItem[2048], AlbumTrackID[8], ListTemp[255];
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InAlbums$,9);
+	Length = indexEnd - 8;
+	AlbumFirstNumber = AtoI(mid(InAlbums$,8,Length));
+	indexStart = find("count%3A",InAlbums$,1) + 8;
+	indexEnd = find(" ",InAlbums$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalAlbums = AtoI(mid(InAlbums$,indexStart,Length));
+	OutAlbumCount = TotalAlbums;
+	If (TotalAlbums > 0){
+		OutAlbumsBar = 65535 - ((65535 / TotalAlbums) * AlbumFirstNumber);
+	}
+	else {
+		OutAlbumsBar = 65535;
+	}
+	OutListBar = OutAlbumsBar;
+	OutListCount = OutAlbumCount;
+	indexNext = 1;
+	For (i = 1 to NumberOfAlbums) {
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" id%3A",InAlbums$,indexNext) + 6;
+		If (indexStart > 6){
+			indexEnd = find(" ",InAlbums$,indexStart);
+			Length = indexEnd - indexStart;
+			AlbumID[i] = mid(InAlbums$,indexStart,Length);
+			trace("Album ID[%u]: %s",i,AlbumID[i]);
+		}	
+		Else {
+			for (j = i to NumberOfAlbums){
+				AlbumID[j] = "";
+				Album[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+				If (Coverflow = 1){
+					ListCoverURL[j] = CoverflowURL_blank;
+					ListCoverflowArtist[j] = " ";
+				}
+				Else if (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = ListCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		indexNext = find(" id%3A",InAlbums$,indexEnd);
+		if (indexNext > 0){
+			Length = indexNext - indexEnd;
+			AlbumsParseItem = mid(InAlbums$,indexEnd,Length);
+		}
+		Else {
+			AlbumsParseItem = mid(InAlbums$,indexEnd,len(InAlbums$) - indexEnd - 1);
+		}
+		indexStart = find(" album%3A",AlbumsParseItem,1) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			Album[i] = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
+		}
+		Else {
+			Album[i] = " ";
+		}
+		indexStart = find(" artwork_track_id%3A",AlbumsParseItem,indexEnd) + 20;
+		If (indexStart > 20){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			AlbumTrackID = mid(AlbumsParseItem,indexStart,Length);
+		}
+		Else {
+			AlbumTrackID = "";
+		}
+		trace("AlbumTrackID[%u]=%s",i,AlbumTrackID);
+		indexStart = find(" artist%3A",AlbumsParseItem,indexEnd) + 10;
+		If (indexStart > 10){
+			indexEnd = find(" ",AlbumsParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			AlbumArtist = ParsePercent(mid(AlbumsParseItem,indexStart,Length));
+		}
+		Else {
+			AlbumArtist = "";
+			
+		}
+		trace("albumArtist[%u]=%s",i,AlbumArtist);
+		
+		// // generate the list item
+		// coverflow list item
+		If (Coverflow = 1){
+			trace("Coverflow = 1");
+			List$[i] = left(Album[i], CoverflowWidthAlbum);
+			ListCoverflowArtist[i] = left(AlbumArtist,CoverflowWidthArtist);
+		}
+		// non-coverflow list item includes artist name in parentheses
+		Else {
+			trace("Coverflow = 0");
+			ListTemp = Album[i] + " (" + AlbumArtist + ")";
+			List$[i] = left(ListTemp,ListWidth);
+		}
+		// set the playable indicate for the album
+		ListPlayable[i] = 1;
+		// // generate cover image for the album
+		// coverflow images are bigger
+		If (Coverflow = 1) {
+			If (len(AlbumTrackID) = 0){
+				ListCoverURL[i] = CoverflowURL_missing;
+			}
+			Else {
+				makestring(ListCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music, AlbumTrackID, CoverflowSize, CoverflowSize);
+			}		
+		}
+		// and noncoverflow images are smaller
+		Else If (ListCoverURL_Enable = 1){
+			trace("making List CoverURL outputs");
+			If (len(AlbumTrackID) = 0){
+				ListCoverURL[i] = ListCoverURL_missing;
+			}
+			Else {
+				makestring(ListCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music, AlbumTrackID,ListCoverSize, ListCoverSize);
+			}
+		}
+	}
+}
+Function Parse_Titles(String InTitles$){
+	Integer i, j, indexStart, indexNext, indexEnd, Length;
+	String TitlesParseItem[2048];
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InTitles$,9);
+	Length = indexEnd - 8;
+	TitleFirstNumber = AtoI(mid(InTitles$,8,Length));
+	indexStart = find("count%3A",InTitles$,1) + 8;
+	indexEnd = find(" ",InTitles$, indexStart);
+	If (indexEnd > 0){
+		Length = indexEnd - indexStart;
+	}
+	Else {
+		Length = len(InTitles$) - indexStart - 1;
+	}
+	TotalTitles = AtoI(mid(InTitles$,indexStart,Length));
+	OutTitleCount = TotalTitles;
+	If (TotalTitles > 0){
+		OutTitlesBar = 65535 - Muldiv(65535, TitleFirstNumber, TotalTitles);
+	}
+	else {
+		OutTitlesBar = 65535;
+	}
+	OutListBar = OutTitlesBar;
+	OutListCount = OutTitleCount;
+	indexEnd = 1;
+	indexNext = 1;
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" id%3A",InTitles$,indexNext) + 6;
+		If (indexStart > 6){
+			indexEnd = find(" ",InTitles$,indexStart);
+			Length = indexEnd - indexStart;
+			TrackID[i] = mid(InTitles$,indexStart,Length);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				TrackID[j] = "";
+				Title[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+				TitleTracknum[j] = 0;
+				TitleAlbumID[j] = "";
+				If (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = ListCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		indexNext = find(" id%3A",InTitles$,indexEnd);
+		If (indexNext > 0){
+			Length = indexNext - indexEnd;
+			TitlesParseItem = mid(InTitles$,indexEnd,Length);
+		}
+		Else {
+			trace("no indexNext match for \" id%3A\"");
+			TitlesParseItem = mid(InTitles$,indexEnd,len(InTitles$) - indexEnd - 1);
+		}
+		trace("parseItem=%s",left(TitlesParseItem,100));
+		indexStart = find(" title%3A",TitlesParseItem,1) + 9;
+		If (indexStart > 9){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			Title[i] = ParsePercent(mid(TitlesParseItem,indexStart,Length));
+		}
+		Else {
+			Title[i] = " ";
+		}
+		indexStart = find(" tracknum%3A",TitlesParseItem,indexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			TitleTracknum[i] = AtoI(mid(TitlesParseItem,indexStart,Length));
+		}
+		Else {
+			trace("no tracknum");
+			TitleTracknum[i] = 0;
+		}
+		indexStart = find(" album_id%3A", TitlesParseItem,IndexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",TitlesParseItem, indexStart);
+			Length = indexEnd - indexStart;
+			TitleAlbumID[i] = mid(TitlesParseItem, indexStart, Length);
+		}
+		Else {
+			trace("no album_id");
+			TitleAlbumID[i] = "";
+		}
+		List$[i] = left(Title[i],ListWidth);
+		ListPlayable[i] = 1;
+		If (ListCoverURL_Enable = 1){
+			trace("making List CoverURL outputs");
+			makestring(ListCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music, TrackID[i],ListCoverSize,ListCoverSize);
+		}
+	}
+}
+Function Parse_Playlists(String InPlaylists$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InPlaylists$,12);
+	Length = indexEnd - 11;
+	PlaylistFirstNumber = AtoI(mid(InPlaylists$,11,Length));
+	trace("PlaylistFirstNumber = %u",PlaylistFirstNumber);
+
+	indexStart = find("count%3A",InPlaylists$,indexEnd) + 8;
+	indexEnd = find(" ",InPlaylists$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalPlaylists = AtoI(mid(InPlaylists$,indexStart,Length));
+	OutPlaylistCount = TotalPlaylists;
+	If (TotalPlaylists > 0){
+		OutPlaylistsBar = 65535 - ((65535 / TotalPlaylists) * PlaylistFirstNumber );
+	}
+	Else {
+		OutPlaylistsBar = 65535;
+	}
+	OutListBar = OutPlaylistsBar;
+	OutListCount = OutPlaylistCount;
+	indexEnd = 1;
+	For (i = 1 to NumberOfList) {
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" id%3A",InPlaylists$,indexEnd) + 6;
+    	If (indexStart > 6){
+			indexEnd = find(" ",InPlaylists$,indexStart);
+			Length = indexEnd - indexStart;
+			PlaylistID[i] = mid(InPlaylists$,indexStart,Length);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				PlaylistID[j] = "";
+				PlaylistRaw[j] = "";
+				Playlist[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+			}
+			Break;
+		}
+		indexStart = find(" playlist%3A", InPlaylists$,indexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",InPlaylists$, indexStart);
+			Length = indexEnd - indexStart;
+			PlaylistRaw[i] = mid(InPlaylists$,indexStart,Length);
+		}
+		Else {
+			PlaylistRaw[i] = "";
+		}
+		trace("PlaylistRaw[%u] = %s",i,PlaylistRaw[i]);
+		Playlist[i] = ParsePercent(PlaylistRaw[i]);
+		List$[i] = left(Playlist[i],ListWidth);
+		ListPlayable[i] = 1;
+	}
+}
+Function Parse_Apps(String InApps$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+
+	indexStart = 6;
+	indexEnd = find(" ",InApps$,indexStart);
+	Length = indexEnd - indexStart;
+	AppsFirstNumber = AtoI(mid(InApps$,indexStart,Length));
+	trace("AppsFirstNumber = %u",AppsFirstNumber);
+	
+	indexStart = find(" count%3A",InApps$,indexEnd) + 9;
+	indexEnd = find(" ",InApps$, indexStart);
+	if (indexEnd = 0){
+		indexEnd = len(InApps$) - 1;
+	}
+	Length = indexEnd - indexStart;
+	TotalApps = AtoI(mid(InApps$,indexStart,Length));
+	OutAppsCount = TotalApps;
+	trace("TotalApps = %u",TotalApps);
+	If (TotalApps > 0){
+		OutAppsBar = 65535 - ((65535 / TotalApps) * AppsFirstNumber );
+	}
+	Else {
+		OutAppsBar = 65535;
+	}
+	OutListBar = OutAppsBar;
+	OutListCount = OutAppsCount;
+	indexEnd = 9;
+
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" icon%3A",InApps$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsIcon[i] = ParsePercent(mid(InApps$,indexStart,Length));
+			trace("Apps icon: %s",AppsIcon[i]);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				AppsIcon[j] = "";
+				AppsCmd[j] = "";
+				AppsName[j] = "";
+				AppsType[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+				If (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = ListCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		indexStart = find(" cmd%3A",InApps$,indexEnd) + 7;
+		if (indexStart > 7){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsCmd[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		}
+		Else {
+			AppsCmd[i] = "";
+		}
+		trace("Apps Cmd: %s",AppsCmd[i]);
+		indexStart = find(" name%3A",InApps$,indexEnd) + 8;
+		if (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			Length = indexEnd - indexStart;
+			AppsName[i] = ParsePercent(mid(InApps$,indexStart,Length));
+		}
+		Else {
+			AppsName[i] = "";
+		}
+		trace("Apps name[%u]: %s",i,AppsName[i]);
+		indexStart = find(" type%3A",InApps$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InApps$,indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InApps$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			AppsType[i] = mid(InApps$,indexStart,Length);
+		}
+		Else {
+			AppsType[i] = "";
+		}
+		List$[i] = left(AppsName[i],ListWidth);
+		ListPlayable[i] = 0;
+		If (ListCoverURL_Enable = 1){
+			If (find ("http:",AppsIcon[i])){
+				ListCoverURL[i] = AppsIcon[i];
+			}
+			Else {
+				makestring(ListCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, AppsIcon[i]);
+			}
+		}
+	}
+}
+Function Parse_Radios(String InRadios$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexStart = 8;
+	indexEnd = find(" ",InRadios$,indexStart);
+	Length = indexEnd - indexStart;
+	RadiosFirstNumber = AtoI(mid(InRadios$,indexStart,Length));
+	trace("RadiosFirstNumber = %u",RadiosFirstNumber);
+	indexStart = find(" count%3A",InRadios$,indexEnd) + 9;
+	indexEnd = find(" ",InRadios$, indexStart);
+	if (indexEnd = 0){
+		indexEnd = len(InRadios$) - 1;
+	}
+	Length = indexEnd - indexStart;
+	TotalRadios = AtoI(mid(InRadios$,indexStart,Length));
+	OutRadiosCount = TotalRadios;
+	trace("TotalRadios = %u",TotalRadios);
+	If (TotalRadios > 0){
+		OutRadiosBar = 65535 - ((65535 / TotalRadios) * RadiosFirstNumber );
+	}
+	Else {
+		OutRadiosBar = 65535;
+	}
+	OutListBar = OutRadiosBar;
+	OutListCount = OutRadiosCount;
+	indexEnd = 9;
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		indexStart = find(" icon%3A",InRadios$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosIcon[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+			trace("Radios icon: %s",RadiosIcon[i]);
+		}
+		Else {
+			For (j = i to NumberOfList){
+				RadiosIcon[j] = "";
+				RadiosCmd[j] = "";
+				RadiosName[j] = "";
+				RadiosType[j] = "";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+				If (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = ListCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		indexStart = find(" cmd%3A",InRadios$,indexEnd) + 7;
+		If (indexStart > 7){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosCmd[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		}
+		Else {
+			RadiosCmd[i] = "";
+		}
+		trace("Radios Cmd: %s",RadiosCmd[i]);
+		indexStart = find(" name%3A",InRadios$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			Length = indexEnd - indexStart;
+			RadiosName[i] = ParsePercent(mid(InRadios$,indexStart,Length));
+		}
+		Else {
+			RadiosName[i] = "";
+		}
+		trace("Radios name[%u]: %s",i,RadiosName[i]);
+		indexStart = find(" type%3A",InRadios$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InRadios$,indexStart);
+			If (indexEnd = 0){
+				indexEnd = Len(InRadios$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			RadiosType[i] = mid(InRadios$,indexStart,Length);
+		}
+		Else {
+			RadiosType[i] = "";
+		}
+		List$[i] = left(RadiosName[i],ListWidth);
+		ListPlayable[i] = 0;
+		If (ListCoverURL_Enable = 1){
+			makestring(ListCoverURL[i],"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, RadiosIcon[i]);
+		}
+	}	
+}
+Function Parse_Search(String InSearch$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+
+	indexEnd = find(" ",InSearch$,8);
+	Length = indexEnd - 8;
+	SearchFirstNumber = AtoI(mid(InSearch$,8,Length));
+	trace("searchfirstnumber: %u",SearchFirstNumber);
+	indexStart = find("count%3A",InSearch$,1) + 8;
+	indexEnd = find(" ",InSearch$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalSearch = AtoI(mid(InSearch$,indexStart,Length));
+	trace("TotalSearch: %u",TotalSearch);
+	OutSearchCount = TotalSearch;
+	If (TotalSearch > 0){
+		OutSearchBar = 65535 - ((65535 / TotalSearch) * SearchFirstNumber);
+	}
+	else {
+		OutSearchBar = 65535;
+	}
+	OutListBar = OutSearchBar;
+	OutListCount = OutSearchCount;
+	indexEnd = 1;
+	For (i = 1 to NumberOfList){
+		// check for newly started parsing thread before starting each loop
+		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+		if (inCount_local <> inCount){
+			trace("new token break");
+			break;
+		}
+		// start to parsse the next item of browse data
+		If (find(" contributor_id",InSearch$,indexEnd)) { // parsing for artists in search results
+			trace("parsing contributor_id in search result");
+			indexStart = find(" contributor_id%3A",InSearch$,indexEnd) + 18;
+			indexEnd = find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = mid(InSearch$,indexStart,Length);
+			trace("contributor_id:%s",SearchID[i]);
+			SearchIDtype[i] = 1;
+			indexStart = indexEnd + 15;
+			indexEnd = find(" ",InSearch$, indexStart);
+			If (indexEnd = 0){
+				indexEnd = len(InSearch$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
+			trace("contributor:%s",Search[i]);
+			If (ListCoverURL_Enable = 1){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		}
+		Else If (find(" album_id%3A",InSearch$,indexEnd)) { // parsing for albums in search results
+			trace("parsing album_id in search result");
+			indexStart = find(" album_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = mid(InSearch$,indexStart,Length);
+			SearchIDtype[i] = 2;
+			indexStart = indexEnd + 9;
+			indexEnd = find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
+			If (ListCoverURL_Enable = 1){
+				// it would be nice to have the album cover URL here but the search command does not identify the artwork_track_id,
+				ListCoverURL[i] = ListCoverURL_missing;
+			}
+		}
+		Else If (find(" genre_id%3A",InSearch$,indexEnd)) { // parsing for genres in search results
+			trace("parsing genre_id in search result");
+			indexStart = find(" genre_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = mid(InSearch$,indexStart,Length);
+			SearchIDtype[i] = 4;
+			indexStart = indexEnd + 9;
+			indexEnd = find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
+			If (ListCoverURL_Enable = 1){
+				ListCoverURL[i] = ListCoverURL_blank;
+			}
+		}
+		Else If (find(" track_id%3A",InSearch$,indexEnd)) { // parsing for tracks in search results
+			trace("parsing track_id in search result");
+			indexStart = find(" track_id%3A",InSearch$,indexEnd) + 12;
+			indexEnd = find(" ",InSearch$,indexStart);
+			Length = indexEnd - indexStart;
+			SearchID[i] = mid(InSearch$,indexStart,Length);
+			SearchIDtype[i] = 3;
+			indexStart = indexEnd + 9;
+			indexEnd = find(" ",InSearch$, indexStart);
+			If (indexEnd = 0) {
+				indexEnd = len(InSearch$) - 1;
+			}
+			Length = indexEnd - indexStart;
+			Search[i] = ParsePercent(mid(InSearch$,indexStart,Length));
+			If (ListCoverURL_Enable = 1){
+				makestring(ListCoverURL[i],"%s%s/cover_%ux%u.jpg", CoverURL_base_music, SearchID[i], ListCoverSize, ListCoverSize);
+			}
+		}
+		Else {
+			For (j = i to NumberOfList){
+				SearchID[j] = "";
+				Search[j] = " ";
+				List$[j] = " ";
+				ListPlayable[j] = 0;
+				If (ListCoverURL_Enable = 1){
+					ListCoverURL[j] = ListCoverURL_blank;
+				}
+			}
+			Break;
+		}
+		List$[i] = left(Search[i],ListWidth);
+		ListPlayable[i] = 1;
+	}
+}
+
+String_Function ParseStr(String In, String tag){
+	Integer i, indexStart, indexEnd, indexEndDelim, Length;
+	// Global_integer parsePosition
+	
+	indexStart = find(tag,In,parsePosition) + len(tag);
+	If (indexStart > len(tag)){
+		indexEnd = find(" ",In,indexStart);
+		if (indexEnd = 0){
+			indexEndDelim = find("\x0D",In,indexStart);
+			if (indexEndDelim > 0){
+				indexEnd = indexEndDelim;
+			}
+			else {
+				indexEnd = len(In) + 1;
+			}
+		}
+		Length = indexEnd - indexStart;
+		parsePosition = indexEnd;
+		return(ParsePercent(mid(In,indexStart,Length)));
+	}
+	Else {
+		return("");
+	}
+}
+Integer_Function ParseInt(String In, String tag){
+	Integer i, indexStart, indexEnd, indexEndDelim, Length;
+	// Global_integer parsePosition
+	
+	indexStart = find(tag,In,parsePosition) + len(tag);
+	If (indexStart > len(tag)){
+		indexEnd = find(" ",In,indexStart);
+		if (indexEnd = 0){
+			indexEndDelim = find("\x0D",In,indexStart);
+			if (indexEndDelim > 0){
+				indexEnd = indexEndDelim;
+			}
+			else {
+				indexEnd = len(In) + 1;
+			}
+		}
+		Length = indexEnd - indexStart;
+		parsePosition = indexEnd;
+		return(AtoI(mid(In,indexStart,Length)));
+	}
+	Else {
+		return(0);
+	}
+}
+
+Function Parse_CB(String InCB$){
+	Integer i, j, indexStart, indexEnd, Length;
+	Integer inCount_local;
+	
+	// store the global token for browse data in the local thread
+	inCountIncrement();
+	inCount_local = inCount;
+	
+	indexEnd = find(" ",InCB$,49);
+	Length = indexEnd - 49;
+	CBFirstNumber = AtoI(mid(InCB$,49,Length));
+	trace("CBFirstNumber: %u",CBFirstNumber);
+	indexStart = find("count%3A",InCB$,indexEnd) + 8;
+	If (indexStart > 8){
+		trace("indexStart:%u",indexStart);
+		indexEnd = find(" ",InCB$, indexStart);
+		trace("indexEnd:%u",indexEnd);
+		Length = indexEnd - indexStart;
+		TotalCB = AtoI(mid(InCB$,indexStart,Length));
+		trace("TotalCB: %u",TotalCB);
+		If (TotalCB = 0){
+			OutListBar = 65535;
+			SetArray(CBLevel,"");
+			SetArray(CBID,"");
+			SetArray(CBName,"");
+			SetArray(CBType,"");
+			SetArray(CBPlayable,0);
+			SetArray(CBMixable,0);
+			SetArray(List$," ");
+			OutListCount = 0;
+			ListName[1] = "CustomBrowse: Empty";
+			ListName$ = ListName[1];
+			SetArray(List$," "); 
+		}
+		Else {
+			OutListBar = 65535 - ((65535 / TotalCB) * CBFirstNumber );
+			OutListCount = TotalCB;
+			
+			For (i = 1 to NumberOfList){
+				// check for newly started parsing thread before starting each loop
+				trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
+				if (inCount_local <> inCount){
+					trace("new token break");
+					break;
+				}
+				// start to parsse the next item of browse data
+				indexStart = find(" level%3A",InCB$,indexEnd) + 9;
+				If (indexStart > 9){
+					indexEnd = find(" ",InCB$, indexStart);
+					Length = indexEnd - indexStart;
+					CBLevel[i] = parsepercent(mid(InCB$,indexStart,Length));
+					trace("CBLevel[%u]: %s",i,CBLevel[i]);
+				}
+				Else {
+					For (j = i to NumberOfList){
+						CBLevel[j] = "";
+						CBID[j] = "";
+						CBName[j] = "";
+						CBType[j] = "";
+						CBPlayable[j] = 0;
+						CBMixable[j] = 0;
+						List$[j] = " ";
+						ListPlayable[j] = 0;
+					}
+					Break;
+				}
+				indexStart = find(" itemid%3A",InCB$,indexEnd) + 10;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBID[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBID[%u]: %s",i,CBID[i]);
+				
+				indexStart = find(" itemname%3A",InCB$,indexEnd) + 12;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBName[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBName[%u]: %s",i,CBName[i]);
+				
+				indexStart = find(" itemtype%3A",InCB$,indexEnd) + 12;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBType[i] = parsepercent(mid(InCB$,indexStart,Length));
+				trace("CBType[%u]: %s",i,CBType[i]);
+				
+				indexStart = find(" itemplayable%3A",InCB$,indexEnd) + 16;
+				indexEnd = find(" ",InCB$, indexStart);
+				Length = indexEnd - indexStart;
+				CBPlayable[i] = AtoI(mid(InCB$,indexStart,Length));
+				trace("CBPlayable[%u]: %u",i,CBPlayable[i]);
+				
+				indexStart = find(" itemmixable%3A",InCB$,indexEnd) + 15;
+				indexEnd = find(" ",InCB$, indexStart);
+				if (indexEnd = 0){
+					indexEnd = len(InCB$) - 1;
+				}
+				Length = indexEnd - indexStart;
+				CBMixable[i] = AtoI(mid(InCB$,indexStart,Length));
+				trace("CBMixable[%u]: %u",i,CBMixable[i]);
+				
+				List$[i] = left(CBName[i],ListWidth);
+				ListPlayable[i] = CBPlayable[i];
+			}
+		}
+	}
+	Else {
+		// "count" was not found, invalid return
+		OutListBar = 65535;
+		SetArray(CBLevel,"");
+		SetArray(CBID,"");
+		SetArray(CBName,"");
+		SetArray(CBType,"");
+		SetArray(CBPlayable,0);
+		SetArray(CBMixable,0);
+		SetArray(List$," ");
+		OutListCount = 0;
+		ListName[1] = "CustomBrowse: Empty";
+		ListName$ = ListName[1];
+		SetArray(List$," "); 
+		SetArray(ListPlayable,0);
+	}
+}
+
+Function Parse_Players(String InPlayers$){
+	Integer i, j, indexStart, indexEnd, Length;
+		
+	indexEnd = find(" ",InPlayers$,10);
+	Length = indexEnd - 9;
+	PlayersFirstNumber = AtoI(mid(InPlayers$,9,Length));
+	trace("PlayersFirstNumber = %u",PlayersFirstNumber);
+	indexStart = find("count%3A",InPlayers$,indexEnd) + 8;
+	indexEnd = find(" ",InPlayers$, indexStart);
+	Length = indexEnd - indexStart;
+	TotalPlayers = AtoI(mid(InPlayers$,indexStart,Length));
+	trace("TotalPlayers = %u",TotalPlayers);
+	OutPlayersCount = TotalPlayers;
+	If (TotalPlayers > 0){
+		OutPlayersBar = 65535 - ((65535 / TotalPlayers) * PlayersFirstNumber);
+	}
+	else {
+		OutPlayersBar = 65535;
+	}
+	indexEnd = 1;
+	For (i = 1 to NumberOfPlayers) {
+		indexStart = find(" playerindex%3A",InPlayers$,indexEnd) + 15;
+		If (indexStart > 15){
+			indexEnd = find(" ",Inplayers$,indexStart);
+			PlayersIndex[i] = AtoI(mid(InPlayers$,indexStart,Length));
+			trace("PlayersIndex[%u] = %u",i,PlayersIndex[i]);
+		}
+		Else {
+			For (j = i to NumberOfPlayers){
+				PlayersIndex[j] = 0;
+				PlayersID[j] = "";
+				PlayersName[j] = "";
+				Players$[j] = " ";
+			}
+			Break;
+		}
+		indexStart = find(" playerid%3A",InPlayers$,indexEnd) + 12;
+		If (indexStart > 12){
+			indexEnd = find(" ",InPlayers$,indexStart);
+			Length = indexEnd - indexStart;
+			PlayersID_raw[i] = mid(InPlayers$,indexStart,Length);
+			PlayersID[i] = parsepercent(PlayersID_raw[i]);
+		}
+		Else {
+			PlayersID[i] = "";
+		}
+		trace("PlayersID[%u] = %s",i,PlayersID[i]);
+		indexStart = find(" name%3A",InPlayers$,indexEnd) + 8;
+		If (indexStart > 8){
+			indexEnd = find(" ",InPlayers$, indexStart);
+			Length = indexEnd - indexStart;
+			PlayersName[i] = parsepercent(mid(InPlayers$,indexStart,Length));
+		}
+		Else {
+			PlayersName[i] = " ";
+		}
+		trace("PlayersName[%u] = %s",i,PlayersName[i]);
+		Players$[i] = PlayersName[i];
+		PlayersID$[i] = PlayersID[i];
+	}
+	For (j = 1 to GetNumArrayRows(PlayersID)){
+		If (PlayersID[j] = PlayerID$) {
+			CurrentPlayerName = PlayersName[j];
+			Break;
+		}
+	}
+	CurrentPlayerID = PlayerID$;
+}
+Function CurrentsongTimer_fn(){
+//	waitCountTime_running = 0;
+	waitUpdateTime_running = 0;
+	While ((CurrentSongTime_enable) && (TCPIP_Connected_int = 1)) {
+		delay(100);
+		If (timeclock_run = 1){
+/*
+			If (waitCountTime_running = 0){
+				waitCountTime_running = 1;
+				Wait(100,waitCountTime){
+					CTTime_sec = CTTime_sec + 1;
+					Parse_Time(CTTime_sec);
+					waitCountTime_running = 0;
+				}
+			}
+*/
+			CTTime_sec = CTTime_sec + 1;
+			Parse_Time(CTTime_sec);
+			If (waitUpdateTime_running = 0){
+				waitUpdateTime_running = 1;
+				Wait(1400){
+					String Out$[64];
+					makestring(Out$,"%s time ? \n",PlayerID$);
+					trace("sending: %s",OUT$);
+					socketsend(TCPClient,OUT$);
+					waitUpdateTime_running = 0;
+				}
+			}
+		}
+	}
+}
+Function Parse_Status(String InStatus$){
+	Integer i, j;
+	Integer indexStart, indexEnd, Length;
+	Integer indexStart2, indexEnd2, Length2;
+	Integer CurrentPlayerSlave_local, CurrentPlayerMaster_local;
+	Integer Time_hr, Time_min, Time_sec, Time_rmd;	
+	String CoverURL_check[3];
+	String CurrentSongConsolidated[200];
+	String temp[4096];
+	Integer inCountStatus_local;
+/*
+	// set local token to global token for status input
+	inCountStatusIncrement();
+	inCountStatus_local = inCountStatus;
+	
+	// using a token is more difficult without a loop to exit from
+	// if an interrupt is desired here, put the entire sequence in a while(inCountStatus_local = inCountStatus) loop
+	// and also add inCountStatusIncrement() at the end of the loop so it will only run once
+*/	
+   	indexStart = find(" player_name%3A",InStatus$,1) + 15;
+	if (indexStart > 15){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentPlayerName = parsepercent(mid(InStatus$,indexStart,Length));
+	}
+	Else {
+		CurrentPlayerName = "<n/a>";
+	}
+   	indexStart = find(" player_connected%3A",InStatus$,indexEnd) + 20;
+	if (indexStart > 20){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentPlayerConnected = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	Else {
+		CurrentPlayerConnected = 0;
+	}
+   	indexStart = find(" power%3A",InStatus$,indexEnd) + 9;
+	if (indexStart > 9){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentPlayerPower = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	Else {
+		CurrentPlayerPower = 0;
+	}
+	indexStart = find(" mode%3A",InStatus$,indexEnd) + 8;
+	if (indexStart > 8){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentPlayerMode = mid(InStatus$,indexStart, Length);
+	}
+	Else {
+		CurrentPlayerMode = "stop";
+	}
+	indexStart = find(" remote%3A",InStatus$,indexEnd) + 10;
+	if (indexStart > 10) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackRemote = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	Else {
+		CurrentTrackRemote = 0;
+	}
+	indexStart = find(" current_title%3A",InStatus$,indexEnd) + 17;
+	if (indexStart > 17) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackCTitle$ = left(parsepercent(mid(InStatus$,indexStart,Length)),255);
+	}
+	Else {
+		CurrentTrackCTitle$ = "";
+	}
+	indexStart = find(" time%3A",InStatus$,indexEnd) + 8;
+	If (indexStart > 8){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackTime$ = mid(InStatus$,indexStart, Length);
+	}
+	Else {
+		CurrentTrackTime$ = "";
+	}
+	indexStart = find(" rate%3A",InStatus$,indexEnd) + 8;
+	If (indexStart > 8){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackRate$ = mid(InStatus$,indexStart, Length);
+	}
+	Else {
+		CurrentTrackRate$ = "";
+	}
+	indexStart = find(" duration%3A",InStatus$,indexEnd) + 12;
+	if (indexStart > 12)	{
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackDuration$ = mid(InStatus$,indexStart, Length);
+	}
+	Else {
+		CurrentTrackDuration$ = "<n/a>";
+	}
+	
+	// start synced player status
+	CurrentPlayerMaster_local = 0;
+	CurrentPlayerSlave_local = 0;
+	indexStart = find(" sync_master%3A",InStatus$,indexEnd) + 15;  
+	if (indexStart > 15){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		SyncMaster = parsepercent(mid(InStatus$,indexStart,Length)); 
+		trace("SyncMaster=%s",SyncMaster);
+		If (SyncMaster = PlayerID$){
+			CurrentPlayerMaster_local = 1;
+		}
+		indexStart = find(" sync_slaves%3A",InStatus$,indexEnd) + 15;
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		SyncSlaves_in = parsepercent(mid(InStatus$,indexStart,Length));
+		indexEnd2 = 1;
+		indexStart2 = 1;
+		SetArray(SyncSlaves,""); //clear the SyncSlaves array 
+		// SyncSlaves array: may include the current player
+		If (find(",",SyncSlaves_in)){
+			For (j = 1 to GetNumArrayRows(SyncSlaves)){
+				indexEnd2 = find(",",SyncSlaves_in,indexStart2 + 1);
+				If (indexEnd2 = 0){ // last iteration
+					trace("last iteration");
+					indexEnd2 = len(SyncSlaves_in) + 1;
+					Length2 = indexEnd2 - indexStart2;
+					SyncSlaves[j] = mid(SyncSlaves_in,indexStart2,Length2);
+					If (SyncSlaves[j] = PlayerID$){
+						CurrentPlayerSlave_local = 1;
+					}
+					trace("SyncSlaves[%u]=%s",j,SyncSlaves[j]);
+					Break;
+				}
+				Length2 = indexEnd2 - indexStart2;
+				SyncSlaves[j] = mid(SyncSlaves_in,indexStart2,Length2);
+				If (SyncSlaves[j] = PlayerID$){
+					CurrentPlayerSlave_local = 1;
+				}
+				trace("SyncSlaves[%u]=%s",j,SyncSlaves[j]);
+				indexStart2 = indexEnd2 + 1;
+			}
+		}
+		Else {
+			SyncSlaves[1] = SyncSlaves_in;
+			If (SyncSlaves[1] = PlayerID$){
+				CurrentPlayerSlave_local = 1;
+			}
+		}
+		trace("updating PlayersSync array");
+		For (i = 1 to GetNumArrayRows(PlayersID)){ // loop through known players
+			If (len(PlayersID[i]) > 0){ // if there is a player at this iteration
+				For (j = 1 to GetNumArrayRows(SyncSlaves)){ // loop through known slaves
+					If (PlayersID[i] = SyncSlaves[j]){ // if player is one of the slaves
+						PlayersSynced[i] = 1; // set PlayersSynced high
+						trace("PlayersID[%u]=SyncSlaves[%u]",i,j);
+						Break; // move to next player
+					}
+					Else {
+						PlayersSynced[i] = 0; // if not a slave, set PlayersSynced low
+					} 
+				}
+			}
+		} 
+	}
+	Else {
+		SetArray(PlayersSynced,0);
+		CurrentPlayerMasterName = "";
+	}
+	If (CurrentPlayerMaster_local = 1){ // update the CurrentPlayerMaster output
+		CurrentPlayerMaster = 1;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = SyncMaster) {
+				CurrentPlayerMasterName = PlayersName[j];
+				Break;
+			}
+		}
+	}
+	Else {
+		CurrentPlayerMaster = 0;
+	} 
+	If (CurrentPlayerSlave_local = 1){ // update the CurrentPlayerSlave output
+		CurrentPlayerSlave = 1;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = SyncMaster) {
+				CurrentPlayerMasterName = PlayersName[j];
+				Break;
+			}
+		}
+	}
+	Else {
+		CurrentPlayerSlave = 0;
+	} 
+	indexStart = find(" mixer%20volume%3A",InStatus$,indexEnd) + 18;
+	If (indexStart > 18){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		Volume = AtoI(mid(InStatus$,indexStart,Length));
+	}
+	makestring(CurrentPlayerVolume,"%u",Volume);
+	CurrentPlayerVolumeBar = (Volume*65535/100);
+	indexStart = find(" playlist%20repeat%3A",InStatus$,indexEnd) + 21;
+	If (indexStart > 21){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		Repeat = AtoI(mid(InStatus$,indexStart, Length));
+	}
+	indexStart = find(" playlist%20shuffle%3A",InStatus$,indexEnd) + 22;
+	If (indexStart > 22){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		Shuffle = AtoI(mid(InStatus$,indexStart, Length));
+	}
+	indexStart = find(" playlist_id%3A",InStatus$,indexEnd) + 15;
+	If (indexStart > 15){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentPlaylistID = mid(InStatus$,indexStart, Length);
+		indexStart = find(" playlist_name%3A",InStatus$,indexEnd) + 17;
+		If (indexStart > 17){
+			indexEnd = find(" ",InStatus$,indexStart);
+			Length = indexEnd - indexStart;
+			CurrentPlaylistName = parsepercent(mid(InStatus$,indexStart, Length));
+		}
+		indexStart = find(" playlist_modified%3A",InStatus$,indexEnd) + 21;
+		If (indexStart > 21){
+			indexEnd = find(" ",InStatus$,indexStart);
+			Length = indexEnd - indexStart;
+			CurrentPlaylistModified = AtoI(mid(InStatus$,indexStart, Length));
+		}
+	}
+	Else {
+		CurrentPlaylistID = "";
+		CurrentPlaylistName = "";
+		CurrentPlaylistModified = 0;
+	}
+	indexStart = find(" playlist_cur_index%3A",InStatus$,indexEnd) + 22;
+	If (indexStart > 22){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentSongIndex = AtoI(mid(InStatus$,indexStart, Length));  
+	}
+	Else {
+		CurrentSongIndex = 0;
+	}
+	indexStart = find(" id%3A",InStatus$,indexEnd) + 6;
+	If (indexStart > 6){
+		indexEnd = find( " ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackID = mid(InStatus$,indexStart, Length);
+		trace("current trackID = %s",CurrentTrackID);
+	}
+	Else {
+		CurrentTrackID = "";
+	}
+/*
+	If (CurrentTrackRemote = 1){
+		CurrentTrackID = "";
+	}
+*/
+	indexStart = find(" title%3A",InStatus$,indexEnd) + 9;
+	If (indexStart > 20){
+		indexEnd = find(" ",InStatus$,indexStart);
+		Length = indexEnd - indexStart;
+		CurrentTrackTitle$_raw = mid(InStatus$,indexStart, Length);
+		trace("currentTrackTitle$_raw=%s",CurrentTrackTitle$_raw);
+		CurrentTrackTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		trace("currentTrackTitle$=%s",CurrentTrackTitle$);
+	}
+	Else {
+		CurrentTrackTitle$ = "<title n/a>";
+	}
+	indexStart = find(" genre_id%3A",InStatus$,indexEnd) + 12;
+	if (indexStart > 12) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart ;
+			CurrentGenreID = mid(InStatus$,indexStart,Length);
+			trace("current genreID = %s",CurrentGenreID);
+		}
+		Else {
+			CurrentGenreID = "";			
+		}
+    }
+	Else {
+		CurrentGenreID = "";
+	}
+	indexStart = find(" genre%3A",InStatus$,indexEnd) + 9;
+	if (indexStart > 9) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+			CurrentTrackGenre$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1;
+			CurrentTrackGenre$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+    }
+	Else {
+		CurrentTrackGenre$ = "<genre n/a>";
+	}
+	indexStart = find(" artist_id%3A",InStatus$,indexEnd) + 13;
+	if (indexStart > 13) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+			CurrentArtistID = mid(InStatus$,indexStart,Length);
+			trace("current ArtistID = %s",CurrentArtistID);
+		}
+		Else {
+			CurrentArtistID = "";			
+		}
+    }
+	Else {
+		CurrentArtistID = "";
+	}
+	indexStart = find(" artist%3A",InStatus$,indexEnd);
+	if (indexStart > 0) {
+		indexStart = indexStart + 10;
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+			CurrentTrackArtist$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1;
+			CurrentTrackArtist$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+	}
+	Else {
+		CurrentTrackArtist$ = "<artist n/a>";
+	}
+	indexStart = find(" album_id%3A",InStatus$,indexEnd) + 12;
+	if (indexStart > 12) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+			CurrentAlbumID = mid(InStatus$,indexStart,Length);
+			trace("current AlbumID = %s",CurrentAlbumID);
+		}
+		Else {
+			CurrentAlbumID = "";			
+		}
+    }
+	Else {
+		CurrentAlbumID = "";
+	}
+	indexStart = find(" album%3A",InStatus$,indexEnd) + 9;
+	if (indexStart > 9) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+			CurrentTrackAlbum$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1;
+			CurrentTrackAlbum$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+	}
+	Else {
+		CurrentTrackAlbum$ = "<album n/a>";
+	}
+	indexStart = find(" url%3A",InStatus$,indexEnd) + 7;
+	if (indexStart > 7) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1;
+		}
+		temp = mid(InStatus$,indexStart, Length);
+		CurrentTrackURL$_raw = left(temp,2048);
+		trace("currentTrackURL$_raw=%s",CurrentTrackURL$_raw);
+		CurrentTrackURL$ = ParsePercent(left(temp,2048));
+		trace("currentTrackURL$=%s",CurrentTrackURL$);
+		// Track the source of the current song
+		If (find("file:",CurrentTrackURL$)){
+			CTRemoteService = 0;
+			CurrentSongRateable = 1;
+		}
+		Else If (find("pandora",CurrentTrackURL$) > 0) {
+			CTRemoteService = 1;
+			CurrentSongRateable = 1;
+			trace("CurrentSong is Pandora");
+		}
+		Else If (find("slacker:",CurrentTrackURL$)){
+			CTRemoteService = 2;
+			CurrentSongRateable = 1;
+			trace("CurrentSong is Slacker");
+		}
+		Else If (find("lfm:",CurrentTrackURL$)){
+			CTRemoteService = 3;
+			CurrentSongRateable = 1;
+			trace("CurrentSong is LastFM");
+		}		
+		Else If (find("rhapd:",CurrentTrackURL$)){
+			CTRemoteService = 4;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Rhapsody");
+		}
+		Else If (find("archive.org",CurrentTrackURL$)){
+			CTRemoteService = 5;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is LiveMusicArchive");
+		}
+		Else If (find("sirius:",CurrentTrackURL$)){
+			CTRemoteService = 6;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Sirius");
+		}
+		Else If (find("live365:",CurrentTrackURL$)){
+			CTRemoteService = 7;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Live365");
+		}
+		Else If (find("mediafly:",CurrentTrackURL$)){
+			CTRemoteService = 8;
+			CurrentSongRateable = 0;
+			trace("CurrentSong is Mediafly");
+		}
+		Else If (find("spotify:",CurrentTrackURL$)){
+			CTRemoteService = 12;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is Spotify");
+		}
+		Else If (find("http:",CurrentTrackURL$) || find("mms:",CurrentTrackURL$) || find("rtmp:",CurrentTrackURL$)){
+			CTRemoteService = 9;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is unknown internet radio");
+		}
+		Else If (find("loop:",CurrentTrackURL$)){
+			CTRemoteService = 10;
+			CurrentsongRateable = 0;
+			trace("CurrentSong is Sounds & Effects");
+		}
+		// CTRemoteService = 11 for BBC iPlayer, determed by Cover URL below
+		// CTRemoteService = 12 fo Spotify, see above
+		Else {
+			If (CurrentTrackRemote = 1){
+				CTRemoteService = 9;
+				CurrentsongRateable = 0;
+				trace("CurrentSong is unknown internet radio");
+			}
+			Else {
+				CTRemoteService = 0;
+				CurrentSongRateable = 0;
+			}
+		}
+	}
+	Else {
+		CurrentTrackURL$ = "";
+		CTRemoteService = 0;
+		CurrentSongRateable = 0;
+	}
+	If (UseCoverID = 1){
+		indexStart = find(" coverid%3A",InStatus$,indexEnd) + 11;
+		if (indexStart > 11){
+			indexEnd = find(" ",InStatus$,indexStart);
+			if (indexEnd > 0){
+				length = indexEnd - indexStart;
+			}
+			Else {
+				Length = len(InStatus$) - indexStart - 1; 
+			}
+			CurrentTrackCoverID = mid(InStatus$,indexStart,Length);
+		}
+		Else {
+			CurrentTrackCoverID = "";
+		}
+	}
+	indexStart = find(" artwork_url%3A",InStatus$,indexEnd) + 15;
+	if (indexStart > 15) {
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0) {
+			Length = indexEnd - indexStart;
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1; 
+		}
+		CurrentTrackRemoteCover$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		temp = left(CurrentTrackRemoteCover$,32);
+		If (find("slacker.com", temp)){
+			CurrentTrackRemoteCover$ = CurrentTrackRemoteCover$ + "?.jpg";
+		}
+		Else If (find("plugins/", temp)){
+			makestring(CurrentTrackRemoteCover$,"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, CurrentTrackRemoteCover$);
+		}
+		Else if (find("iplayer/", temp)){
+			CTRemoteService = 11;
+		}
+		Else If (find("spotify", temp)){
+			makestring(CurrentTrackRemoteCover$,"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, CurrentTrackRemoteCover$);
+		}
+		Else If (find("/music", temp)){
+			If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
+				makestring(CurrentTrackRemoteCover$,"%s%s/cover_%ux%u.png", CoverURL_base_music, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+			}
+			Else {
+				makestring(CurrentTrackRemoteCover$,"%s-%s/cover_%ux%u.png", CoverURL_base_music, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+			}
+		}
+		CurrentsongCoverURL = CurrentTrackRemoteCover$;
+	}
+	Else If (CTRemoteService = 0){
+		CurrentTrackRemoteCover$ = "";
+		If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
+			makestring(CurrentsongCoverURL,"%s%s/cover_%ux%u.jpg",CoverURL_base_music, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURLfull,"%s%s/cover.jpg",CoverURL_base_music, CurrentTrackCoverID);
+		}
+		Else {
+			makestring(CurrentsongCoverURL,"%s%s/cover_%ux%u.jpg",CoverURL_base_music,CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURLfull,"%s%s/cover.jpg",CoverURL_base_music,CurrentTrackID);
+		}
+	}
+	Else If (len(CurrentsongCoverURL_push) > 0){
+		CurrentsongCoverURL = CurrentsongCoverURL_push;
+		CurrentsongCoverURLfull = CurrentsongCoverURL_push;
+	}
+	Else {
+		CurrentTrackRemoteCover$ = "";
+		If (UseCoverID = 1 && len(CurrentTrackCoverID) > 0){
+			makestring(CurrentsongCoverURL,"%s%s/cover_%ux%u.jpg",CoverURL_base_music, CurrentTrackCoverID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURLfull,"%s%s/cover.jpg",CoverURL_base_music, CurrentTrackCoverID);
+		}
+		else {
+			makestring(CurrentsongCoverURL,"%s%s/cover_%ux%u.jpg",CoverURL_base_music, CurrentTrackID, CurrentsongCoverSize, CurrentsongCoverSize);
+			makestring(CurrentsongCoverURLfull,"%s%s/cover.jpg",CoverURL_base_music, CurrentTrackID);
+		}
+	}
+	If (CurrentTrackRemote = 1){
+		indexStart = find(" remote_title%3A",InStatus$,indexEnd) + 16;
+		if (indexStart > 16) {
+			indexEnd = find(" ",InStatus$,indexStart);
+			if (indexEnd > 0) {
+				Length = indexEnd - indexStart;
+			}
+			Else {
+				Length = len(InStatus$) - indexStart - 1;
+			}
+			CurrentTrackRTitle$ = ParsePercent(mid(InStatus$,indexStart, Length));
+		}
+		Else {
+			CurrentTrackRTitle$ = "";
+		}	
+	}
+	indexStart = find(" bitrate%3A",InStatus$,indexEnd) + 11;
+	if (indexStart > 11){
+		indexEnd = find(" ",InStatus$,indexStart);
+		if (indexEnd > 0){
+			Length = indexEnd - indexStart;
+		}
+		Else {
+			Length = len(InStatus$) - indexStart - 1; 
+		}
+		CurrentsongBitrate = left(ParsePercent(mid(InStatus$,indexStart, Length)),CurrentsongWidth);
+	}
+	Else {
+		CurrentsongBitrate = " ";
+	}
+	// start to process the parsed information
+	CurrentsongType = CTRemoteService;
+	If (CurrentSongSeparateOut_Enable = 1){
+		CurrentsongTitle = left(CurrentTrackTitle$,CurrentsongWidth);
+		CurrentsongAlbum = left(CurrentTrackAlbum$,CurrentsongWidth);
+		CurrentsongArtist = left(CurrentTrackArtist$,CurrentsongWidth);
+		// create CurrentsongGenre depending on which internet source is playing
+		If (CurrentTrackRemote = 1){
+			// special conditions for certain services
+			If (CTRemoteService = 4){
+				CurrentsongGenre = "Rhapsody";
+			}
+			Else If ((CTRemoteService = 2) && (CurrentTrackCTitle$ = "Play Station")){
+				CurrentsongGenre = "Slacker";
+			}
+			Else If (CTRemoteService = 7){
+				CurrentsongGenre = "Live365 station";
+			}
+			Else If ((CTRemoteService = 8) && (CurrentTrackCTitle$ = "Play this episode")){
+				CurrentsongGenre = "Mediafly";
+			}
+			// use the remote_title as the default genre
+			Else If (len(CurrentTrackRTitle$) > 0){
+				CurrentsongGenre = left(CurrentTrackRTitle$,CurrentsongWidth);
+			}
+			// use current_title if there is no remote_title
+			Else {
+				CurrentsongGenre = left(CurrentTrackCTitle$,CurrentsongWidth);
+			}
+		}
+		// create the default CurrentsongGenre for local tracks
+		Else {
+			CurrentsongGenre = left(CurrentTrackGenre$,CurrentsongWidth); 
+		}
+	}
+	If (CurrentSongConsolidatedOut_Enable = 1){
+		// create CurrentsongConsolidatedText which will display nicely formatted to the tp screen   
+		CurrentsongConsolidatedText = "";   
+		CurrentSongConsolidated = "";
+		if(find("n/a",CurrentTrackTitle$) = 0)
+		{
+			CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackTitle$ + "\r";	
+		}
+		if(find("n/a",CurrentTrackAlbum$) = 0)
+		{
+			CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackAlbum$ + "\r";	
+		}
+		if(find("n/a",CurrentTrackArtist$) = 0)
+		{
+			CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackArtist$ + "\r";	
+		}
+		if(find("n/a",CurrentTrackGenre$) = 0)
+		{
+			CurrentSongConsolidated = CurrentSongConsolidated + CurrentTrackGenre$ + "\r";	
+		}	
+		If (len(CurrentsongConsolidated) > 0){
+			CurrentsongConsolidatedText = CurrentSongConsolidated;
+		}
+		Else {
+			CurrentsongConsolidatedText = "<n/a>";
+		}
+	}
+//	CurrentsongRate = CurrentTrackRate$;
+	If (CurrentTrackDuration$ = "0") {
+		makestring(CurrentsongDuration,"0:00");
+		CTDuration_sec = 0;
+	}
+	Else if (CurrentTrackDuration$ != "<n/a>") {
+		CTDuration_sec = AtoI(CurrentTrackDuration$);
+		Time_min = CTDuration_sec / 60;
+		Time_rmd = CTDuration_sec - (Time_min * 60);
+		If (Time_min < 60){
+			makestring(CurrentsongDuration,"%u:%02u",Time_min,Time_rmd); 
+		}
+		Else {
+			Time_hr = Time_min / 60;
+			Time_min = Time_min - (Time_hr * 60);
+			makestring(CurrentsongDuration,"%u:%02u:%02u",Time_hr,Time_min,Time_rmd);
+		}
+	}
+	Else {
+		CurrentsongDuration = CurrentTrackDuration$;
+		CTDuration_sec = 0;
+	}
+	CurrentsongIsRemote = CurrentTrackRemote;
+ 	If (CurrentTrackRemote = 0){
+		trackstat_get(CurrentTrackID);
+	}
+	Else {
+		CurrentsongTrackstat$ = " ";
+	}
+	trace("CurrentPlayerMode = %s",CurrentPlayerMode);
+	if (CurrentPlayerMode = "play") {
+		mode_pause_fb = 0;
+		mode_stop_fb = 0;
+		mode_play_fb = 1;				
+		timeclock_run = 1;
+		If (len (CurrentTrackTime$) > 0){
+//			RetimeWait(100,waitCountTime);
+			CTTime_sec = AtoI(CurrentTrackTime$);
+			Parse_Time(CTTime_sec); 
+		}
+	}	
+	Else if (CurrentPlayerMode = "pause") {
+		mode_stop_fb = 0;
+		mode_play_fb = 0;	
+		mode_pause_fb = 1;
+		timeclock_run = 0;
+//		CancelWait(waitCountTime);
+		CTTime_sec = AtoI(CurrentTrackTime$); 
+		Parse_Time(CTTime_sec); 
+	}
+	Else {
+		mode_play_fb = 0;	
+		mode_pause_fb = 0;
+		mode_stop_fb = 1;
+		timeclock_run = 0;
+//		CancelWait(waitCountTime);
+		CTTime_sec = 0;
+		Parse_Time(CTTime_sec);
+	}
+	if (Nowplaying_reset_enable = 1) {
+		Nowplaying_PgReset_fn();
+	}
+	Else {
+		NowplayingRefresh_fn();
+	}
+	If (repeat = 2)	{
+		repeat_off_fb = 0;
+		repeat_track_fb = 0;
+		repeat_all_fb = 1;
+    }
+	Else If (repeat = 1) {
+		repeat_off_fb = 0;
+		repeat_all_fb = 0;
+		repeat_track_fb = 1;
+	}
+	Else {
+		repeat_track_fb = 0;
+		repeat_all_fb = 0;
+		repeat_off_fb = 1;
+	}
+	If (shuffle = 2) {
+		shuffle_off_fb = 0;
+		shuffle_track_fb = 0;
+		shuffle_album_fb = 1;
+    }
+	Else If (shuffle = 1) {
+		shuffle_off_fb = 0;
+		shuffle_album_fb = 0;
+		shuffle_track_fb = 1;
+	}
+	Else {
+		shuffle_track_fb = 0;
+		shuffle_album_fb = 0;
+		shuffle_off_fb = 1;
+	}
+}
+Function Parse_Trackstat(String InTrackstat$){
+	Integer i, indexStart, indexEnd, Length;
+	String TSCurrentID[32];
+//	trackstat getrating 12345 rating%3A4 ratingpercentage%3A80
+	indexStart = find("rating ",InTrackstat$) + 7;
+	indexEnd = find(" ",InTrackstat$,indexStart);
+	Length = indexEnd - indexStart;
+	TSCurrentID = mid(Intrackstat$,indexStart,Length);
+	trace("TSCurrentID = %s",TSCurrentID);
+	If (TSCurrentID = CurrentTrackID){
+		trace("TSCurrentID = CurrentTrackID");
+		indexStart = find(" ratingpercentage%3A",InTrackstat$) + 20;
+		if (indexStart > 20){
+			CurrentsongTrackstat = AtoI(mid(InTrackstat$,indexStart,len(InTrackstat$) - indexStart));
+		}
+		Else {
+			CurrentsongTrackstat = 0;
+		}
+	}
+	makestring(CurrentsongTrackstat$,"%u",CurrentsongTrackstat);
+}
+Function Parse_Volume(String InVol$){
+	Integer indexStart, indexEnd, Length, temp;
+	if ((find("-",InVol$) = 0) && (find("%2B",InVol$) = 0)){
+		indexStart = find("mixer volume ",InVol$) + 13;
+		if (indexStart > 13){
+			Volume = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+			makestring(CurrentPlayerVolume,"%u",Volume);
+			CurrentPlayerVolumeBar = (Volume*65535/100);
+		}
+	}
+	else {
+		indexStart = find("-",InVol$) + 1;
+		if (indexStart > 1){
+			temp = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+			if (Volume >= temp){
+				Volume = Volume - temp;
+				makestring(CurrentPlayerVolume,"%u",Volume);
+				CurrentPlayerVolumeBar = (Volume*65535/100);
+			}
+		}
+		else {
+			indexStart = find("%2B",InVol$) + 3;
+			if (indexStart > 3){
+				temp = AtoI(mid(InVol$,indexStart,len(InVol$) + 1 - indexStart));
+				if (Volume + temp <= 100){
+					Volume = Volume + temp;
+					makestring(CurrentPlayerVolume,"%u",Volume);
+					CurrentPlayerVolumeBar = (Volume*65535/100);
+				}
+			}
+		}
+	}
+}
+Function Parse_Showbriefly(String InShow$){
+	Integer indexStart, indexEnd, Length, i;
+	String temp$[2][256], temp[768];
+	/*
+	while (progShowbriefly = 1){
+		delay(DELAY_SHOWBRIEFLY);
+	}
+	progShowbriefly = 1;
+	*/
+	setarray(temp$,"");
+	
+	if (find(" type%3Ashowbriefly",InShow$)){
+		indexEnd = 1;
+		for (i=0 to 2){
+			indexStart = find(" line",InShow$, indexEnd) + 9;
+			if (indexStart > 9){
+				indexEnd = find(" ",InShow$, indexStart);
+				if (indexEnd = 0){
+					indexEnd = len(InShow$) - 1;
+				}
+				Length = indexEnd - indexStart;
+				temp$[i] = mid(InShow$,indexStart,Length);
+				trace("temp$[%u]:%s",i,temp$[i]);
+			}
+			else {
+				break;
+			}
+		}
+		temp = temp$[0] + " " + temp$[1] + " " + temp$[2];
+		Showbriefly$ = left(Parsepercent(temp),255);
+		Pulse(DELAY_SHOWBRIEFLY, showbriefly);
+		// progShowbriefly = 1;
+	}
+}
+
+// ////////////// Events 
+PUSH Jump_Home{
+ 	Home_PgReset_fn();
+}
+PUSH Jump_Genres{
+	Genres_PgReset_fn();
+}
+PUSH Jump_Artists{
+	Artists_PgReset_fn();
+}
+PUSH Jump_Albums{
+	Albums_PgReset_fn();
+}
+PUSH Jump_Tracks{
+	Titles_PgReset_fn();
+}
+PUSH Jump_Playlists{
+	Playlists_PgReset_fn();
+}
+PUSH Jump_Dynamic{
+	Dynamic_PgReset_fn();
+}
+PUSH Jump_Pandora{
+	Pandora_PgReset_fn();
+}   
+PUSH Jump_Rhapsody{
+	Rhapsody_PgReset_fn();
+}
+PUSH Jump_Slacker{
+	Slacker_PgReset_fn();
+}
+PUSH Jump_Napster{
+	Napster_PgReset_fn();
+}
+PUSH Jump_LastFM{
+	LastFM_PgReset_fn();
+}
+PUSH Jump_Sirius{
+	Sirius_PgReset_fn();
+}
+PUSH Jump_Sounds{
+	Sounds_PgReset_fn();
+}
+PUSH Jump_Podcasts{
+	Podcasts_PgReset_fn();
+}
+PUSH Jump_Favorites{
+	Favorites_PgReset_fn();
+}
+PUSH Jump_Radios{
+	Radios_PgReset_fn();
+}
+PUSH List_Back{
+	ListShiftBk_fn();
+	ListRefresh_fn();	
+}
+PUSH Nowplaying_Refresh{
+	Nowplaying_PgReset_fn();
+}
+PUSH Coverflow {
+	NumberOfAlbums = NumberOfCoverflow;
+	If (ListType[1] = 0){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 1){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 2){
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListSearchRS[1] = 0;
+		If (len(ActiveGenre) > 0){
+			ListName[1] = "Albums in " + ActiveGenre;
+			ListActiveGenre[1] = ActiveGenre;
+			ListActiveGenreID[1] = ActiveGenreID;
+			restrictorAlbums = restrictorArtists;
+		}
+		Else {
+			ListName[1] = "All Albums";
+			restrictorAlbums = "";
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+		}
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 3){
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 4){
+		// tracks
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 5){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 6){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 8){ 
+		restrictorAlbums = "search:" + search_in;
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListName[1] = search_in + " in Albums";
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 9){
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}             
+	Else If (ListType[1] = 10){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 11){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+	Else If (ListType[1] = 12){ 
+		restrictorAlbums = "";
+		ListShiftFwd_fn();
+		ListType[1] = 3;
+		ListActiveGenre[1] = "";
+		ListActiveGenreID[1] = "";
+		ListSearchRS[1] = 0;
+		ListName[1] = "All Albums";
+		ListRestrictor[1] = "";
+		FirstAlbum = 0;
+		ListFirst[1] = 0;
+		AlbumsRefresh_fn();
+	}
+}
+RELEASE Coverflow {
+	integer i;
+	SetArray(ListCoverflowArtist," ");
+	#IF_SERIES3
+//		MySetArray(ListCoverURL,ListCoverURL_blank);
+		for (i = 1 to GetNumArrayRows(ListCoverURL)){
+			ListCoverURL[i] = ListCoverURL_blank;
+		}
+	#ELSE
+		SetArray(ListCoverURL,ListCoverURL_blank);
+	#ENDIF
+	NumberOfAlbums = NumberOfList;   
+	If (ListType[1] = 3){
+		AlbumsRefresh_fn();
+	}
+}
+CHANGE InPageList{
+	If (ProgInPageList = 0){
+		ProgInPageList = 1;
+		If (ListType[1] = 0){
+			FirstHome = (65535 - InPageList) * TotalHome / 65535;
+			ListFirst[1] = FirstHome;
+			HomeRefresh_fn();
+		}
+		Else If (ListType[1] = 1){
+			FirstGenre = (65535 - InPageList) * TotalGenres / 65535;
+			ListFirst[1] = FirstGenre;
+			GenresRefresh_fn();
+		}
+		Else If (ListType[1] = 2){
+			FirstArtist = (65535 - InPageList) * TotalArtists / 65535;
+			ListFirst[1] = FirstArtist;
+			ArtistsRefresh_fn();
+		}
+		Else If (ListType[1] = 3){
+			FirstAlbum = (65535 - InPageList) * TotalAlbums / 65535;
+			ListFirst[1] = FirstAlbum;
+			AlbumsRefresh_fn();
+		}
+		Else If (ListType[1] = 4){
+			FirstTitle = (65535 - InPageList) * TotalTitles / 65535;
+			ListFirst[1] = FirstTitle;
+			TitlesRefresh_fn();
+		}
+		Else If (ListType[1] = 5){
+			FirstPlaylist = (65535 - InPageList) * TotalPlaylists / 65535;
+			ListFirst[1] = FirstPlaylist;
+			PlaylistsRefresh_fn();
+		}
+		Else If (ListType[1] = 6){
+			FirstDynamic = (65535 - InPageList) * TotalDynamic / 65535;
+			ListFirst[1] = FirstDynamic;
+			DynamicRefresh_fn();
+		}
+		Else If (ListType[1] = 10){ 
+			FirstFavorites = (65535 - InPageList) * TotalFavorites / 65535;
+			ListFirst[1] = FirstFavorites;
+			FavoritesRefresh_fn();
+		}
+		Else If (ListType[1] = 11){ 
+			FirstApps = (65535 - InPageList) * TotalApps / 65535;
+			ListFirst[1] = FirstApps;
+			AppsRefresh_fn();
+		}
+		Else If (ListType[1] = 12){ 
+			FirstRadios = (65535 - InPageList) * TotalRadios / 65535;
+			ListFirst[1] = FirstRadios;
+			RadiosRefresh_fn();
+		}
+		// ListType[1] = 13 reserved for Players
+		// not yet a possible List type
+/*		Else If (ListType[1] = 14){ 
+			FirstCB = (65535 - InPageList) * TotalCB / 65535;
+			ListFirst[1] = FirstCB;
+			CBRefresh_fn();
+		}*/ // CB does not return an actual Total, so the scrollbar won't work
+		Delay (50);
+		ProgInPageList = 0;
+	}
+}
+CHANGE InPageNowplaying{
+	If (ProgInPageNowplaying = 0){
+		ProgInPageNowplaying = 1;
+		FirstNowplaying = (65535 - InPageNowplaying) * TotalNowplaying / 65535;
+		NowplayingRefresh_fn();
+		Delay (50);
+		ProgInPageNowplaying = 0;
+	}
+}
+CHANGE InPagePlayers{
+	If (ProgInPagePlayers = 0){
+		ProgInPagePlayers = 1;
+		FirstPlayers = (65535 - InPagePlayers) * TotalPlayers / 65535;
+		PlayersRefresh_fn();
+		Delay (50);
+		ProgInPagePlayers = 0;
+	}
+}
+PUSH List_PgUp{
+	If (ListType[1] = 0){
+	 	Home_PgUp_fn();
+	}
+	Else If (ListType[1] = 1){
+		Genres_PgUp_fn(); // Genres code
+	}
+	Else If (ListType[1] = 2){
+		Artists_PgUp_fn(); // Artists code
+	}
+	Else If (ListType[1] = 3){
+		Albums_PgUp_fn();// Albums code
+	}
+	Else If (ListType[1] = 4){
+		Titles_PgUp_fn();// Titles code
+	}
+	Else If (ListType[1] = 5){
+		Playlists_PgUp_fn();// Playlists code
+	}
+	Else If (ListType[1] = 6){
+		Dynamic_PgUp_fn();// Dynamicplaylist code
+	}
+	Else If (ListType[1] = 8){
+		Search_PgUp_fn(); // Search results code
+	}
+    Else If (ListType[1] = 10){
+		Favorites_PgUp_fn(); // Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		Apps_PgUp_fn(); // Apps results code
+    }
+    Else If (ListType[1] = 12){
+		Radios_PgUp_fn(); // Radios results code
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CB_PgUp_fn(); // CustomBrowse results code
+    }
+}
+PUSH Nowplaying_PgUp{
+	Nowplaying_PgUp_fn(); 
+}                         
+PUSH Players_PgUp {
+	Players_PgUp_fn();
+}
+PUSH List_PgDn{
+	If (ListType[1] = 0){
+		Home_PgDn_fn();
+	}
+	Else If (ListType[1] = 1){
+		Genres_PgDn_fn();//Genres code
+	}
+	Else If (ListType[1] = 2){
+		Artists_PgDn_fn();//Artists code
+	}
+	Else If (ListType[1] = 3){
+		Albums_PgDn_fn();//Albums code
+	}
+	Else If (ListType[1] = 4){
+		Titles_PgDn_fn();//Titles code
+	}
+	Else If (ListType[1] = 5){
+		Playlists_PgDn_fn();//Playlists code
+	}
+	Else If (ListType[1] = 6){
+		Dynamic_PgDn_fn();//DynamicPlaylists code
+	}
+	Else If (ListType[1] = 8){
+		Search_PgDn_fn(); //Search results code
+	}
+    Else If (ListType[1] = 10){
+		Favorites_PgDn_fn(); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		Apps_PgDn_fn(); 
+    }
+    Else If (ListType[1] = 12){
+		Radios_PgDn_fn(); 
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CB_PgDn_fn(); 
+    }
+}
+PUSH Nowplaying_PgDn {
+	Nowplaying_PgDn_fn();
+}    
+PUSH Players_PgDn {
+	Players_PgDn_fn();
+}
+PUSH ListSelect{
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	trace("ListSelect[%u]; ListType:%u",i,ListType[1]);
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1){
+		GenreListSelect_fn(i);//Genres code
+	}
+	Else If (ListType[1] = 2){
+		ArtistListSelect_fn(i);//Artists code
+	}
+	Else If (ListType[1] = 3){
+		AlbumListSelect_fn(i);//Albums code
+	}
+	Else If (ListType[1] = 4){
+		TitleListSelect_fn(i);//Titles code
+	}
+	Else If (ListType[1] = 5){ //Playlists code
+		If (Playlist_NeverResume){
+			PlaylistListPlay_fn(i);
+		}
+		Else {
+			PlaylistListSelect_fn(i);
+		}
+	}
+	Else If (ListType[1] = 6){
+		DynamicListSelect_fn(i); //DynamicPlaylists code
+	}
+	Else If (ListType[1] = 8){
+		SearchListSelect_fn(i); //Search results code
+	}
+    Else If (ListType[1] = 10){
+		FavoritesListSelect_fn(i); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListSelect_fn(i); 
+    }
+}
+PUSH ListPlay{
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1){
+		GenreListPlay_fn(i); //Genres code
+	}
+	Else If (ListType[1] = 2){
+		ArtistListPlay_fn(i); //Artists code
+	}
+	Else If (ListType[1] = 3){
+		AlbumListPlay_fn(i); //Albums code
+	}
+	Else If (ListType[1] = 4){
+		TitleListPlay_fn(i); //Titles code
+	}
+	Else If (ListType[1] = 5){
+		PlaylistListPlay_fn(i); //Playlists code
+	}
+	Else If (ListType[1] = 6){
+		DynamicListPlay_fn(i); //DynamicPlaylists code
+	}	
+	Else If (ListType[1] = 8){
+		SearchListPlay_fn(i); //Search results code
+	}
+    Else If (ListType[1] = 10){
+		FavoritesListPlay_fn(i); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListPlay_fn(i); 
+    }
+}
+PUSH ListAdd{
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1){
+		GenreListAdd_fn(i); //Genres code
+	}
+	Else If (ListType[1] = 2){
+		ArtistListAdd_fn(i); //Artists code
+	}
+	Else If (ListType[1] = 3){
+		AlbumListAdd_fn(i); //Albums code
+	}
+	Else If (ListType[1] = 4){
+		TitleListAdd_fn(i); //Titles code
+	}
+	Else If (ListType[1] = 5){
+		PlaylistListAdd_fn(i); //Playlists code
+	}
+	Else If (ListType[1] = 6){
+		DynamicListPlay_fn(i); //DynamicPlaylists code
+	}
+	Else If (ListType[1] = 8){
+		SearchListAdd_fn(i); //Search results code
+	}
+    Else If (ListType[1] = 10){
+		FavoritesListAdd_fn(i); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+    Else If (ListType[1] = 14){
+		CBListAdd_fn(i); 
+    }
+}
+PUSH ListInsert{
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	If (ListType[1] = 0){
+		If (i <= ListLengthHome){
+			i = i + FirstHome;
+			HomeListSelect_fn(i);//Home page code
+		}
+	}
+	Else If (ListType[1] = 1)	{
+		GenreListInsert_fn(i); //Genres code
+	}
+	Else If (ListType[1] = 2){
+		ArtistListInsert_fn(i); //Artists code
+	}
+	Else If (ListType[1] = 3){
+		AlbumListInsert_fn(i); //Albums code
+	}
+	Else If (ListType[1] = 4){
+		TitleListInsert_fn(i); //Titles code
+	}
+	Else If (ListType[1] = 5){
+		PlaylistListInsert_fn(i); //Playlists code
+	}
+	Else If (ListType[1] = 6){
+		DynamicListPlay_fn(i); //DynamicPlaylists code
+	}
+	Else If (ListType[1] = 8){
+		SearchListInsert_fn(i); //Search results code
+	}
+    Else If (ListType[1] = 10){
+		FavoritesListInsert_fn(i); //Favorites results code
+    }
+    Else If (ListType[1] = 11){
+		AppsListSelect_fn(i); 
+    }
+    Else If (ListType[1] = 12){
+		RadiosListSelect_fn(i); 
+    }
+	// ListType[1] = 13 reserved for Players
+	// not yet a possible List type
+}
+PUSH NowplayingPlay {
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	NowplayingPlay_fn(i);
+}
+PUSH NowplayingRemove {
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	NowplayingRemove_fn(i);
+}
+PUSH NowplayingMoveUp {
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	NowplayingMoveUp_fn(i);
+}
+PUSH NowplayingMoveDown {
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	NowplayingMoveDown_fn(i);
+}
+PUSH Select_DefaultPlayer{
+	String Out$[128],tags$[16];
+	If (PlayerID$ <> PlayerID$_Default){
+		makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		PlayerID$ = PlayerID$_Default;
+		CurrentPlayerID = PlayerID$;
+		StatusFind$ = PlayersID_raw[0] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[0] + " status ";
+		TimeFind$ = PlayersID_raw[0] + " time ";
+		delay(20);
+		if (UseCoverID = 1){
+			tags$ = "pgsaelucKNr";
+		}
+		else {
+			tags$ = "pgsaeluKNr";
+		}
+		makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		delay(20);
+		// subscribe to showbriefly messages
+		makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+	}
+}
+PUSH Players_Refresh {
+	Players_Pgreset_fn();
+}
+PUSH PlayersSelect {
+	String Out$[128], tags$[16];
+	INTEGER i,j;
+	i = GetLastModifiedArrayIndex ();
+	If (i <= NumberOfPlayers){
+		i = i + FirstPlayers;
+		makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		PlayerID$ = PlayersID[i];
+		CurrentPlayerID = PlayerID$;
+		For (j = 1 to GetNumArrayRows(PlayersID)){
+			If (PlayersID[j] = PlayerID$) {
+				CurrentPlayerName = PlayersName[j];
+				Break;
+			}
+		}
+		StatusFind$ = PlayersID_raw[i] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[i] + " status ";
+		TimeFind$ = PlayersID_raw[i] + " time ";
+		delay(20);
+		if (UseCoverID = 1){
+			tags$ = "pgsaelucKNr";
+		}
+		else {
+			tags$ = "pgsaeluKNr";
+		}
+		makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+		delay(20);
+		// subscribe to showbriefly messages
+		makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+		socketsend(TCPClient, out$);
+		trace("sending: %s",OUT$);
+	}
+}   
+PUSH PlayersSyncTog {
+	String Out$[64];
+	INTEGER i;
+	i = GetLastModifiedArrayIndex ();
+	If (i <= NumberOfPlayers){
+		i = i + FirstPlayers;
+		If (PlayersID[i] <> PlayerID$ || PlayersSynced[i] = 1){
+			If (PlayersSynced[i] = 1){
+				makestring(out$,"%s sync - \n",PlayersID[i]);  
+				trace("sending: %s",out$);
+				Socketsend(TCPClient, out$);
+			}
+			Else {
+				makestring(out$,"%s sync %u \n",PlayerID$,PlayersIndex[i]);  
+				trace("sending: %s",out$);
+				Socketsend(TCPClient, out$);
+			}
+		}
+	}     
+}
+PUSH Play {
+	String Out$[64];
+	makestring(OUT$,"%s play\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Pause_On {
+	String Out$[64];
+	makestring(OUT$,"%s pause 1 %s\n", PlayerID$, suppressShowbriefly);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+
+	If (ActivePlaylist != "" && Playlist_Save_Enable = 1)
+	{
+		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		trace("saved playlist: %s",ActivePlaylist);
+	}
+}
+PUSH Pause_Off {
+	String Out$[64];
+	makestring(OUT$,"%s pause 0 %s\n", PlayerID$, suppressShowbriefly);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Pause_Tog {
+	String Out$[64];
+	If ((ActivePlaylist != "") && (CurrentPlayerMode = "play") && Playlist_Save_Enable = 1)
+	{
+		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		trace("saved playlist: %s",ActivePlaylist);
+	}
+	makestring(OUT$,"%s pause %s\n",PlayerID$, suppressShowbriefly);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Stop {
+	String Out$[64];
+	ActivePlaylist = "";
+	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient, OUT$);
+	makestring(OUT$,"%s stop\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Next {
+	String Out$[64];
+	makestring(OUT$,"%s playlist index +1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Prev {          
+	String Out$[64];
+	makestring(OUT$,"%s button rew.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonUp {
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_up\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonDn{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_down\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonLt{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_left\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonRt{
+	String Out$[64];
+	makestring(OUT$,"%s button arrow_right\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button0{
+	String Out$[64];
+	makestring(OUT$,"%s button 0\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button1{
+	String Out$[64];
+	makestring(OUT$,"%s button 1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button2{
+	String Out$[64];
+	makestring(OUT$,"%s button 2\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button3{
+	String Out$[64];
+	makestring(OUT$,"%s button 3\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button4{
+	String Out$[64];
+	makestring(OUT$,"%s button 4\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button5{
+	String Out$[64];
+	makestring(OUT$,"%s button 5\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button6{
+	String Out$[64];
+	makestring(OUT$,"%s button 6\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button7{
+	String Out$[64];
+	makestring(OUT$,"%s button 7\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button8{
+	String Out$[64];
+	makestring(OUT$,"%s button 8\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Button9{
+	String Out$[64];
+	makestring(OUT$,"%s button 9\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonSearch{
+	String Out$[64];
+	makestring(OUT$,"%s button search\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonNP{
+	String Out$[64];
+	makestring(OUT$,"%s button now_playing\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonSize{
+	String Out$[64];
+	makestring(OUT$,"%s button size\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonBrightness{
+	String Out$[64];
+	makestring(OUT$,"%s button brightness.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonShuffle{
+	String Out$[64];
+	makestring(OUT$,"%s button shuffle.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH ButtonRepeat{
+	String Out$[64];
+	makestring(OUT$,"%s button repeat\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+} 
+PUSH ButtonSleep{
+	String Out$[64];
+	makestring(OUT$,"%s button sleep.single\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Pwr_On {
+	String Out$[64];
+	makestring(OUT$,"%s power 1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Pwr_Off {
+	String Out$[64];
+	makestring(OUT$,"%s power 0\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH VolumeUp {
+	String Out$[64];
+	makestring(Out$,"%s mixer volume +%u\n",PlayerID$,VolumeIncrement);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH VolumeDn {
+	String Out$[64];
+	makestring(Out$,"%s mixer volume -%u\n",PlayerID$,VolumeIncrement);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+CHANGE VolumeBar{
+	String Out$[64];
+	If (VolumeBar <> CurrentPlayerVolumeBar){
+		makestring(Out$,"%s mixer volume %lu\n",PlayerID$,VolumeBar*100/65535);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+
+PUSH Repeat_Off {
+	String Out$[64];
+	makestring(OUT$,"%s playlist repeat 0\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Repeat_Track {
+	String Out$[64];
+	makestring(OUT$,"%s playlist repeat 1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Repeat_All {
+	String Out$[64];
+	makestring(OUT$,"%s playlist repeat 2\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Shuffle_Off {
+	String Out$[64];
+	makestring(OUT$,"%s playlist shuffle 0\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Shuffle_Track {
+	String Out$[64];
+	makestring(OUT$,"%s playlist shuffle 1\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Shuffle_Album {
+	String Out$[64];
+	makestring(OUT$,"%s playlist shuffle 2\n", PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Playlist_Clear {
+	String Out$[64];
+	makestring(OUT$,"%s playlist clear \n:",PlayerID$);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+PUSH Currentsong_AddFavorite{
+	String Out$[2048];
+	If (FavoriteAdd_toEnd = 1){
+		makestring(OUT$,"favorites add item_id:65535 title:%s url:%s\n", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+	}
+	Else {
+		makestring(OUT$,"favorites add title:%s url:%s\n", CurrentTrackTitle$_raw, CurrenttrackURL$_raw);
+	}
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+CHANGE InTimeBar{
+	String Out$[64];
+	Long_Integer seek;
+	If (progInTimeBar = 0){
+		progInTimeBar = 1;
+		If ((CurrentTrackRemote = 0) || (CTRemoteService = 4) || (CTRemoteService = 5) || (CTRemoteService = 9)){
+			If (CTDuration_sec > 0){
+				timeclock_run = 0;
+				seek = (InTimeBar * CTDuration_sec) / 65535;
+				makestring(OUT$,"%s time %lu \n",PlayerID$,seek);
+				trace("sending: %s",OUT$);
+				socketsend(TCPClient,OUT$);
+				delay(60);
+			}
+		}
+		progInTimeBar = 0;
+	}
+}
+CHANGE PlaylistPlay$ {
+	String Out$[512];
+	ActivePlaylist = "";
+	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient, OUT$);
+    
+    If (DirectIn_DefaultPlayerOnly = 1){
+		makestring(OUT$,"%s playlist play %s\n",PlayerID$_Default,PlaylistPlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);    
+    }
+    Else {
+		makestring(OUT$,"%s playlist play %s\n",PlayerID$,PlaylistPlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+}
+CHANGE PlaylistResume$ {
+	String Out$[512];
+	If ((ActivePlaylist != "") && (Playlist_Save_Enable = 1)) {
+		makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+	}
+	makestring(OUT$,"%s dynamicplaylist playlist stop\n",PlayerID$); //stop adding songs with the dynamic playlist plugin
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient, OUT$);
+
+    If (DirectIn_DefaultPlayerOnly = 1){
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$_Default, PlaylistResume$); // start the desired playlist where playing when last saved
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = PlaylistResume$;
+		trace("active playlist: %s",ActivePlaylist);	
+	}
+	Else {
+		makestring(OUT$,"%s playlist resume %s\n",PlayerID$, PlaylistResume$); // start the desired playlist where playing when last saved
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		ActivePlaylist = PlaylistResume$;
+		trace("active playlist: %s",ActivePlaylist);	
+	}
+}
+/*
+PUSH PlaylistSave
+	String Out$[512];
+{
+	makestring(OUT$,"%s playlist save %s\n",PlayerID$, ActivePlaylist);
+	trace("sending: %s",OUT$);
+	socketsend(TCPClient,OUT$);
+}
+*/
+CHANGE FavoritePlay$ {
+    String Out$[512];
+	If (DirectIn_DefaultPlayerOnly = 1){
+		ActivePlaylist = "";
+	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n",PlayerID$_Default, FavoritePlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else {
+		ActivePlaylist = "";
+	 	makestring(OUT$,"%s favorites playlist play item_id:%s \n", PlayerID$, FavoritePlay$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+}
+CHANGE DynamicResume$ {
+	String Out$[512];
+    If (DirectIn_DefaultPlayerOnly = 1){
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$_Default, DynamicResume$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else {
+		ActivePlaylist = "";
+		makestring(OUT$,"%s dynamicplaylist playlist continue %s\n",PlayerID$, DynamicResume$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+}
+PUSH BrowseCurrentGenre {
+	String temp[16];
+
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackGenre$ <> "<genre n/a>"){
+			search_in_raw = left(CurrentTrackGenre$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_genres_fn();
+		}
+	}
+	Else If (len(CurrentGenreID) > 0){
+		If (ListType[1] != 2){
+			ListShiftFwd_fn();
+			ListType[1] = 2;
+			ListActiveGenre[1] = CurrentTrackGenre$;
+			ListActiveGenreID[1] = CurrentGenreID;
+		}
+		ListFirst[1] = 0;
+		ActiveGenreID = CurrentGenreID;
+		ActiveGenre = CurrentTrackGenre$;
+		makestring(ListName[1], "%s",CurrentTrackGenre$);
+		makestring(restrictorArtists,"genre_id:%s",CurrentGenreID);
+		ListRestrictor[1] = restrictorArtists;
+		FirstArtist = 0;
+		ArtistsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+PUSH BrowseCurrentArtist {
+	String temp[16];
+
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackArtist$ <> "<artist n/a>"){
+			search_in_raw = left(CurrentTrackArtist$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_artists_fn();
+		}
+	}
+	Else If (len(CurrentArtistID) > 0){
+		If (ListType[1] != 3){
+			ListShiftFwd_fn();
+			ListType[1] = 3;
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+		}
+		ListFirst[1] = 0;
+		ActiveGenre = "";
+		ActiveGenreID = "";
+		ActiveArtistID = CurrentArtistID;
+		ActiveArtist = CurrentTrackArtist$;
+		makestring(ListName[1], "Albums for %s",CurrentTrackArtist$);
+		makestring(restrictorAlbums,"artist_id:%s",CurrentArtistID);
+		ListRestrictor[1] = restrictorAlbums;
+		FirstAlbum = 0;
+		AlbumsRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+PUSH BrowseCurrentAlbum {
+	String temp[16];
+		
+	If ((CurrentTrackRemote = 1) || (BrowseCS_AlwaysSearch = 1)){
+		If (CurrentTrackAlbum$ <> "<album n/a>"){
+			search_in_raw = left(CurrentTrackAlbum$,16);
+			temp = search_in_raw;
+			search_in = FormatSearch(temp);
+			search_albums_fn();
+		}
+	}
+	Else If (len(CurrentAlbumID) > 0){
+		If (ListType[1] != 4){
+			ListShiftFwd_fn();
+			ListType[1] = 4;
+			ListActiveGenre[1] = "";
+			ListActiveGenreID[1] = "";
+		}
+		ListFirst[1] = 0;
+		ActiveAlbumID = CurrentAlbumID;
+		ActiveAlbum = CurrentTrackAlbum$;
+		ActiveGenre = "";
+		ActiveGenreID = "";
+		makestring(ListName[1], "Titles in %s",CurrentTrackAlbum$);
+		If (UseCoverID = 1){
+			makestring(restrictorTitles,"album_id:%s sort:tracknum tags:tec",CurrentAlbumID);
+		}
+		Else {
+			makestring(restrictorTitles,"album_id:%s sort:tracknum tags:te",CurrentAlbumID);
+		}
+		ListRestrictor[1] = restrictorTitles;
+		FirstTitle = 0;
+		TitlesRefresh_fn();
+		ListName$ = ListName[1];
+	}
+}
+PUSH BrowseCurrentSong {
+	String temp[8];
+	
+	If (CurrentTrackTitle$ <> "<title n/a>"){
+		search_in_raw = left(CurrentTrackTitle$,8);
+		temp = search_in_raw;
+		search_in = FormatSearch(temp);
+		Search_fn();
+	}
+}
+PUSH Rate_Up {
+	String Out$[64];
+	Integer rating_int;
+	If (CurrentTrackRemote = 0){
+		If (CurrentsongTrackstat = 0){
+			rating_int = 60 + TrackstatIncrement;
+		}
+		Else {
+			rating_int = CurrentsongTrackstat + TrackstatIncrement;
+		}
+		If (rating_int > 100){
+			rating_int = 100;
+		}
+		makestring(OUT$,"trackstat setrating %s %u%%\n",CurrentTrackID,rating_int);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 1){
+		makestring(OUT$,"%s pandora rate 1\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 2){
+		makestring(OUT$,"%s slacker rate F\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+//	<playerid> slacker rate U // slacker unrating command (unmark as favorite)
+	}
+	Else If (CTRemoteService = 3){
+		makestring(OUT$,"%s lfm rate L\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+}
+PUSH CurrentSongTime_Enable {
+	CurrentsongTimer_fn();
+}
+PUSH Rate_Dn {
+	String Out$[64];
+	Signed_Integer rating_int;
+	If (CurrentTrackRemote = 0){
+		If (CurrentsongTrackstat = 0){
+			rating_int = 60 - TrackstatIncrement;
+		}
+		Else {
+			rating_int = CurrentsongTrackstat - TrackstatIncrement;
+		}
+		If (rating_int < 0){
+			rating_int = 0;
+		}
+		makestring(OUT$,"trackstat setrating %s %u%%\n",CurrentTrackID,rating_int);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 1){
+		makestring(OUT$,"%s pandora rate 0\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 2){
+		makestring(OUT$,"%s slacker rate B\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+	Else If (CTRemoteService = 3){
+		makestring(OUT$,"%s lfm rate B\n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient, OUT$);
+	}
+}
+CHANGE CurrentsongTrackstatSet{
+	String Out$[64];
+	Integer rating_int;
+	If (progInTrackstat = 0){
+		progInTrackstat = 1;
+		If (CurrentTrackRemote = 0){
+			If (CurrentsongTrackstatSet > 100){
+				rating_int = 100;
+			}
+			Else If (CurrentsongTrackstatSet < 0){
+				rating_int = 0;
+			}
+			Else {
+				rating_int = CurrentsongTrackstatSet;
+			}
+			makestring(OUT$,"trackstat setrating %s %u%%\n",CurrentTrackID,rating_int);
+			trace("sending: %s",OUT$);
+			socketsend(TCPClient, OUT$);
+		}
+		Delay(50);
+		progInTrackstat = 0;
+	}
+}
+CHANGE search_in$ {
+	String temp[64];
+	temp = search_in$;
+	search_in_raw = temp;
+	search_in = FormatSearch(temp);
+	trace("search_in = %s",search_in);
+	trace("ListSearchRS[1] = %u",ListSearchRS[1]);
+	If ((len(search_in) > 0) && (ListSearchRS[1] = 0)){
+		
+		If (ListType[1] = 0 || ListType[1] = 8){
+			trace("matched ListType[1] = 0 or 8");
+			search_fn(); // General Search
+		}
+		Else If (ListType[1] = 1){
+			search_genres_fn(); // Genres search
+		}
+		Else If (ListType[1] = 2){
+			search_artists_fn(); // Artists search
+		}
+		Else If (ListType[1] = 3){
+			search_albums_fn(); // Albums search
+		}
+		Else If (ListType[1] = 4){
+			search_titles_fn(); // Titles search
+		}
+		Else If ((ListType[1] = 5) || (ListType[1] = 6)){
+			search_playlists_fn(); // Playlists search
+		}
+/* 		Else If (ListType[1] = 12){
+			Search_Radios_fn(); // radios search
+		}
+*/
+	}
+}
+PUSH Search_submit {
+	If (ListType[1] = 0){
+		search_fn(); // General Search
+	}
+	Else If (ListType[1] = 1){
+		search_genres_fn(); // Genres search
+	}
+	Else If (ListType[1] = 2){
+		search_artists_fn(); // Artists search
+	}
+	Else If (ListType[1] = 3){
+		search_albums_fn(); // Albums search
+	}
+	Else If (ListType[1] = 4){
+		search_titles_fn(); // Titles search
+	}
+	Else If (ListType[1] = 5){
+		search_playlists_fn(); // Playlists search
+	}
+	Else If (ListType[1] = 6){
+		search_playlists_fn(); // DynamicPlaylists search
+	}
+	Else If (ListType[1] = 10){
+		Search_Favorites_fn();
+	}
+	Else If (ListType[1] = 12){
+		Search_Radios_fn(); // radios search
+	}
+}
+CHANGE NumberOfList{
+	NumberOfAlbums = NumberOfList;
+}
+// //////////// TCPIP Connection
+PUSH TCPIP_Connect{
+    SIGNED_INTEGER status;
+    
+	If (OnConnect_DefaultPlayer = 1){
+		PlayerID$ = PlayerID$_Default;
+		CurrentPlayerID = PlayerID$;
+		StatusFind$ = PlayersID_raw[0] + " status - 1";
+		NowplayingFind$ = PlayersID_raw[0] + " status ";
+		TimeFind$ = PlayersID_raw[0] + " time ";
+	}
+	status = SocketConnectClient (TCPClient, ServerIPAddr$, ServerPort, TCPIP_ReconnectEnable);
+    if (status < 0){
+        print ("Error connecting socket to address %s on port  %d", 
+            ServerIPAddr$, ServerPort);
+	}
+}
+RELEASE TCPIP_Connect{
+	String Out$[64];
+    SIGNED_INTEGER status;
+    If (OnDisconnect_Pause = 1){
+		makestring(out$,"%s pause 1 %s\n",PlayerID$, suppressShowbriefly);
+		socketsend(TCPClient, out$);
+		delay(200);
+	}
+	status = SocketDisconnectClient (TCPClient);
+	if (status < 0){
+    print ("Error disconnecting socket to address %s on port  %d", 
+            ServerIPAddr$, ServerPort);
+    }
+}
+SOCKETCONNECT TCPClient{
+	String Out$[128], tags$[16];
+    SIGNED_LONG_INTEGER PortNumber;
+    SIGNED_INTEGER LocalStatus;
+    STRING RemoteIPAddress[20];
+    STRING RequestedAddress[255];
+    	
+    LocalStatus = SocketGetAddressAsRequested(TCPClient, RequestedAddress);
+    if (LocalStatus < 0)
+        print ("Error getting remote ip address. %d\n", LocalStatus);
+    print ("OnConnect: Connect call to %s successful\n", RequestedAddress);
+    PortNumber = SocketGetPortNumber(TCPClient);
+    if (PortNumber < 0)
+        print ("Error getting client port number. %ld\n", PortNumber);
+    LocalStatus = SocketGetRemoteIPAddress(TCPClient, RemoteIPAddress);
+    if (LocalStatus < 0)
+        print ("Error getting remote ip address. %d\n", LocalStatus);
+    print ("OnConnect: Connected to port %ld on address %s\n", 
+                PortNumber, RemoteIPAddress);
+	TCPIP_Connected_int = 1;
+	TCPIP_Connected = 1;
+//	SOCKET Startup procedure
+	// subscribe to status updates
+	if (UseCoverID = 1){
+		tags$ = "pgsaelucKNr";
+	}
+	else {
+		tags$ = "pgsaeluKNr";
+	}
+	makestring(out$,"%s status - 1 tags:%s subscribe:0\n",PlayerID$, tags$);  
+	socketsend(TCPClient, out$);
+	trace("sending: %s",OUT$);
+	delay(20);
+	// subscribe to showbriefly messages
+	makestring(out$,"%s displaystatus subscribe:showbriefly\n",PlayerID$);  
+	socketsend(TCPClient, out$);
+	trace("sending: %s",OUT$);
+	delay(20);
+	// play if that option is enabled
+	If (OnConnect_Play = 1){
+		makestring(out$,"%s play \n",PlayerID$);
+		trace("sending: %s",OUT$);
+		socketsend(TCPClient,OUT$);
+		delay (50);
+	}
+	Players_Pgreset_fn(); // retrieve players listing
+	delay (50);
+	CurrentSongTimer_fn();
+}
+SOCKETDISCONNECT TCPClient{
+    TCPIP_Connected_int = 0;
+	TCPIP_Connected = 0;
+    if (TCPIP_Connect)
+        print ("Socket disconnected remotely");
+    Else
+        print ("Local disconnect complete.");
+}
+SOCKETSTATUS TCPClient{
+    SIGNED_INTEGER Status;
+    Status = SocketGetStatus();
+    TCPIP_Status = Status;
+    print ("The SocketGetStatus returns:       %d\n", Status);
+    print ("The TCPClient.SocketStatus returns: %d\n", TCPClient.SocketStatus);
+}
+// /////////// Initialization script
+Function Main() {
+	integer i;
+	String In$[16384],Find$[64];
+	String ServerHTTP[32];
+	PlayerID$ = PlayerID$_Default;
+	PlayersID_raw[0] = FormatPlayerID(PlayerID$_Default);
+	StatusFind$ = PlayersID_raw[0] + " status - 1";
+	NowplayingFind$ = PlayersID_raw[0] + " status ";
+	TimeFind$ = PlayersID_raw[0] + " time ";
+    FAR_parse = "favorites items ";
+	if (suppressShowbrieflyPause){
+		suppressShowbriefly = "suppressShowBriefly";
+	}
+	else {
+		suppressShowbriefly = "";
+	}
+	progInTimeBar = 0;
+	progInPageList = 0;
+	progInPageNowplaying = 0;
+	progInPagePlayers = 0;
+	progInTrackstat = 0;
+	// progShowbriefly = 0;
+	inCount = 0;
+	inCountNP = 0;
+//	inCountStatus = 0;
+	FirstGenre = 0;
+	FirstArtist = 0;
+	FirstAlbum = 0;
+	FirstTitle = 0;
+	FirstPlaylist = 0;
+	FirstNowplaying = 0;
+	FirstDynamic = 0;
+	FirstFavorites = 0; 
+	FirstPlayers = 0;
+	ActivePlaylist = "";
+	restrictorGenres = "";
+	restrictorArtists = "";
+	restrictorAlbums = "";
+	If (UseCoverID = 1){
+		restrictorTitles = "tags:tec";
+	}
+	Else {
+		restrictorTitles = "tags:te";
+	}
+	restrictorPlaylists = "";
+	restrictorFavorites = "";
+	ActiveFAR_ID = "";
+	SetArray(ListSearchRS,0);
+	SetArray(ListType,0);
+	SetArray(ListName,"Home");
+	SetArray(ListRestrictor,"");
+	Nowplaying_reset_enable = 1;
+	// cover URL base
+	makestring(ServerHTTP,"%s:%u", ServerIPAddr$, ServerHttpPort);
+	makestring(CoverURL_base_music,"http://%s/music/",ServerHTTP);
+	// Coverflow missing & blank covers
+	makestring(CoverflowURL_blank,"http://%s/html/images/blank_%ux%u.png", ServerHTTP, CoverflowSize, CoverflowSize);
+	makestring(CoverflowURL_missing,"%s0/cover_%ux%u.png", CoverURL_base_music, CoverflowSize, CoverflowSize);
+	// List item missing & blank covers
+	makestring(ListCoverURL_blank,"http://%s/html/images/blank_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+	makestring(ListCoverURL_missing,"%s0/cover_%ux%u.png", CoverURL_base_music, ListCoverSize, ListCoverSize);
+	// Nowplaying blank cover
+	makestring(NowplayingCoverURL_blank,"http://%s/html/images/blank_%ux%u.png", ServerHTTP, NowplayingCoverSize, NowplayingCoverSize);
+	// create the home list according to the HomeItem parameters
+ 	For (i = 1 to TotalHome){
+		Switch (HomeItem[i]){
+			Case (1):{
+				ListHomeItem[i] = 1;
+				ListHome[i] = "Favorites";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/favorites_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (2):{
+				ListHomeItem[i] = 2;
+				ListHome[i] = "Genres";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/genres_%ux%u.png",ServerHTTP, ListCoverSize,ListCoverSize);
+			}
+			Case (3):{
+				ListHomeItem[i] = 3;
+				ListHome[i] = "Artists";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/artists_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (4):{
+				ListHomeItem[i] = 4;
+				ListHome[i] = "Albums";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/albums_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (5):{
+				ListHomeItem[i] = 5;
+				ListHome[i] = "Playlists";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/playlists_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (6):{
+				ListHomeItem[i] = 6;
+				ListHome[i] = "Dynamic PL";    
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/DynamicPlayList/html/images/dynamicplaylist_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (7):{
+				ListHomeItem[i] = 7;
+				ListHome[i] = "Radios";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/radio_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (8):{
+				ListHomeItem[i] = 8;
+				ListHome[i] = "Apps";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/radio_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (9):{
+				ListHomeItem[i] = 9;
+				ListHome[i] = "Pandora";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Pandora/html/images/icon_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (10):{
+				ListHomeItem[i] = 10;
+				ListHome[i] = "Podcasts";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Podcast/html/images/icon_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (11):{
+				ListHomeItem[i] = 11;
+				ListHome[i] = "Tracks";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/blank_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (12):{
+				ListHomeItem[i] = 12;
+				ListHome[i] = "New Albums";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/newmusic_%ux%u.png",ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (13):{
+				ListHomeItem[i] = 13;
+				ListHome[i] = "Custom Browse";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/CustomBrowse/html/images/custombrowse_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (14):{
+				ListHomeItem[i] = 14;
+				ListHome[i] = "Rhapsody";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/RhapsodyDirect/html/images/icon_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (15):{
+				ListHomeItem[i] = 15;
+				ListHome[i] = "Slacker";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Slacker/html/images/icon_%ux%u.png", ServerHTTP,  ListCoverSize, ListCoverSize);
+			}
+			Case (16):{
+				ListHomeItem[i] = 16;
+				ListHome[i] = "Napster";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Napster/html/images/icon.png", ServerHTTP);
+			}
+			Case (17):{
+				ListHomeItem[i] = 17;
+				ListHome[i] = "Last.fm";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/LastFM/html/images/icon_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			Case (18):{
+				ListHomeItem[i] = 18;
+				ListHome[i] = "Sirius";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Sirius/html/images/icon_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);			
+			}
+			Case (19):{
+				ListHomeItem[i] = 19;
+				ListHome[i] = "Sound Effects";
+				makestring(ListHomeCoverURL[i],"http://%s/plugins/Sounds/html/images/icon_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+			default:{
+				ListHomeItem[i] = 0;
+				ListHome[i] = " ";
+				makestring(ListHomeCoverURL[i],"http://%s/html/images/blank_%ux%u.png", ServerHTTP, ListCoverSize, ListCoverSize);
+			}
+		}
+	}
+	NumberOfAlbums = NumberOfList;
+	WaitForInitializationComplete();		
+	Home_PgReset_fn();
+	CurrentPlayerID = PlayerID$;
+
+	while (1){
+		trace("starting Gather for incoming data");
+		In$ = Gather("\n",TCPClient.SocketRxBuf);
+		trace("received data; looking for type");
+		Find$ = left(In$,64);
+		trace("%s",Find$);  
+		If (find(StatusFind$,Find$)) { // status parsing
+	//	add this back in if implementing a token for status update interrupt
+	//		inCountStatusIncrement();
+			trace("parsing status");
+			Parse_Status(In$);
+		} 
+		Else If (Find(NowplayingFind$,Find$)) { // Nowplaying parsing
+			trace("parsing nowplaying");
+			Parse_Nowplaying(In$);
+		}
+		Else If (find(" time",Find$)) { // time parsing
+			trace("parsing time fb");
+	//		RetimeWait(100,waitCountTime);
+			// insert debugging code here to look for Marc's error
+			// ***
+			// Error: Invalid join number -35 in BuildCresnetLongAnalog_14h
+			In$ = mid(In$,34,len(In$) - 35);
+			Parse_Time(AtoI(In$)); // parse_time requires integer input
+		}
+		Else If (find(" displaystatus",Find$)){
+			trace("parsing showbriefly");
+			Parse_Showbriefly(In$); 
+		}
+		Else If (find(" mixer volume",Find$)){
+			trace("parsing volume");
+			Parse_Volume(In$);
+		}
+		Else If (find("trackstat ",Find$)){
+			trace("parsing trackstat rating");
+			Parse_Trackstat(In$);
+		}
+		Else If (find("favorites add", Find$)){
+			trace("parsing favorites add confirmation");
+			If (find(" count%3A1",In$)){
+				pulse(20,FavoriteAdd_success);
+			}
+		}
+		Else If (find(FAR_parse,Find$)){ // Favorites/Apps/Radios parsing
+			trace("parsing favorites, apps, or radios");
+			Parse_FAR(In$);
+		}
+		Else If (find("dynamicplaylist playlists",Find$)) { // dynamic playlist parsing
+			trace("parsing dynamic playlists");
+			Parse_Dynamic(In$);
+		}
+		Else If (find("genres ",Find$)) { // genre parsing
+			trace("parsing genres");
+			Parse_Genres(In$);
+		}
+		Else If (find("artists ",Find$)) { // Artist parsing
+			trace("parsing Artists");
+			Parse_Artists(In$);
+		}
+		Else If (find("albums ",Find$)) { // Album parsing
+			trace("parsing albums");
+			Parse_Albums(In$);
+		}
+		Else If (find("titles ",Find$)) { // Titles (tracks) parsing
+			trace("parsing titles");
+			Parse_Titles(In$);
+		}
+		Else If (find("playlists ",Find$)) {  // Playlist parsing
+			trace("parsing playlists");
+			Parse_Playlists(In$);
+		}
+		Else If (find("apps ",Find$)){ // Top-level Apps parsing
+			trace("parsing apps");
+			Parse_Apps(In$);
+		}
+		Else If (find("radios ",Find$)){ // Top-level Radios parsing
+			trace("parsing radios");
+			Parse_Radios(In$);
+		}
+		Else If (find("custombrowse browse",Find$)){ // custombrowse parsing
+			trace("parsing custombrowse");
+			Parse_CB(In$);
+		}
+		Else If (find("search playlist",Find$)){
+			// just a fake to prevent regular search parsing when playing radio search
+		}
+		Else If (find("search ",Find$)){  // Search parsing
+			trace("parsing search");
+			Parse_Search(In$);
+		}
+		Else If (find("players ",Find$)) { // Players parsing
+			trace("parsing players");
+			Parse_Players(In$);
+		}
+		Else {
+			delay(5);
+		}
+	}
+}
