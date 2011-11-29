@@ -1,26 +1,32 @@
 /*
 Dealer Name:Harmony Home Theaters
 System Name: SqueezeBox Server
-System Number: 7.5
+System Number: 7.6
 Programmer: JWM 
 License:
 	
-	(c) 2009-2010 Jason Melvin    
+	(c) Copyright 2009-2011 Jason Melvin    
 
 	This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU Lesser General Public License
+	and GNU General Public License along with this program.  
+	If not, see <http://www.gnu.org/licenses/>.
 */
 // ///////////////////Compiler Directives
+#DEFINE_CONSTANT ARRAY_SIZE 10
+#DEFINE_CONSTANT NP_TIMER 1000
+#DEFINE_CONSTANT DELAY_SHOWBRIEFLY 300
+
+
 #SYMBOL_NAME "SqueezeBox 0.5.4" 
 #HELP_BEGIN
 	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
@@ -29,8 +35,6 @@ License:
 #ENABLE_DYNAMIC
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
-#DEFINE_CONSTANT Nowplaying_reset_enable_time 1000
-#define_constant delayShowbriefly 300
 #PRINT_TO_TRACE
 // #ENABLE_TRACE
 
@@ -169,32 +173,32 @@ STRING_OUTPUT  CurrentsongTrackstat$;
 ANALOG_OUTPUT  CurrentsongType;
 // ARRAYS
 // Nowplaying i/o
-DIGITAL_INPUT  NowplayingPlay[10];
-DIGITAL_INPUT  NowplayingRemove[10];
-DIGITAL_INPUT  NowplayingMoveUp[10];
-DIGITAL_INPUT  NowPlayingMoveDown[10];
+DIGITAL_INPUT  NowplayingPlay[ARRAY_SIZE];
+DIGITAL_INPUT  NowplayingRemove[ARRAY_SIZE];
+DIGITAL_INPUT  NowplayingMoveUp[ARRAY_SIZE];
+DIGITAL_INPUT  NowPlayingMoveDown[ARRAY_SIZE];
 DIGITAL_OUTPUT NowplayingPageFlip;
-STRING_OUTPUT  Nowplaying[10];
-STRING_OUTPUT  NowplayingTitle$[10];
-STRING_OUTPUT  NowplayingArtist$[10];
-STRING_OUTPUT  NowplayingAlbum$[10];
-STRING_OUTPUT  NowplayingCoverURL[10];
-DIGITAL_OUTPUT NowplayingCurrentSong[10];
+STRING_OUTPUT  Nowplaying[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingTitle$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingArtist$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingAlbum$[ARRAY_SIZE];
+STRING_OUTPUT  NowplayingCoverURL[ARRAY_SIZE];
+DIGITAL_OUTPUT NowplayingCurrentSong[ARRAY_SIZE];
 // List i/o
-DIGITAL_INPUT  ListSelect[10];
-DIGITAL_INPUT  ListPlay[10];
-DIGITAL_INPUT  ListAdd[10];
-DIGITAL_INPUT  ListInsert[10];
-STRING_OUTPUT  List$[10];
-DIGITAL_OUTPUT ListPlayable[10];
-STRING_OUTPUT  ListCoverURL[10];
-STRING_OUTPUT  ListCoverflowArtist[10];
+DIGITAL_INPUT  ListSelect[ARRAY_SIZE];
+DIGITAL_INPUT  ListPlay[ARRAY_SIZE];
+DIGITAL_INPUT  ListAdd[ARRAY_SIZE];
+DIGITAL_INPUT  ListInsert[ARRAY_SIZE];
+STRING_OUTPUT  List$[ARRAY_SIZE];
+DIGITAL_OUTPUT ListPlayable[ARRAY_SIZE];
+STRING_OUTPUT  ListCoverURL[ARRAY_SIZE];
+STRING_OUTPUT  ListCoverflowArtist[ARRAY_SIZE];
 // Players i/o
-DIGITAL_INPUT  PlayersSelect[10];
-DIGITAL_INPUT  PlayersSyncTog[10,10];
-STRING_OUTPUT  Players$[10];
-STRING_OUTPUT  PlayersID$[10,10];
-DIGITAL_OUTPUT PlayersSynced[10,10];
+DIGITAL_INPUT  PlayersSelect[ARRAY_SIZE];
+DIGITAL_INPUT  PlayersSyncTog[ARRAY_SIZE,ARRAY_SIZE];
+STRING_OUTPUT  Players$[ARRAY_SIZE];
+STRING_OUTPUT  PlayersID$[ARRAY_SIZE,ARRAY_SIZE];
+DIGITAL_OUTPUT PlayersSynced[ARRAY_SIZE,ARRAY_SIZE];
 //
 ///////////////////////////// Parameters
 STRING_PARAMETER PlayerID$_Default[17];
@@ -232,14 +236,14 @@ INTEGER_PARAMETER ListCoverSize;
 INTEGER_PARAMETER CoverflowSize;
 Integer_parameter CurrentsongCoverSize;
 INTEGER_PARAMETER NowplayingCoverSize;
-INTEGER_PARAMETER HomeListLength;
-#BEGIN_PARAMETER_PROPERTIES HomeListLength
+INTEGER_PARAMETER TotalHome;
+#BEGIN_PARAMETER_PROPERTIES TotalHome
 	propValidUnits=unitDecimal;
-	propBounds=1d,20d;
+	propBounds=1d,20d; // increase the 20d if you want more items on the home list
 	propDefaultValue=10d;
 	propShortDescription= "set to the number of items desired in the home list and make the number of HomeItem parameters below the same";
 #END_PARAMETER_PROPERTIES
-INTEGER_PARAMETER HomeItem[20];
+INTEGER_PARAMETER HomeItem[20]; // increase the number in brackets if you want more items on the home list
 #BEGIN_PARAMETER_PROPERTIES HomeItem
 	propDefaultValue=0d;
 	propList={1d,"Favorites"}, {2d,"Genres"}, {3d,"Artists"}, {4d,"Albums"}, {5d,"Playlists"}, {6d,"Dynamic"}, {7d,"Radios"}, {8d,"Apps"}, {9d,"Pandora"}, {10d,"Podcasts"}, {11d,"Tracks"}, {12d,"New Albums"}, {13d,"Custom Browse"}, {14d,"Rhapsody"}, {15d,"Slacker"}, {16d,"Napster"}, {17d,"Last.fm"}, {18d,"Sirius"}, {19d,"Sound Effects"}, {0d,"Empty"};
@@ -248,134 +252,219 @@ INTEGER_PARAMETER HomeItem[20];
 // ///////////////////////// Sockets
 TCP_CLIENT TCPClient[16384];
 // //////////////// Global Variables
-INTEGER inCount;
-INTEGER inCountNP;
-// INTEGER inCountStatus;
-INTEGER FirstHome, TotalHome, ListLengthHome;
-INTEGER FirstGenre, TotalGenres, GenreFirstNumber;
-INTEGER FirstArtist, TotalArtists, ArtistFirstNumber;
-INTEGER FirstAlbum, TotalAlbums, AlbumFirstNumber;
-INTEGER FirstTitle, TotalTitles, TitleFirstNumber;
-INTEGER FirstPlaylist, TotalPlaylists, PlaylistFirstNumber;
-INTEGER FirstNowplaying, TotalNowplaying, NowplayingFirstNumber;
-INTEGER FirstDynamic, TotalDynamic, DynamicFirstNumber;
-INTEGER FirstSearch, TotalSearch, SearchFirstNumber;
-INTEGER FirstFavorites, TotalFavorites, FavoritesFirstNumber; 
-INTEGER FirstApps, TotalApps, AppsFirstNumber; 
-INTEGER FirstRadios, TotalRadios, RadiosFirstNumber; 
-INTEGER FirstCB, TotalCB, CBFirstNumber;
-INTEGER FirstPlayers, TotalPlayers, PlayersFirstNumber, ListLengthPlayers;
-STRING 	ActiveGenreID[8], 
-			ActiveArtistID[8], 
-			ActiveAlbumID[8], 
-			ActiveTrackID[8], 
-			ActivePlaylistID[8];
-//
-STRING suppressShowbriefly[19];
-INTEGER NumberOfAlbums;
-//
-INTEGER CurrentsongIndex;
-STRING	CurrentTrackID[32], 
-		CurrentPlaylistID[8],
-		CurrentGenreID[8], 
-		CurrentArtistID[8], 
-		CurrentAlbumID[8];
-INTEGER CTDuration_sec, CTTime_sec;
-INTEGER CurrentPlaylistModified;
-INTEGER Repeat, Shuffle, CurrentTrackRemote, CTRemoteService;
-Integer Volume;
-INTEGER timeclock_run;
-// INTEGER waitCountTime_running;
-INTEGER waitUpdateTime_running;
-INTEGER TCPIP_Connected_int;
-//
-INTEGER progInTimeBar, 
+INTEGER	inCount,
+		inCountNP,
+		ListLengthHome,
+		TotalGenres,
+		TotalArtists,
+		TotalAlbums,
+		TotalTitles,
+		TotalPlaylists,
+		TotalDynamic,
+		TotalSearch,
+		TotalFavorites,
+		TotalApps,
+		TotalRadios,
+		TotalCB,
+		TotalPlayers,
+		FirstHome,
+		FirstGenre,
+		FirstArtist,
+		FirstAlbum,
+		FirstTitle,
+		FirstPlaylist,
+		FirstNowplaying,
+		FirstDynamic,
+		FirstSearch,
+		FirstFavorites,
+		FirstApps,
+		FirstRadios,
+		FirstCB,
+		FirstPlayers,
+		GenreFirstNumber,
+		ArtistFirstNumber,
+		AlbumFirstNumber,
+		TitleFirstNumber,
+		PlaylistFirstNumber,
+		TotalNowplaying,
+		NowplayingFirstNumber,
+		DynamicFirstNumber,
+		SearchFirstNumber,
+		FavoritesFirstNumber,
+		AppsFirstNumber,
+		RadiosFirstNumber,
+		CBFirstNumber,
+		PlayersFirstNumber,
+		NumberOfAlbums,
+		CurrentsongIndex,
+		CTDuration_sec, 
+		CTTime_sec,
+		CurrentPlaylistModified,
+		Repeat,
+		Shuffle, 
+		CurrentTrackRemote, 
+		CTRemoteService,
+		Volume,
+		timeclock_run,
+		waitUpdateTime_running,
+		TCPIP_Connected_int,
+		progInTimeBar, 
 		progInPageList, 
 		progInPageNowplaying, 
 		progInPagePlayers, 
-		progInTrackstat;
-//		progShowbriefly;
-//
-INTEGER parsePosition;
-//
-STRING	search_in[64], search_in_raw[64];
-//
-INTEGER OutHomeCount, OutHomeBar;
-INTEGER OutGenreCount, OutGenresBar;
-INTEGER OutArtistCount, OutArtistsBar;
-INTEGER OutAlbumCount, OutAlbumsBar;
-INTEGER OutTitleCount;
-INTEGER OutTitlesBar;
-INTEGER OutPlaylistCount, OutPlaylistsBar;
-INTEGER OutDynamicCount, OutDynamicBar;
-INTEGER OutSearchCount, OutSearchBar; 
-INTEGER OutFavoritesCount,OutFavoritesBar;
-INTEGER OutAppsCount,OutAppsBar;
-INTEGER OutRadiosCount,OutRadiosBar;
-//
-INTEGER Nowplaying_reset_enable; 
-//
-INTEGER ArtistsListTop;
-String ListActiveGenreID[5][8];
-INTEGER ListType[5], ListFirst[5], ListSearchRS[5];
-STRING 	GenreID[10][8],
-			ArtistID[10][8],
-			AlbumID[10][8],
-			TitleAlbumID[10][8],
-			TrackID[10][8],
-			SearchID[10][8],
-			NowplayingID[10][32],
-			PlaylistID[10][16];
+		progInTrackstat,
+		parsePosition,
+		OutHomeCount,
+		OutHomeBar,
+		OutGenreCount,
+		OutGenresBar,
+		OutArtistCount,
+		OutArtistsBar,
+		OutAlbumCount,
+		OutAlbumsBar,
+		OutTitleCount,
+		OutTitlesBar,
+		OutPlaylistCount,
+		OutPlaylistsBar,
+		OutDynamicCount,
+		OutDynamicBar,
+		OutSearchCount,
+		OutSearchBar, 
+		OutFavoritesCount,OutFavoritesBar,
+		OutAppsCount,OutAppsBar,
+		OutRadiosCount,OutRadiosBar,
+		Nowplaying_reset_enable, 
+		ArtistsListTop,
+		ListType[5], 
+		ListFirst[5], 
+		ListSearchRS[5],
+		TitleTracknum[ARRAY_SIZE],
+		SearchIDType[ARRAY_SIZE],
+		NowplayingIndex[ARRAY_SIZE],
+		ListHomeItem[20],
+		CBPlayable[ARRAY_SIZE], 
+		CBMixable[ARRAY_SIZE],
+		FavoritesIsAudio[ARRAY_SIZE], 
+		FavoritesHasItems[ARRAY_SIZE],
+		PlayersIndex[ARRAY_SIZE];
 
-INTEGER TitleTracknum[10];
-INTEGER SearchIDType[10];
-INTEGER NowplayingIndex[10];
+// INTEGER	inCountStatus;
+// INTEGER	progShowbriefly;
+// INTEGER	waitCountTime_running;
 
-INTEGER ListHomeItem[20];
+STRING 	ActiveGenreID[8], 
+		ActiveArtistID[8], 
+		ActiveAlbumID[8], 
+		ActiveTrackID[8], 
+		ActivePlaylistID[8],
+		suppressShowbriefly[19],
+		CurrentTrackID[32], 
+		CurrentPlaylistID[8],
+		CurrentGenreID[8], 
+		CurrentArtistID[8], 
+		CurrentAlbumID[8],
+		search_in[64], 
+		search_in_raw[64],
+		ListActiveGenreID[5][8],
+		GenreID[ARRAY_SIZE][8],
+		ArtistID[ARRAY_SIZE][8],
+		AlbumID[ARRAY_SIZE][8],
+		TitleAlbumID[ARRAY_SIZE][8],
+		TrackID[ARRAY_SIZE][8],
+		SearchID[ARRAY_SIZE][8],
+		NowplayingID[ARRAY_SIZE][32],
+		PlaylistID[ARRAY_SIZE][16],
+		CBLevel[ARRAY_SIZE][256], 
+		CBID[ARRAY_SIZE][64], 
+		CBName[ARRAY_SIZE][64], 
+		CBType[ARRAY_SIZE][64],
+		ActivePlayerID[32], 
+		StatusFind$[64], 
+		NowplayingFind$[64], 
+		TimeFind$[64],
+		FAR_parse[32], 
+		FAR_cmd[32],
+		CurrentPlayerMode[8],
+		CurrentTrackTime$[32],
+		CurrentTrackRate$[16],
+		CurrentTrackDuration$[32],
+		SyncMaster[32],
+		SyncSlaves_in[512],
+		SyncSlaves[ARRAY_SIZE][32],
+		CurrentPlaylistName[255],
+		CurrentTrackTitle$[255],
+		CurrentTrackTitle$_raw[255],
+		CurrentTrackGenre$[255],
+		CurrentTrackArtist$[255],
+		CurrentTrackAlbum$[255],
+		CurrentTrackCTitle$[255],
+		CurrentTrackRTitle$[255],
+		CurrentTrackRemoteCover$[512],
+		CurrentsongCoverURL_push[255],
+		CoverURL_base_music[128],
+		CurrentTrackCoverID[64],
+		CurrentTrackURL$[2048],
+		CurrentTrackURL$_raw[2048],
+		CoverflowURL_blank[64],
+		CoverflowURL_missing[64],
+		ListCoverURL_blank[64],
+		ListCoverURL_missing[64],
+		NowplayingCoverURL_blank[64],
+		restrictorGenres[255],
+		restrictorArtists[255],
+		restrictorAlbums[255],
+		restrictorTitles[255],
+		restrictorPlaylists[255],
+		restrictorSearch[255],
+		restrictorFavorites[255],
+		ActiveFAR_ID[64],
+		restrictorCB[255],
+		restrictor2CB[255],
+		ListName[5][255],
+		ListRestrictor[5][255],
+		ListRestrictor2[5][255],
+		ListActiveGenre[5][255],
+		ListHome[20][16],
+		ListHomeCoverURL[20][128],
+		ActiveGenre[128],
+		ActiveArtist[128],
+		ActiveAlbum[128],
+		ActiveTitle[128],
+		ActivePlaylist[128],
+		ActiveDynamic[128],
+		ActiveDynamicFile[128],
+		ActiveFavoritesName[255],
+		ActiveFavoritesID[255],
+		FavoritesTitle[255],
+		Genre[ARRAY_SIZE][255], 
+		Artist[ARRAY_SIZE][255], 
+		Album[ARRAY_SIZE][255], 
+		Title[ARRAY_SIZE][255], 
+		Playlist[ARRAY_SIZE][255],
+		PlaylistRaw[ARRAY_SIZE][255], 
+		DynamicName[ARRAY_SIZE][255], 
+		DynamicFile[ARRAY_SIZE][255], 
+		Search[ARRAY_SIZE][255],
+		NowplayingTitle[ARRAY_SIZE][255], 
+		NowplayingArtist[ARRAY_SIZE][255], 
+		NowplayingAlbum[ARRAY_SIZE][255],
+		FavoritesName[ARRAY_SIZE][255], 
+		FavoritesID[ARRAY_SIZE][64], 
+		FavoritesType[ARRAY_SIZE][255],
+		FavoritesImage[ARRAY_SIZE][255],
+		AppsCmd[ARRAY_SIZE][64],
+		AppsName[ARRAY_SIZE][64],
+		AppsIcon[ARRAY_SIZE][255],
+		AppsType[ARRAY_SIZE][64],
+		RadiosCmd[ARRAY_SIZE][64],
+		RadiosName[ARRAY_SIZE][64], 
+		RadiosIcon[ARRAY_SIZE][255],
+		RadiosType[ARRAY_SIZE][64],
+		PlayerID$[32], 
+		PlayersName[ARRAY_SIZE][128], 
+		PlayersID[ARRAY_SIZE][32], 
+		PlayersID_raw[ARRAY_SIZE][32];
 
-STRING CBLevel[10][256], CBID[10][64], CBName[10][64], CBType[10][64];
-INTEGER CBPlayable[10], CBMixable[10];
-
-INTEGER FavoritesIsAudio[10], FavoritesHasItems[10];
-
-STRING ActivePlayerID[32], StatusFind$[64], NowplayingFind$[64], TimeFind$[64];
-STRING FAR_parse[32], FAR_cmd[32];
-STRING CurrentPlayerMode[8], CurrentTrackTime$[32], CurrentTrackRate$[16], CurrentTrackDuration$[32];
-STRING SyncMaster[32], SyncSlaves_in[512], SyncSlaves[10][32];
-STRING CurrentPlaylistName[255];
-STRING CurrentTrackTitle$[255], CurrentTrackTitle$_raw[255];
-STRING CurrentTrackGenre$[255], CurrentTrackArtist$[255], CurrentTrackAlbum$[255];
-STRING CurrentTrackCTitle$[255], CurrentTrackRTitle$[255];
-STRING CurrentTrackRemoteCover$[512];
-STRING CurrentsongCoverURL_push[255];
-String CoverURL_base_music[128];
-STRING CurrentTrackCoverID[64];
-STRING CurrentTrackURL$[2048], CurrentTrackURL$_raw[2048];
-STRING CoverflowURL_blank[64], CoverflowURL_missing[64];
-STRING ListCoverURL_blank[64], ListCoverURL_missing[64];
-STRING NowplayingCoverURL_blank[64];
-
-STRING restrictorGenres[255], restrictorArtists[255], restrictorAlbums[255];
-STRING restrictorTitles[255], restrictorPlaylists[255], restrictorSearch[255];
-STRING restrictorFavorites[255], ActiveFAR_ID[64];
-STRING restrictorCB[255], restrictor2CB[255];
-
-STRING ListName[5][255], ListRestrictor[5][255], ListRestrictor2[5][255], ListActiveGenre[5][255];
-STRING ListHome[20][16], ListHomeCoverURL[20][128];
-STRING ActiveGenre[128], ActiveArtist[128], ActiveAlbum[128], ActiveTitle[128], ActivePlaylist[128], ActiveDynamic[128], ActiveDynamicFile[128];
-
-STRING ActiveFavoritesName[255], ActiveFavoritesID[255], FavoritesTitle[255];
-//
-STRING Genre[10][255], Artist[10][255], Album[10][255], Title[10][255], Playlist[10][255],PlaylistRaw[10][255], DynamicName[10][255], DynamicFile[10][255], Search[10][255];
-STRING NowplayingTitle[10][255], NowplayingArtist[10][255], NowplayingAlbum[10][255];
-//
-STRING FavoritesName[10][255], FavoritesID[10][64], FavoritesType[10][255];  
-STRING FavoritesImage[10][255];
-STRING AppsCmd[10][64],AppsName[10][64],AppsIcon[10][255],AppsType[10][64];
-STRING RadiosCmd[10][64],RadiosName[10][64], RadiosIcon[10][255],RadiosType[10][64];
-//
-STRING  PlayerID$[32], PlayersName[10][128], PlayersID[10][32], PlayersID_raw[10][32];
-INTEGER PlayersIndex[10];
 // ////////////////////// FUNCTIONS
 Function MySetArray(string array[], string value){
 	integer i;
@@ -508,13 +597,13 @@ Function ListShiftBk_fn(){
 	}
 }
 Function Nowplaying_wait(){
-	Wait(Nowplaying_reset_enable_time, Nowplaying_reset_enable_timer){
+	Wait(NP_TIMER, NP_TIMERr){
 		Nowplaying_reset_enable = 1;
 	}
 }
 Function Nowplaying_wait_fn(){
 	Nowplaying_reset_enable = 0;
-	Cancelwait(Nowplaying_reset_enable_timer);
+	Cancelwait(NP_TIMERr);
 	Nowplaying_wait();
 }
 Function HomeRefresh_fn(){
@@ -525,7 +614,7 @@ Function HomeRefresh_fn(){
 	OutHomeBar = 65535 - ((65535 / TotalHome) * FirstHome );
 	OutListBar = OutHomeBar;
 	OutListCount = TotalHome;
-    If ((TotalHome - FirstHome) < NumberOfList) {
+	If ((TotalHome - FirstHome) < NumberOfList) {
 		ListLengthHome = TotalHome - FirstHome;
 	}
 	Else {
@@ -928,7 +1017,7 @@ Function Nowplaying_PgReset_fn(){
 		FirstNowplaying = CurrentsongIndex - NowplayingShowPrev;	
 	Else
 		FirstNowplaying = 0;
-    Cancelwait(Nowplaying_reset_enable_timer);
+	Cancelwait(NP_TIMERr);
 	Nowplaying_reset_enable = 1;
 	NowplayingRefresh_fn();
 	// ListType[1] = 7 reserved for Nowplaying
@@ -2086,7 +2175,7 @@ Function NowplayingPlay_fn(integer i){
 		Nowplaying_PgReset_fn();
 	}
 	Else {
-		Cancelwait(Nowplaying_reset_enable_timer);
+		Cancelwait(NP_TIMERr);
 		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist index %u \n",PlayerID$, NowplayingIndex[i]);
 		trace("sending: %s",OUT$);
@@ -2096,7 +2185,7 @@ Function NowplayingPlay_fn(integer i){
 Function NowplayingRemove_fn(integer i){
 	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_reset_enable_timer);
+		Cancelwait(NP_TIMERr);
 		Nowplaying_reset_enable = 1;
 		Activeplaylist = "";
 		makestring(OUT$,"%s playlist delete %u \n",PlayerID$, NowplayingIndex[i]);
@@ -2107,7 +2196,7 @@ Function NowplayingRemove_fn(integer i){
 Function NowplayingMoveUp_fn(integer i){
 	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_reset_enable_timer);
+		Cancelwait(NP_TIMERr);
 		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]-1);
 		trace("sending: %s",OUT$);
@@ -2117,7 +2206,7 @@ Function NowplayingMoveUp_fn(integer i){
 Function NowplayingMoveDown_fn(integer i){
 	String Out$[64];
 	If (NowplayingIndex[i] < 65534){
-		Cancelwait(Nowplaying_reset_enable_timer);
+		Cancelwait(NP_TIMERr);
 		Nowplaying_reset_enable = 1;
 		makestring(OUT$,"%s playlist move %u %u \n",PlayerID$, NowplayingIndex[i], NowplayingIndex[i]+1);
 		trace("sending: %s",OUT$);
@@ -2395,13 +2484,12 @@ Function Parse_Time(Integer InTime){
 Function Parse_Nowplaying(String InNowplaying$){
 	Integer i, j;
 	Integer indexStart, indexEnd, Length, indexNext;
-	Integer ListLengthNowplaying;
 	String NowplayingParseItem[16384];
 	String  Nowplaying_int[512];
 	Integer Nowplaying_intLen;
-	String NowplayingURL[10][256];
-	String temp[256];
+	String NowplayingCover[ARRAY_SIZE][256];
 	Integer inCountNP_local;
+	Integer artworkRemote;
 	
 	// store the global token for incomming NP data in the local thread
 	inCountNPIncrement();
@@ -2440,31 +2528,33 @@ Function Parse_Nowplaying(String InNowplaying$){
 	Else {
 		OutNowplayingBar = 65535;
 	}
-	ListLengthNowplaying  = NumberOfNowplaying;
 	indexNext = indexEnd;
-	For (i = 1 to ListLengthNowplaying)	{
+	For (i = 1 to NumberOfNowplaying)	{
 		// check for newly started parsing thread before starting each loop
 		trace("inCountNP = %u; inCountNP_local = %u",inCountNP,inCountNP_local);
 		if (inCountNP_local <> inCountNP){
 			break;
 			trace("new token break");
 		}
-		// start to parse the next item of NP data
+		// identify the next (or first) group of data for Nowplaying, and put it in NowplayingParseItem
 		indexStart = find(" playlist%20index%3A",InNowplaying$,indexNext) + 20;
 		If (indexStart > 20){
 			indexEnd = find(" ",InNowplaying$,indexStart);
 			Length = indexEnd - indexStart;
 			NowplayingIndex[i] = AtoI(mid(InNowplaying$,indexStart,Length));
 			trace("NowplayingIndex (i=%u)= %u",i,Nowplayingindex[i]); 
-			If (NowplayingIndex[i] = CurrentsongIndex){  // compare Index w/ CurrentsongIndex for NowplayingCurrentSong
+			// compare Index w/ CurrentsongIndex for NowplayingCurrentSong
+			If (NowplayingIndex[i] = CurrentsongIndex){  
 				NowplayingCurrentSong[i] = 1;
 			}
 			Else {
 				NowplayingCurrentSong[i] = 0;
 			}
 		}
-		Else { // zero the remaining array elements if no more matches for index (should be unnecessary)
-			For (j = i to ListLengthNowplaying){
+		Else { 
+			// zero the remaining array elements if no more matches for index (should be unnecessary)
+			// !!! instead of zeroing, the code should request items from the top of the list for wraparound
+			For (j = i to NumberOfNowplaying){
 				NowplayingCurrentSong[j] = 0;
 				NowplayingID[j] = "";
 				NowplayingTitle[j] = "";
@@ -2491,6 +2581,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		Else {
 			NowplayingParseItem = mid(InNowplaying$,indexEnd,len(InNowplaying$) - indexEnd - 1);
 		}
+		// now start looking through the NowplayingParseItem
 		indexStart = find(" id%3A",NowplayingParseItem,1) + 6;
 		If (indexStart > 6){
 			indexEnd = find(" ",NowplayingParseItem, indexStart);
@@ -2554,6 +2645,7 @@ Function Parse_Nowplaying(String InNowplaying$){
 		}
 		indexStart = find(" artwork_url%3A",NowplayingParseItem,indexEnd) + 15;
 		If (indexStart > 15){
+			artworkRemote = 1;
 			indexEnd = find(" ",NowplayingParseItem, indexStart);
 			If (indexEnd > 0){
 				Length = indexEnd - indexStart;
@@ -2562,15 +2654,27 @@ Function Parse_Nowplaying(String InNowplaying$){
 				indexEnd = Len(NowplayingParseItem) + 1;
 				Length = indexEnd - indexStart;
 			}
-			temp = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
-			If (find("spotify", temp)){
-				makestring(temp,"http://%s:%u/%s",ServerIPAddr$, ServerHttpPort, temp);
-			}
-			NowplayingURL[i] = temp;
+			NowplayingCover[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
 		}
 		Else {
-			NowplayingURL[i] = "";
+			artworkRemote = 0;
+			indexStart = find(" coverid%3A",NowplayingParseItem,indexEnd) + 11;
+			If (indexStart > 11){
+				indexEnd = find(" ",NowplayingParseItem, indexStart);
+				If (indexEnd > 0){
+					Length = indexEnd - indexStart;
+				}
+				Else {
+					indexEnd = Len(NowplayingParseItem) + 1;
+					Length = indexEnd - indexStart;
+				}
+				NowplayingCover[i] = ParsePercent(mid(NowplayingParseItem,indexStart,Length));
+			}
+			Else {
+				NowplayingCover[i] = "";
+			}
 		}
+		
 		// check for newly started parsing thread before outputting
 		if (inCountNP_local <> inCountNP){
 			trace("new token break");
@@ -2599,18 +2703,24 @@ Function Parse_Nowplaying(String InNowplaying$){
 			NowplayingAlbum$[i] = NowplayingAlbum[i];
 		}
 		If (NowplayingCoverURL_Enable = 1){
-			If (len(NowplayingURL[i]) > 0){
-				If (find("slacker.com",left(NowplayingURL[i],32))){
-					NowplayingCoverURL[i] = NowplayingURL[i] + "?.jpg";
+			If (len(NowplayingCover[i]) > 0){
+				If (find("plugins/",left(NowplayingCover[i],8))){
+					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingCover[i]);
 				}
-				Else If (find("plugins/",left(NowplayingURL[i],8))){
-					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingURL[i]);
+				Else If (find("spotify", left(NowplayingCover[i],32))){
+					makestring(NowplayingCoverURL[i],"http://%s:%u/%s", ServerIPAddr$, ServerHttpPort, NowplayingCover[i]);
 				}
-				Else If (find("/music",left(NowplayingURL[i],6))){
+				Else If (find("slacker.com",left(NowplayingCover[i],32))){
+					NowplayingCoverURL[i] = NowplayingCover[i] + "?.jpg";
+				}
+				Else If (find("/music",left(NowplayingCover[i],6))){
 					makestring(NowplayingCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music , NowplayingID[i], NowplayingCoverSize, NowplayingCoverSize);
 				}
+				Else If ( UseCoverID && !artworkRemote ){
+					makestring(NowplayingCoverURL[i],"%s%s/cover_%ux%u.png", CoverURL_base_music , NowplayingCover[i], NowplayingCoverSize, NowplayingCoverSize);
+				}
 				Else {
-					NowplayingCoverURL[i] = NowplayingURL[i];
+					NowplayingCoverURL[i] = NowplayingCover[i];
 				}
 			}
 			Else {
@@ -2621,7 +2731,6 @@ Function Parse_Nowplaying(String InNowplaying$){
 }
 Function Parse_FAR(String InFavorites$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
-	Integer ListLengthFavorites;
 	String FavoritesParseItem[16384];
 	Integer inCount_local;
 	
@@ -2659,7 +2768,6 @@ Function Parse_FAR(String InFavorites$){
 		OutFavoritesBar = 65535 - ((65535 / TotalFavorites) * FavoritesFirstNumber );
 		OutListBar = OutFavoritesBar;
 		OutListCount = OutFavoritesCount;
-		ListLengthFavorites = NumberOfList;
 		indexEnd = 20;
 		indexStart = find(" title%3A",InFavorites$,indexEnd) + 9;
 		If (indexStart > 9){
@@ -2674,7 +2782,7 @@ Function Parse_FAR(String InFavorites$){
 		ListName[1] = FavoritesTitle;
 		ListName$ = ListName[1];
 		indexNext = indexEnd;
-		For (i = 1 to ListLengthFavorites){
+		For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -2690,7 +2798,7 @@ Function Parse_FAR(String InFavorites$){
 				trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
 			}
 			Else {
-				For (j = i to ListLengthFavorites){
+				For (j = i to NumberOfList){
 					FavoritesID[j] = "";
 					FavoritesName[j] = "";
 					FavoritesType[j] = "";
@@ -2786,7 +2894,6 @@ Function Parse_FAR(String InFavorites$){
 }
 Function Parse_Dynamic(String InDynamic$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthDynamic;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -2810,9 +2917,8 @@ Function Parse_Dynamic(String InDynamic$){
 	}
 	OutListBar = OutDynamicBar;
 	OutListCount = OutDynamicCount;
-	ListLengthDynamic = NumberOfList;
 	indexEnd = 1;
-	For (i = 1 to ListLengthDynamic){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -2827,7 +2933,7 @@ Function Parse_Dynamic(String InDynamic$){
 			DynamicFile[i] = ParsePercent(mid(InDynamic$,indexStart,Length));
 		}
 		Else {
-			For (j = i to ListLengthDynamic){
+			For (j = i to NumberOfList){
 				DynamicFile[j] = "";
 				DynamicName[j] = "";
 				List$[j] = " ";
@@ -2850,7 +2956,6 @@ Function Parse_Dynamic(String InDynamic$){
 }
 Function Parse_Genres(String InGenres$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthGenres;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -2878,9 +2983,8 @@ Function Parse_Genres(String InGenres$){
 	}
 	OutListBar = OutGenresBar;
 	OutListCount = OutGenreCount;
-	ListLengthGenres = NumberOfList;
 	indexEnd = 1;
-	For (i = 1 to ListLengthGenres){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -2895,7 +2999,7 @@ Function Parse_Genres(String InGenres$){
 			GenreID[i] = mid(InGenres$,indexStart,Length);
 		}
 		Else {
-			For (j = i to ListLengthGenres){
+			For (j = i to NumberOfList){
 				GenreID[j] = "";
 				Genre[j] = "";
 				List$[j] = " ";
@@ -2918,7 +3022,6 @@ Function Parse_Genres(String InGenres$){
 }
 Function Parse_Artists(String InArtists$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthArtists;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -2948,14 +3051,13 @@ Function Parse_Artists(String InArtists$){
 	}
 	OutListBar = OutArtistsBar;
 	OutListCount = OutArtistCount;
-	ListLengthArtists = NumberOfList;
 	indexEnd = 1;  
 	If (ArtistsListTop = 1){
 		Artist[1] = "All Albums";
 		ArtistID[1] = "";
 		List$[1] = Artist[1];
 	}
-	For (i = (1 + ArtistsListTop) to ListLengthArtists){
+	For (i = (1 + ArtistsListTop) to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -2970,7 +3072,7 @@ Function Parse_Artists(String InArtists$){
 			ArtistID[i] = mid(InArtists$,indexStart,Length);
 		}
 		Else {
-			For (j = i to ListLengthArtists){
+			For (j = i to NumberOfList){
 				ArtistID[j] = "";
 				Artist[j]  = "";
 				List$[j] = " ";
@@ -2993,7 +3095,6 @@ Function Parse_Artists(String InArtists$){
 }
 Function Parse_Albums(String InAlbums$){
 	Integer i, j, indexStart, indexEnd, indexNext, Length;
-	Integer ListLengthAlbums;
 	String AlbumArtist[128], AlbumsParseItem[2048], AlbumTrackID[8], ListTemp[255];
 	Integer inCount_local;
 	
@@ -3017,9 +3118,8 @@ Function Parse_Albums(String InAlbums$){
 	}
 	OutListBar = OutAlbumsBar;
 	OutListCount = OutAlbumCount;
-	ListLengthAlbums = NumberOfAlbums;
 	indexNext = 1;
-	For (i = 1 to ListLengthAlbums) {
+	For (i = 1 to NumberOfAlbums) {
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3035,7 +3135,7 @@ Function Parse_Albums(String InAlbums$){
 			trace("Album ID[%u]: %s",i,AlbumID[i]);
 		}	
 		Else {
-			for (j = i to ListLengthAlbums){
+			for (j = i to NumberOfAlbums){
 				AlbumID[j] = "";
 				Album[j] = "";
 				List$[j] = " ";
@@ -3128,7 +3228,6 @@ Function Parse_Albums(String InAlbums$){
 }
 Function Parse_Titles(String InTitles$){
 	Integer i, j, indexStart, indexNext, indexEnd, Length;
-	Integer ListLengthTitles;
 	String TitlesParseItem[2048];
 	Integer inCount_local;
 	
@@ -3157,10 +3256,9 @@ Function Parse_Titles(String InTitles$){
 	}
 	OutListBar = OutTitlesBar;
 	OutListCount = OutTitleCount;
-	ListLengthTitles = NumberOfList;
 	indexEnd = 1;
 	indexNext = 1;
-	For (i = 1 to ListLengthTitles){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3175,7 +3273,7 @@ Function Parse_Titles(String InTitles$){
 			TrackID[i] = mid(InTitles$,indexStart,Length);
 		}
 		Else {
-			For (j = i to ListLengthTitles){
+			For (j = i to NumberOfList){
 				TrackID[j] = "";
 				Title[j] = "";
 				List$[j] = " ";
@@ -3237,7 +3335,6 @@ Function Parse_Titles(String InTitles$){
 }
 Function Parse_Playlists(String InPlaylists$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthPlaylists;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -3262,9 +3359,8 @@ Function Parse_Playlists(String InPlaylists$){
 	}
 	OutListBar = OutPlaylistsBar;
 	OutListCount = OutPlaylistCount;
-	ListLengthPlaylists = NumberOfList;
 	indexEnd = 1;
-	For (i = 1 to ListLengthPlaylists) {
+	For (i = 1 to NumberOfList) {
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3279,7 +3375,7 @@ Function Parse_Playlists(String InPlaylists$){
 			PlaylistID[i] = mid(InPlaylists$,indexStart,Length);
 		}
 		Else {
-			For (j = i to ListLengthPlaylists){
+			For (j = i to NumberOfList){
 				PlaylistID[j] = "";
 				PlaylistRaw[j] = "";
 				Playlist[j] = "";
@@ -3305,7 +3401,6 @@ Function Parse_Playlists(String InPlaylists$){
 }
 Function Parse_Apps(String InApps$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthApps;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -3336,11 +3431,9 @@ Function Parse_Apps(String InApps$){
 	}
 	OutListBar = OutAppsBar;
 	OutListCount = OutAppsCount;
-	ListLengthApps = NumberOfList;
-	trace("listlengthApps = %u",ListLengthApps);
 	indexEnd = 9;
 
-	For (i = 1 to ListLengthApps){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3356,7 +3449,7 @@ Function Parse_Apps(String InApps$){
 			trace("Apps icon: %s",AppsIcon[i]);
 		}
 		Else {
-			For (j = i to ListLengthApps){
+			For (j = i to NumberOfList){
 				AppsIcon[j] = "";
 				AppsCmd[j] = "";
 				AppsName[j] = "";
@@ -3415,7 +3508,6 @@ Function Parse_Apps(String InApps$){
 }
 Function Parse_Radios(String InRadios$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthRadios;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -3444,10 +3536,8 @@ Function Parse_Radios(String InRadios$){
 	}
 	OutListBar = OutRadiosBar;
 	OutListCount = OutRadiosCount;
-	ListLengthRadios = NumberOfList;
-	trace("listlengthRadios = %u",ListLengthRadios);
 	indexEnd = 9;
-	For (i = 1 to ListLengthRadios){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3463,7 +3553,7 @@ Function Parse_Radios(String InRadios$){
 			trace("Radios icon: %s",RadiosIcon[i]);
 		}
 		Else {
-			For (j = i to ListLengthRadios){
+			For (j = i to NumberOfList){
 				RadiosIcon[j] = "";
 				RadiosCmd[j] = "";
 				RadiosName[j] = "";
@@ -3517,7 +3607,6 @@ Function Parse_Radios(String InRadios$){
 }
 Function Parse_Search(String InSearch$){
 	Integer i, j, indexStart, indexEnd, Length;
-	Integer ListLengthSearch;
 	Integer inCount_local;
 	
 	// store the global token for browse data in the local thread
@@ -3542,9 +3631,8 @@ Function Parse_Search(String InSearch$){
 	}
 	OutListBar = OutSearchBar;
 	OutListCount = OutSearchCount;
-	ListLengthSearch = NumberOfList;
 	indexEnd = 1;
-	For (i = 1 to ListLengthSearch){
+	For (i = 1 to NumberOfList){
 		// check for newly started parsing thread before starting each loop
 		trace("inCount = %u; inCount_local = %u",inCount,inCount_local);
 		if (inCount_local <> inCount){
@@ -3628,7 +3716,7 @@ Function Parse_Search(String InSearch$){
 			}
 		}
 		Else {
-			For (j = i to ListLengthSearch){
+			For (j = i to NumberOfList){
 				SearchID[j] = "";
 				Search[j] = " ";
 				List$[j] = " ";
@@ -3834,9 +3922,8 @@ Function Parse_Players(String InPlayers$){
 	else {
 		OutPlayersBar = 65535;
 	}
-	ListLengthPlayers = NumberOfPlayers;
 	indexEnd = 1;
-	For (i = 1 to ListLengthPlayers) {
+	For (i = 1 to NumberOfPlayers) {
 		indexStart = find(" playerindex%3A",InPlayers$,indexEnd) + 15;
 		If (indexStart > 15){
 			indexEnd = find(" ",Inplayers$,indexStart);
@@ -3844,7 +3931,7 @@ Function Parse_Players(String InPlayers$){
 			trace("PlayersIndex[%u] = %u",i,PlayersIndex[i]);
 		}
 		Else {
-			For (j = i to ListLengthPlayers){
+			For (j = i to NumberOfPlayers){
 				PlayersIndex[j] = 0;
 				PlayersID[j] = "";
 				PlayersName[j] = "";
@@ -4694,7 +4781,7 @@ Function Parse_Showbriefly(String InShow$){
 	String temp$[2][256], temp[768];
 	/*
 	while (progShowbriefly = 1){
-		delay(delayShowbriefly);
+		delay(DELAY_SHOWBRIEFLY);
 	}
 	progShowbriefly = 1;
 	*/
@@ -4719,7 +4806,7 @@ Function Parse_Showbriefly(String InShow$){
 		}
 		temp = temp$[0] + " " + temp$[1] + " " + temp$[2];
 		Showbriefly$ = left(Parsepercent(temp),255);
-		Pulse(delayShowbriefly, showbriefly);
+		Pulse(DELAY_SHOWBRIEFLY, showbriefly);
 		// progShowbriefly = 1;
 	}
 }
@@ -5346,7 +5433,7 @@ PUSH Select_DefaultPlayer{
 		TimeFind$ = PlayersID_raw[0] + " time ";
 		delay(20);
 		if (UseCoverID = 1){
-			tags$ = "pgsaeluKcNr";
+			tags$ = "pgsaelucKNr";
 		}
 		else {
 			tags$ = "pgsaeluKNr";
@@ -5368,7 +5455,7 @@ PUSH PlayersSelect {
 	String Out$[128], tags$[16];
 	INTEGER i,j;
 	i = GetLastModifiedArrayIndex ();
-	If (i <= ListLengthPlayers){
+	If (i <= NumberOfPlayers){
 		i = i + FirstPlayers;
 		makestring(out$,"%s status - 1 subscribe:-\n",PlayerID$);  
 		socketsend(TCPClient, out$);
@@ -5386,7 +5473,7 @@ PUSH PlayersSelect {
 		TimeFind$ = PlayersID_raw[i] + " time ";
 		delay(20);
 		if (UseCoverID = 1){
-			tags$ = "pgsaeluKcNr";
+			tags$ = "pgsaelucKNr";
 		}
 		else {
 			tags$ = "pgsaeluKNr";
@@ -5405,7 +5492,7 @@ PUSH PlayersSyncTog {
 	String Out$[64];
 	INTEGER i;
 	i = GetLastModifiedArrayIndex ();
-	If (i <= ListLengthPlayers){
+	If (i <= NumberOfPlayers){
 		i = i + FirstPlayers;
 		If (PlayersID[i] <> PlayerID$ || PlayersSynced[i] = 1){
 			If (PlayersSynced[i] = 1){
@@ -6115,7 +6202,7 @@ SOCKETCONNECT TCPClient{
 //	SOCKET Startup procedure
 	// subscribe to status updates
 	if (UseCoverID = 1){
-		tags$ = "pgsaeluKcNr";
+		tags$ = "pgsaelucKNr";
 	}
 	else {
 		tags$ = "pgsaeluKNr";
@@ -6220,8 +6307,7 @@ Function Main() {
 	// Nowplaying blank cover
 	makestring(NowplayingCoverURL_blank,"http://%s/html/images/blank_%ux%u.png", ServerHTTP, NowplayingCoverSize, NowplayingCoverSize);
 	// create the home list according to the HomeItem parameters
- 	TotalHome = HomeListLength;    
-	For (i = 1 to TotalHome){
+ 	For (i = 1 to TotalHome){
 		Switch (HomeItem[i]){
 			Case (1):{
 				ListHomeItem[i] = 1;
