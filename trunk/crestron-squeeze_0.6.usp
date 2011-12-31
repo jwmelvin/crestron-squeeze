@@ -1557,10 +1557,11 @@ Function TitleListSelect_fn(integer i){
 			ActiveTrackID = TrackID[i];
 			ActiveTitle = Title[i];
 			ActivePlaylist = "";
-			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s \n",PlayerID$, TitleAlbumID[i]);
+			makestring(OUT$,"%s playlistcontrol cmd:load album_id:%s\n",PlayerID$, TitleAlbumID[i]);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
-			makestring(OUT$,"%s playlist index %u \n",PlayerID$, TitleTracknum[i] - 1);
+			makestring(OUT$,"%s playlist index %u\n",PlayerID$, TitleTracknum[i] - 1);
+      delay(10);
 			trace("sending: %s",OUT$);
 			socketsend(TCPClient,OUT$);
 		}
