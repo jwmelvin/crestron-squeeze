@@ -2758,10 +2758,10 @@ Function Parse_FAR(String InFavorites$){
 		SetArray(FavoritesType,"");
 		SetArray(FavoritesName,"");
 		SetArray(FavoritesID,"");
-		FavoritesTitle = "Empty";
+		FavoritesTitle = FAR_cmd + ": Empty";
 		OutListBar = 65535;
 		OutListCount = 0;
-		ListName[1] = "Empty";
+		ListName[1] = FavoritesTitle;
 		ListName$ = ListName[1];
 		SetArray(List$," "); 
 	}
@@ -2777,7 +2777,7 @@ Function Parse_FAR(String InFavorites$){
 			FavoritesTitle = ParsePercent(mid(InFavorites$,indexStart,Length));
 		}
 		Else {
-			FavoritesTitle = "Blank";
+			FavoritesTitle = FAR_cmd + ": Blank";
 		}
 		trace("Favorites title: %s",FavoritesTitle);
 		ListName[1] = FavoritesTitle;
