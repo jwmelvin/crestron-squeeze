@@ -1,50 +1,52 @@
-#summary Some information about my SqueezeCenter module for Crestron control systems.
+# summary Some information about my SqueezeCenter module for Crestron control systems.
 
-= Introduction =
+# Introduction 
 Please enjoy and let me know if you have any questions or find any problems. The latest code is available in the Source tab, not Downloads.
 
-==Important advice==
+## Important advice
   * Make sure you define the analog `NumberOfList` input (and other `NumberOf__` inputs), which is required to tell the module how many lines of text to output for a single page; if undefined, zero lines of text are generated.
 
   * Make sure you use only lowercase letters for the PlayerID MAC address.
 
   * Make sure you use Triode's Spotify plugin for LMS, not the official Spotify plugin. Triode's may be installed in the LMS settings web page by adding this repository: http://triodeplugins.googlecode.com/svn/trunk/repo.xml
 
-==Revision History==
-||*Version*||Notes||
-||0.7|| Current working code. Added direct Spotify access and corrected some Spotify cover art. I also added an option (set as a parameter) to change what happens when you Select a track; the new option allow you to insert and play just the track, rather than replacing the playlist with the entire album from which the track comes.||
-||0.6|| Added current song bitrate and sample size.||
-||0.5.4|| Compatible with 3-series processors and with the CoverID method of cover art in SBS 7.6. Also adds a constant at the top to define the size of the arrays, allowing for lists of longer than ten positions if desired. Also has working Spotify cover art using the third-party plugin. ||
-||0.5.3|| Moves the incoming data to a gather() within a while(1) loop in main. That eliminates the SocketReceive event, which should improve processor load. Also added ShowBriefly outputs (a serial for the text and a digital that pulses when a new message appears); a parameter (`suppressShowbrieflyPause`) controls whether pause messages are shown.  Currently available in the source tab. ||
-||0.5.2|| Current testing build in repository; fixes list item covers for large collections; adds button emulation for SB remote; added option to always start playlists from the beginning (required for non-SBS playlists); starting to incorporate the CoverID for track covers, a change that is encouraged in SBS 7.6. ||
-||0.5.1|| Adds mixer volume; user-defined size for current cover. ||
-||0.5|| Adds support for extended characters and new option, `ASCII_only`. Adds custom home list, where there are parameters to set the number of items on the home list and pick what each one is. Adds the home list item "New Albums", which shows albums by the date they were added to the collection (most recent first). Adds CustomBrowse integration (a little rough due to the way that CB reports information). Adds the `ListPlayable` outputs to indicate whether each `List$` item is playable.||
-||0.4.3||Corrects a few bugs: browsing internet music sources, `InPageNowplaying`. Adds `Playlist_Clear` input. Revision to the `Nowplaying` consolidated output. Adds trackstat rating capability. ||
-||0.4.2||Corrects the bug above and adds a consolidated `CurrentSong` output, with options to set whether you want the consolidated output or separate output (or both).  Also has an option for whether you want time feedback. Time feedback has been substantially changed, so it now uses an internal timer to increment the time, with updates every 15 seconds from the server.||
-||0.4.1||***NOTICE*** This version has a problem with album names that contain an escaped character near the end. It has been corrected in 0.4.2||
-||0.4||BIG REVISION.  Includes multi-player control and coverflow mode, which switches to a different number of items to list and includes artists and cover URLs with the albums.  Also can list radios/apps and search in radios.  Search functionality changed to take a full string, so you now use the ASCII keypad symbol in SIMPL. Can use search functionality to perform functions in apps, like creating Pandora stations. Includes a combined output for the Nowplaying list, which shows "Trackname - Artist" as one output, with analogs setting the max length of each.  Similarly, there are analog inputs for the max width of the coverflow outputs.  I will try to (soon) update the signal descriptions below, which are now outdated. Contact me with any questions.||
-||0.3.7||Fixed page up/down in home screen when list length is shorter than home screen||
-||0.3.6||more bug fixes||
-||0.3.5||Fixed the generation of titles for the lists of Pandora and Favorites pages; now generated and updated during the parsing sequence to reflect the actual data from the server. Also changed the mechanics of the input arrays for selecting, adding, inserting, etc. so it is more efficient code.||
-||0.3.4||Added a direct input to play favorites with a string, e.g., "0.1" to play the second item in the first folder in favorites.  If the item does not exist, nothing happens. I use this to program keypad buttons (the first favorite is a folder called "keypads", which makes it really easy to reassign keypad playlists.  Also fixed a bug with favorites collections containing folders.||
-||0.3.3||Fixed an issue with Favorites when it received empty results. Also changed the page up/down functions to avoid the blank pages that used to appear occasionally.||
+## Revision History
+|Version|Notes|
+|-------|-----|
+|0.7| Current working code. Added direct Spotify access and corrected some Spotify cover art. I also added an option (set as a parameter) to change what happens when you Select a track; the new option allow you to insert and play just the track, rather than replacing the playlist with the entire album from which the track comes.|
+|0.6| Added current song bitrate and sample size.|
+|0.5.4| Compatible with 3-series processors and with the CoverID method of cover art in SBS 7.6. Also adds a constant at the top to define the size of the arrays, allowing for lists of longer than ten positions if desired. Also has working Spotify cover art using the third-party plugin. |
+|0.5.3| Moves the incoming data to a gather() within a while(1) loop in main. That eliminates the SocketReceive event, which should improve processor load. Also added ShowBriefly outputs (a serial for the text and a digital that pulses when a new message appears); a parameter (`suppressShowbrieflyPause`) controls whether pause messages are shown.  Currently available in the source tab. |
+|0.5.2| Current testing build in repository; fixes list item covers for large collections; adds button emulation for SB remote; added option to always start playlists from the beginning (required for non-SBS playlists); starting to incorporate the CoverID for track covers, a change that is encouraged in SBS 7.6. |
+|0.5.1| Adds mixer volume; user-defined size for current cover. |
+|0.5| Adds support for extended characters and new option, `ASCII_only`. Adds custom home list, where there are parameters to set the number of items on the home list and pick what each one is. Adds the home list item "New Albums", which shows albums by the date they were added to the collection (most recent first). Adds CustomBrowse integration (a little rough due to the way that CB reports information). Adds the `ListPlayable` outputs to indicate whether each `List$` item is playable.||
+|0.4.3|Corrects a few bugs: browsing internet music sources, `InPageNowplaying`. Adds `Playlist_Clear` input. Revision to the `Nowplaying` consolidated output. Adds trackstat rating capability. ||
+|0.4.2|Corrects the bug above and adds a consolidated `CurrentSong` output, with options to set whether you want the consolidated output or separate output (or both).  Also has an option for whether you want time feedback. Time feedback has been substantially changed, so it now uses an internal timer to increment the time, with updates every 15 seconds from the server.||
+|0.4.1|***NOTICE*** This version has a problem with album names that contain an escaped character near the end. It has been corrected in 0.4.2||
+|0.4|BIG REVISION.  Includes multi-player control and coverflow mode, which switches to a different number of items to list and includes artists and cover URLs with the albums.  Also can list radios/apps and search in radios.  Search functionality changed to take a full string, so you now use the ASCII keypad symbol in SIMPL. Can use search functionality to perform functions in apps, like creating Pandora stations. Includes a combined output for the Nowplaying list, which shows "Trackname - Artist" as one output, with analogs setting the max length of each.  Similarly, there are analog inputs for the max width of the coverflow outputs.  I will try to (soon) update the signal descriptions below, which are now outdated. Contact me with any questions.||
+|0.3.7|Fixed page up/down in home screen when list length is shorter than home screen||
+|0.3.6|more bug fixes||
+|0.3.5|Fixed the generation of titles for the lists of Pandora and Favorites pages; now generated and updated during the parsing sequence to reflect the actual data from the server. Also changed the mechanics of the input arrays for selecting, adding, inserting, etc. so it is more efficient code.||
+|0.3.4|Added a direct input to play favorites with a string, e.g., "0.1" to play the second item in the first folder in favorites.  If the item does not exist, nothing happens. I use this to program keypad buttons (the first favorite is a folder called "keypads", which makes it really easy to reassign keypad playlists.  Also fixed a bug with favorites collections containing folders.||
+|0.3.3|Fixed an issue with Favorites when it received empty results. Also changed the page up/down functions to avoid the blank pages that used to appear occasionally.||
 
-----
-----
-= Module Inputs and Outputs=
+
+# Module Inputs and Outputs
 Here is a description of the various inputs and outputs:
-==Connection==
- ===Inputs===
+## Connection
+### Inputs
  
-|| *Type* || *Name* || *Description* ||
-||D||`TCPIP_Connect`||Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.||
-||D||`TCPIP_ReconnectEnable`||Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.||
+| Type | Name | Description |
+|------|------|-------------|
+|D|`TCPIP_Connect`||Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.|
+|D|`TCPIP_ReconnectEnable`||Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.|
 
-  ===Outputs===
+  ### Outputs
   
-|| *Type* || *Name* || *Description* ||
-||D||`TCPIP_Connected`||High if the module is connected to the Squeezebox Server||
-||A||`TCPIP_Status`|| analog value of connection status||
+| Type | Name | Description |
+|------|------|-------------|
+|D|`TCPIP_Connected`|High if the module is connected to the Squeezebox Server|
+|A|`TCPIP_Status`| analog value of connection status|
 
 ----
 
