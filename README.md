@@ -1,6 +1,12 @@
 # Introduction 
 Please enjoy and let me know if you have any questions or find any problems. The latest code is available in the Source tab, not Downloads.
 
+* The file radio.png is a replacement for the file of the same name distributed with SBS. It is made to match the style of the other top-level icons for use on the home list of this Crestron module. To use it, replace the existing file with this version (must be done after every upgrade of SBS).
+
+For example, on Ubuntu, I use the following command (in which you must substitute the actual file location for <original_file_location>):
+sudo cp <original_file_location> /usr/share/squeezeboxserver/HTML/Default/html/images/radio.png
+
+
 ## Important advice
   * Make sure you define the analog `NumberOfList` input (and other `NumberOf__` inputs), which is required to tell the module how many lines of text to output for a single page; if undefined, zero lines of text are generated.
 
@@ -39,7 +45,7 @@ Here is a description of the various inputs and outputs:
 |D|`TCPIP_Connect`|Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.|
 |D|`TCPIP_ReconnectEnable`|Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.|
 
-  ### Outputs
+### Outputs
   
 | Type | Name | Description |
 |------|------|-------------|
@@ -102,7 +108,7 @@ Here is a description of the various inputs and outputs:
 |--------|--------|---------------|
 | - | - | none currently. |
 
-
+----
 
 ## Transport Controls
 ### Inputs
@@ -176,6 +182,7 @@ Here is a description of the various inputs and outputs:
 | S | `CurrentsongTrackstat$` | Serial output with the trackstat rating, rangin from "0" to "100", if the song is a local file. If not, it is a " " to clear the touchpanel text. |
 | A | `CurrentsongType` | Indicates the type of the current song, as follows: 0 = local file; 1 = Pandora; 2 = Slacker; 3 = LastFM; 4 = Rhapsody; 5 = LiveMusicArchive; 6 = Sirius; 7 = Live365; 8 = Mediafly; 9 = Internet Radio/Podcast; 10 = Sounds&Effects. |
 
+----
 
 ## Browse Controls
 ### Inputs
@@ -260,7 +267,7 @@ Here is a description of the various inputs and outputs:
 | D | `Search_RequiresSubmit` |  Indicates when a search requires the input `Search_Submit` to run the search. Used for searches of remote data, rather than the local database, which is find-as-you-type. |
 | S | `search_in_fb` | Shows the current search string. | # commented out because removed but may add again
 
-
+----
 ## Player Controls
 ### Inputs
   
@@ -288,8 +295,3 @@ Here is a description of the various inputs and outputs:
 | S | `CurrentPlayerMasterName` | Indicates the name of the player that is the Master of the current sync group. |
 | S | `Players$` |  The names of the players connected to the server. |
 | S | `PlayersID` |  The ID of the players connected to the server. |
-
-The file radio.png is a replacement for the file of the same name distributed with SBS. It is made to match the style of the other top-level icons for use on the home list of this Crestron module. To use it, replace the existing file with this version (must be done after every upgrade of SBS).
-
-For example, on Ubuntu, I use the following command (in which you must substitute the actual file location for <original_file_location>):
-sudo cp <original_file_location> /usr/share/squeezeboxserver/HTML/Default/html/images/radio.png
