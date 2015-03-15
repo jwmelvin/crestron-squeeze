@@ -1,6 +1,3 @@
-# summary 
-Some information about my SqueezeCenter module for Crestron control systems.
-
 # Introduction 
 Please enjoy and let me know if you have any questions or find any problems. The latest code is available in the Source tab, not Downloads.
 
