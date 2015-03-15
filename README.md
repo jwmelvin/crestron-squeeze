@@ -36,8 +36,8 @@ Here is a description of the various inputs and outputs:
  
 | Type | Name | Description |
 |------|------|-------------|
-|D|`TCPIP_Connect`||Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.|
-|D|`TCPIP_ReconnectEnable`||Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.|
+|D|`TCPIP_Connect`|Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.|
+|D|`TCPIP_ReconnectEnable`|Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.|
 
   ### Outputs
   
