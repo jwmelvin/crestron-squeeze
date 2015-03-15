@@ -51,10 +51,11 @@ Here is a description of the various inputs and outputs:
 
 ----
 
-==Options==
-  ===Inputs===
+## Options
+### Inputs
   
 | *Type* | *Name* | *Description* |
+|--------|--------|---------------|
 | P | `PlayerID$_Default` |  The MAC address of the player to use on startup, e.g., "00:04:20:00:b7:01" (without the quotes). NOTE: use only lowercase letters. |
 | P | `ServerIPAddr$` | String of the IP address of the server, e.g., "192.168.1.50" (without the quotes). |
 | P | `ServerPort` |  Integer value of the server CLI port. Default is 9090. |
