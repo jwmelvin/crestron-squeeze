@@ -1,65 +1,57 @@
-# Some information about my SqueezeCenter module for Crestron control systems.
+#summary Some information about my SqueezeCenter module for Crestron control systems.
 
-# Introduction
-
+= Introduction =
 Please enjoy and let me know if you have any questions or find any problems. The latest code is available in the Source tab, not Downloads.
 
-## Important advice
+==Important advice==
+  * Make sure you define the analog `NumberOfList` input (and other `NumberOf__` inputs), which is required to tell the module how many lines of text to output for a single page; if undefined, zero lines of text are generated.
 
-  - Make sure you define the analog `NumberOfList` input (and other `NumberOf__` inputs), which is required to tell the module how many lines of text to output for a single page; if undefined, zero lines of text are generated.
+  * Make sure you use only lowercase letters for the PlayerID MAC address.
 
-  - Make sure you use only lowercase letters for the PlayerID MAC address.
+  * Make sure you use Triode's Spotify plugin for LMS, not the official Spotify plugin. Triode's may be installed in the LMS settings web page by adding this repository: http://triodeplugins.googlecode.com/svn/trunk/repo.xml
 
-  - Make sure you use Triode's Spotify plugin for LMS, not the official Spotify plugin. Triode's may be installed in the LMS settings web page by adding this repository: http://triodeplugins.googlecode.com/svn/trunk/repo.xml
-
-## Revision History
-
-<table>
-  <tr><td>**Version**</td><td>Notes</td></tr>
-  <tr><td>0.7</td><td>Current working code. Added direct Spotify access and corrected some Spotify cover art. I also added an option (set as a parameter) to change what happens when you Select a track; the new option allow you to insert and play just the track, rather than replacing the playlist with the entire album from which the track comes.</td></tr>
-  <tr><td>0.6</td><td>Added current song bitrate and sample size.</td></tr>
-  <tr><td>0.5.4</td><td>Compatible with 3-series processors and with the CoverID method of cover art in SBS 7.6. Also adds a constant at the top to define the size of the arrays, allowing for lists of longer than ten positions if desired. Also has working Spotify cover art using the third-party plugin.</td></tr>
-  <tr><td>0.5.3</td><td>Moves the incoming data to a gather() within a while(1) loop in main. That eliminates the SocketReceive event, which should improve processor load. Also added ShowBriefly outputs (a serial for the text and a digital that pulses when a new message appears); a parameter (`suppressShowbrieflyPause`) controls whether pause messages are shown.  Currently available in the source tab.</td></tr>
-  <tr><td>0.5.2</td><td>Current testing build in repository; fixes list item covers for large collections; adds button emulation for SB remote; added option to always start playlists from the beginning (required for non-SBS playlists); starting to incorporate the CoverID for track covers, a change that is encouraged in SBS 7.6.</td></tr>
-  <tr><td>0.5.1</td><td>Adds mixer volume; user-defined size for current cover.</td></tr>
-  <tr><td>0.5</td><td>Adds support for extended characters and new option, `ASCII_only`. Adds custom home list, where there are parameters to set the number of items on the home list and pick what each one is. Adds the home list item "New Albums", which shows albums by the date they were added to the collection (most recent first). Adds CustomBrowse integration (a little rough due to the way that CB reports information). Adds the `ListPlayable` outputs to indicate whether each `List$` item is playable.</td></tr>
-  <tr><td>0.4.3</td><td>Corrects a few bugs: browsing internet music sources, `InPageNowplaying`. Adds `Playlist_Clear` input. Revision to the `Nowplaying` consolidated output. Adds trackstat rating capability.</td></tr>
-  <tr><td>0.4.2</td><td>Corrects the bug above and adds a consolidated `CurrentSong` output, with options to set whether you want the consolidated output or separate output (or both).  Also has an option for whether you want time feedback. Time feedback has been substantially changed, so it now uses an internal timer to increment the time, with updates every 15 seconds from the server.</td></tr>
-  <tr><td>0.4.1</td><td>***NOTICE*** This version has a problem with album names that contain an escaped character near the end. It has been corrected in 0.4.2</td></tr>
-  <tr><td>0.4</td><td>BIG REVISION.  Includes multi-player control and coverflow mode, which switches to a different number of items to list and includes artists and cover URLs with the albums.  Also can list radios/apps and search in radios.  Search functionality changed to take a full string, so you now use the ASCII keypad symbol in SIMPL. Can use search functionality to perform functions in apps, like creating Pandora stations. Includes a combined output for the Nowplaying list, which shows "Trackname - Artist" as one output, with analogs setting the max length of each.  Similarly, there are analog inputs for the max width of the coverflow outputs.  I will try to (soon) update the signal descriptions below, which are now outdated. Contact me with any questions.</td></tr>
-  <tr><td>0.3.7</td><td>Fixed page up/down in home screen when list length is shorter than home screen</td></tr>
-  <tr><td>0.3.6</td><td>more bug fixes</td></tr>
-  <tr><td>0.3.5</td><td>Fixed the generation of titles for the lists of Pandora and Favorites pages; now generated and updated during the parsing sequence to reflect the actual data from the server. Also changed the mechanics of the input arrays for selecting, adding, inserting, etc. so it is more efficient code.</td></tr>
-  <tr><td>0.3.4</td><td>Added a direct input to play favorites with a string, e.g., "0.1" to play the second item in the first folder in favorites.  If the item does not exist, nothing happens. I use this to program keypad buttons (the first favorite is a folder called "keypads", which makes it really easy to reassign keypad playlists.  Also fixed a bug with favorites collections containing folders.</td></tr>
-  <tr><td>0.3.3</td><td>Fixed an issue with Favorites when it received empty results. Also changed the page up/down functions to avoid the blank pages that used to appear occasionally.</td></tr>
-</table>
+==Revision History==
+||*Version*||Notes||
+||0.7|| Current working code. Added direct Spotify access and corrected some Spotify cover art. I also added an option (set as a parameter) to change what happens when you Select a track; the new option allow you to insert and play just the track, rather than replacing the playlist with the entire album from which the track comes.||
+||0.6|| Added current song bitrate and sample size.||
+||0.5.4|| Compatible with 3-series processors and with the CoverID method of cover art in SBS 7.6. Also adds a constant at the top to define the size of the arrays, allowing for lists of longer than ten positions if desired. Also has working Spotify cover art using the third-party plugin. ||
+||0.5.3|| Moves the incoming data to a gather() within a while(1) loop in main. That eliminates the SocketReceive event, which should improve processor load. Also added ShowBriefly outputs (a serial for the text and a digital that pulses when a new message appears); a parameter (`suppressShowbrieflyPause`) controls whether pause messages are shown.  Currently available in the source tab. ||
+||0.5.2|| Current testing build in repository; fixes list item covers for large collections; adds button emulation for SB remote; added option to always start playlists from the beginning (required for non-SBS playlists); starting to incorporate the CoverID for track covers, a change that is encouraged in SBS 7.6. ||
+||0.5.1|| Adds mixer volume; user-defined size for current cover. ||
+||0.5|| Adds support for extended characters and new option, `ASCII_only`. Adds custom home list, where there are parameters to set the number of items on the home list and pick what each one is. Adds the home list item "New Albums", which shows albums by the date they were added to the collection (most recent first). Adds CustomBrowse integration (a little rough due to the way that CB reports information). Adds the `ListPlayable` outputs to indicate whether each `List$` item is playable.||
+||0.4.3||Corrects a few bugs: browsing internet music sources, `InPageNowplaying`. Adds `Playlist_Clear` input. Revision to the `Nowplaying` consolidated output. Adds trackstat rating capability. ||
+||0.4.2||Corrects the bug above and adds a consolidated `CurrentSong` output, with options to set whether you want the consolidated output or separate output (or both).  Also has an option for whether you want time feedback. Time feedback has been substantially changed, so it now uses an internal timer to increment the time, with updates every 15 seconds from the server.||
+||0.4.1||***NOTICE*** This version has a problem with album names that contain an escaped character near the end. It has been corrected in 0.4.2||
+||0.4||BIG REVISION.  Includes multi-player control and coverflow mode, which switches to a different number of items to list and includes artists and cover URLs with the albums.  Also can list radios/apps and search in radios.  Search functionality changed to take a full string, so you now use the ASCII keypad symbol in SIMPL. Can use search functionality to perform functions in apps, like creating Pandora stations. Includes a combined output for the Nowplaying list, which shows "Trackname - Artist" as one output, with analogs setting the max length of each.  Similarly, there are analog inputs for the max width of the coverflow outputs.  I will try to (soon) update the signal descriptions below, which are now outdated. Contact me with any questions.||
+||0.3.7||Fixed page up/down in home screen when list length is shorter than home screen||
+||0.3.6||more bug fixes||
+||0.3.5||Fixed the generation of titles for the lists of Pandora and Favorites pages; now generated and updated during the parsing sequence to reflect the actual data from the server. Also changed the mechanics of the input arrays for selecting, adding, inserting, etc. so it is more efficient code.||
+||0.3.4||Added a direct input to play favorites with a string, e.g., "0.1" to play the second item in the first folder in favorites.  If the item does not exist, nothing happens. I use this to program keypad buttons (the first favorite is a folder called "keypads", which makes it really easy to reassign keypad playlists.  Also fixed a bug with favorites collections containing folders.||
+||0.3.3||Fixed an issue with Favorites when it received empty results. Also changed the page up/down functions to avoid the blank pages that used to appear occasionally.||
 
 ----
 ----
-# Module Inputs and Outputs
-
+= Module Inputs and Outputs=
 Here is a description of the various inputs and outputs:
-## Connection
-
+==Connection==
  ===Inputs===
  
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 ||D||`TCPIP_Connect`||Causes the module to connect. It may be best to disconnect when not using as an active source to reduce traffic and load on the processor.||
 ||D||`TCPIP_ReconnectEnable`||Causes the module to attempt reconnection if the socket is closed remotely. I leave a 1 on this line.||
 
   ===Outputs===
   
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 ||D||`TCPIP_Connected`||High if the module is connected to the Squeezebox Server||
 ||A||`TCPIP_Status`|| analog value of connection status||
 
 ----
 
-## Options
-
+==Options==
   ===Inputs===
   
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 || P || `PlayerID$_Default` ||  The MAC address of the player to use on startup, e.g., "00:04:20:00:b7:01" (without the quotes). NOTE: use only lowercase letters. ||
 || P || `ServerIPAddr$` || String of the IP address of the server, e.g., "192.168.1.50" (without the quotes). ||
 || P || `ServerPort` ||  Integer value of the server CLI port. Default is 9090. ||
@@ -105,17 +97,14 @@ Here is a description of the various inputs and outputs:
 
   ===Outputs===
 
-<table>
-  <tr><td>**Type**</td><td>**Name**</td><td>**Description**</td></tr>
-  <tr><td>-</td><td>-</td><td>none currently.</td></tr>
-</table>
+|| *Type* || *Name* || *Description* ||
+|| - || - || none currently. ||
 
 ----
 
-## Transport Controls
-
+==Transport Controls==
   ===Inputs===
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 || D || `Play` || Start playing. ||
 || D || `Pause_On` || Engage pause. ||
 || D || `Pause_Off` || Disengage pause. Generally equivalent to `Play`.||
@@ -142,8 +131,8 @@ Here is a description of the various inputs and outputs:
 || A || `CurrentsongTrackstatSet` || Sets the Trackstat rating of the current song, if that song is a local file. Valid range is 0-100; if that range is exceeded then the module limits the rating to that range.  ||
 
   ===Outputs===
-|| **Type** || **Name** || **Description** ||
-|| || **Player state feedback** || ||
+|| *Type* || *Name* || *Description* ||
+|| || *Player state feedback* || ||
 || S || `CurrentPlayerName` || Name of current player. ||
 || S || `CurrentPlayerID` || ID (MAC address) of current player. ||
 || D || `CurrentPlayerPower` || Power state of current player (1 if on). ||
@@ -164,7 +153,7 @@ Here is a description of the various inputs and outputs:
 || D || `shuffle_album_fb` || High if the player is set to shuffle the current playlist by album. ||
 || D || `showbriefly` || Pulses high for 3 seconds when a new showbriefly message arrives. ||
 || S || `showbriefly$` || the text of the latest showbriefly message. ||
-|| || **Current song feedback** || ||
+|| || *Current song feedback* || ||
 || D || `CurrentsongRemote_fb` || High if current song is from the internet. ||
 || D || `CurrentsongIsRadioRateable` || High if the current track is rateable. Useful to control appearance of a subpage with the rating controls. ||
 || S || `CurrentsongTitle` || The track title of the current song. ||
@@ -182,11 +171,10 @@ Here is a description of the various inputs and outputs:
 || A || `CurrentsongType` || Indicates the type of the current song, as follows: 0 = local file; 1 = Pandora; 2 = Slacker; 3 = LastFM; 4 = Rhapsody; 5 = LiveMusicArchive; 6 = Sirius; 7 = Live365; 8 = Mediafly; 9 = Internet Radio/Podcast; 10 = Sounds&Effects. ||
 
 ----
-## Browse Controls
-
+==Browse Controls==
   ===Inputs==
-|| **Type** || **Name** || **Description** ||
-|| || **Browse List Items** || ||
+|| *Type* || *Name* || *Description* ||
+|| || *Browse List Items* || ||
 || D || `List_PgUp` || Moves the Browse list up a page. ||
 || D || `List_PgDn` || Moves the Browse list down a page. ||
 || D || `List_Back` || Moves the Browse list back in history. Hits the home page after a maximum of five steps. ||
@@ -213,7 +201,7 @@ Here is a description of the various inputs and outputs:
 || D || `ListPlay` || An array to play a selected item of the Browse list.  The selected item is inserted into the playlist following the currently playing song and playback is advanced to the newly inserted item. ||
 || D || `ListAdd` || An array to add a selected item of the Browse list to the end of the current playlist. ||
 || D || `ListInsert` || An array to insert a selected item of the Browse list as the next item in the current playlist. ||
-|| || **Nowplaying list items** || ||
+|| || *Nowplaying list items* || ||
 || D || `Nowplaying_Refresh` || Refreshes the Nowplaying list to its default position, controlled byt he `NowplayingShowPrev` input (see Options). ||
 || D || `Nowplaying_PgUp` || Moves the Nowplaying list up a page. ||
 || D || `Nowplaying_PgDn` || Moves the Nowplaying list down a page. ||
@@ -224,8 +212,8 @@ Here is a description of the various inputs and outputs:
 || D || `NowPlayingMoveDown` || An array to move a selected item down in the current playlist. ||
 
   ===Outputs===
-|| **Type** || **Name** || **Description** || 
-|| || **Browse List items** || ||
+|| *Type* || *Name* || *Description* || 
+|| || *Browse List items* || ||
 || S || `ListName$` || The title of the current list. Shows the name of the album if you are browsing the titles in the album, or the name of the genre if you are browsing the artists in the genre. Also provides search string feedback if you are searching. ||
 || S || `List$` || An array of items comprising the Browse list. ||
 || D || `ListPlayable` || An array indicating whether each `List$` item is playable (with the corresponding `ListPlay` input). Most useful for internet sources. ||
@@ -234,7 +222,7 @@ Here is a description of the various inputs and outputs:
 || S || `ListName$` || The title of the current list. Shows the name of the album if you are browsing the titles in the album, or the name of the genre if you are browsing the artists in the genre. Also provides search string feedback if you are searching. ||
 || S || `ListCoverURL` || The URL for the album cover of the list item. Only active when Coverflow input is high. ||
 || S || `ListCoverflowArtist` || The Artist of the list item (which is an album). Only active when Coverflow input is high. ||
-|| || **Nowplaying List items** || ||
+|| || *Nowplaying List items* || ||
 || S || `NowplayingTitle$` || The Nowplaying list array of track names. ||
 || S || `NowplayingArtist$` || The Nowplaying list array of artist names. ||
 || S || `NowplayingAlbum$` || The Nowplaying list array of album names. ||
@@ -244,10 +232,9 @@ Here is a description of the various inputs and outputs:
 || D || `NowplayingPageFlip` || Pulses in certain circumstances to indicate a flip to the Nowplaying page.  Useful for single-list GUIs, so when a playlist is selected, it plays the playlist and flips you to nowplaying. ||
 
 ----
-## Search Controls
-
+==Search Controls==
   ===Inputs===
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 || S || `search_in$` || Strings here are used as the search string. Use an "ASCII Keypad" symbol in SIMPL to put together strings from button pushes. ||
 || D || `Search_Submit` || Submits the last search_in$ as a search. Not necessary for local searches, which occur every time search_in$ changes, but necessary when the `Search_RequiresSubmit` output is high (for internet searches). ||
 <wiki:comment>
@@ -257,7 +244,7 @@ Here is a description of the various inputs and outputs:
 </wiki:comment>
 
   ===Outputs===
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 || D || `Search_KeyboardPopup` ||  Pulses when a search item in the list is selected, which prepares the module to accept a string an requires the input `Search_Submit` to run the search. ||
 || D || `Search_RequiresSubmit` ||  Indicates when a search requires the input `Search_Submit` to run the search. Used for searches of remote data, rather than the local database, which is find-as-you-type. ||
 <wiki:comment>
@@ -266,11 +253,10 @@ Here is a description of the various inputs and outputs:
 
 ----
 
-## Player Controls
-
+==Player Controls==
   ===Inputs===
   
-|| **Type** || **Name** || **Description** ||
+|| *Type* || *Name* || *Description* ||
 || D || `Select_DefaultPlayer` || Selects the player defined by the parameter `PlayerID$_default`.  ||
 || D || `Players_Refresh` || Retrieves a listing of players from the server.  ||
 || D || `Players_PgUp` || Scroll the Players list.  ||
@@ -281,15 +267,19 @@ Here is a description of the various inputs and outputs:
 
   ===Outputs===
 
-<table>
-  <tr><td>**Type**</td><td>**Name**</td><td>**Description**</td></tr>
-  <tr><td>D</td><td>`CurrentPlayerPower`</td><td>High if the current player is powered on.</td></tr>
-  <tr><td>D</td><td>`CurrentPlayerConnected`</td><td>High if the current player is connected to the server.</td></tr>
-  <tr><td>D</td><td>`CurrentPlayerMaster`</td><td>High if the current player is a master in a sync group.</td></tr>
-  <tr><td>D</td><td>`CurrentPlayerSlave`</td><td>High if the current player is a slave in a sync group.</td></tr>
-  <tr><td>D</td><td>`PlayersSynced`</td><td>Indicates which players are synced to the player currently being controlled.</td></tr>
-  <tr><td>S</td><td>`CurrentPlayerName`</td><td>Indicates the name of the current player.</td></tr>
-  <tr><td>S</td><td>`CurrentPlayerID`</td><td>Indicates the ID of the current player.</td></tr>
-  <tr><td>S</td><td>`CurrentPlayerMasterName`</td><td>Indicates the name of the player that is the Master of the current sync group.</td></tr>
-  <tr><td>S</td><td>`Players$`</td><td>The names of the players connected to the server.</td></tr>
-  <tr><td>S</td><td>`PlayersID`</td><td>The ID of the players connected to the server.</td></tr>
+|| *Type* || *Name* || *Description* ||
+|| D || `CurrentPlayerPower` || High if the current player is powered on.  ||
+|| D || `CurrentPlayerConnected` || High if the current player is connected to the server.  ||
+|| D || `CurrentPlayerMaster` || High if the current player is a master in a sync group.  ||
+|| D || `CurrentPlayerSlave` ||  High if the current player is a slave in a sync group. ||
+|| D || `PlayersSynced` || Indicates which players are synced to the player currently being controlled.  ||
+|| S || `CurrentPlayerName` || Indicates the name of the current player. ||
+|| S || `CurrentPlayerID` || Indicates the ID of the current player. ||
+|| S || `CurrentPlayerMasterName` || Indicates the name of the player that is the Master of the current sync group. ||
+|| S || `Players$` ||  The names of the players connected to the server. ||
+|| S || `PlayersID` ||  The ID of the players connected to the server. ||
+
+The file radio.png is a replacement for the file of the same name distributed with SBS. It is made to match the style of the other top-level icons for use on the home list of this Crestron module. To use it, replace the existing file with this version (must be done after every upgrade of SBS).
+
+For example, on Ubuntu, I use the following command (in which you must substitute the actual file location for <original_file_location>):
+sudo cp <original_file_location> /usr/share/squeezeboxserver/HTML/Default/html/images/radio.png
