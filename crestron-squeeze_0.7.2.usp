@@ -2806,7 +2806,9 @@ Function Parse_FAR(String InFavorites$){
 			if (indexStart > 6){
 				indexEnd = find(" ",InFavorites$,indexStart);
 				Length = indexEnd - indexStart;
-				FavoritesID[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
+				// made this change to accommodate spaces in IDs, and since it's never displayed there is no reason to parsePercent 
+				// FavoritesID[i] = ParsePercent(mid(InFavorites$,indexStart,Length));
+				FavoritesID[i] = mid(InFavorites$,indexStart,Length);
 				if(debug) trace("Favorites ID[%u]: %s",i,FavoritesID[i]);
 			}
 			Else {
