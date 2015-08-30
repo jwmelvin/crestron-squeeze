@@ -25,7 +25,6 @@ License:
 #DEFINE_CONSTANT NP_TIMER 1000
 #DEFINE_CONSTANT DELAY_SHOWBRIEFLY 300
 
-
 #SYMBOL_NAME "SqueezeBox 0.7.2" 
 #HELP_BEGIN
 	See http://code.google.com/p/crestron-squeeze/wiki/Home?tm=6
